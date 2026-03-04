@@ -1,0 +1,45 @@
+micronaut:
+  application:
+    name: locagest
+  security:
+    enabled: true
+    token:
+      jwt:
+        enabled: true
+        signatures:
+          jwks:
+            cognito:
+              url: ${COGNITO_JWKS_URL}  # https://cognito-idp.eu-west-3.amazonaws.com/<pool-id>/.well-known/jwks.json
+
+datasources:
+  default:
+    url:      ${DB_URL}                  # jdbc:postgresql://<rds-proxy-endpoint>:5432/locagest
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      # Avec RDS Proxy : pool minimal côté Lambda (1 connexion par invocation suffit)
+      maximum-pool-size:    2
+      minimum-idle:         1
+      connection-timeout:   5000
+      idle-timeout:         60000
+      # Validation de connexion PostgreSQL
+      connection-test-query: "SELECT 1"
+
+flyway:
+  datasources:
+    default:
+      enabled:   true
+      locations:  classpath:db/migration
+
+aws:
+  region: ${AWS_REGION:eu-west-3}
+  s3:
+    bucket: ${S3_BUCKET:locagest-docs}
+  ses:
+    from-address: ${SES_FROM:noreply@ucjgsalm.org}
+
+logger:
+  levels:
+    org.ucjgsalm.locagest: DEBUG
+    com.zaxxer.hikari:     WARN

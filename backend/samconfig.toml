@@ -1,0 +1,15 @@
+[default]
+[default.global.parameters]
+stack_name = "salm-facture-backend"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+resolve_s3 = true
+s3_prefix = "salm-facture"
+region = "eu-west-3"
+parameter_overrides = "Environment=prod"

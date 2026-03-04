@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocaGest v2 — Interfaces</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Source+Sans+3:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --forest:#2a5c3f;--forest-mid:#3a7a56;--forest-lt:#5a9e74;--forest-dk:#1a3d29;
+  --cream:#f5f0e6;--cream-dk:#ede7d9;--cream-dkr:#ddd5c2;
+  --warm:#c8793a;--warm-dim:rgba(200,121,58,.12);--warm-lt:#e8935a;
+  --teal:#1a7a7a;--teal-dim:rgba(26,122,122,.1);--teal-lt:#2a9a9a;
+  --blue:#2a4a7c;--blue-dim:rgba(42,74,124,.08);
+  --red:#c0392b;--red-dim:rgba(192,57,43,.08);
+  --green-dim:rgba(42,92,63,.08);
+  --text:#1a2f1f;--text-mid:#3d5c44;--text-muted:#7a9481;
+  --border:#c8d8c4;--border-dk:#a0b89a;--white:#fff;
+  --shadow:0 2px 10px rgba(42,92,63,.1);--shadow-lg:0 8px 30px rgba(42,92,63,.15);
+  --radius:14px;--radius-sm:9px;
+}
+body{
+  background:#e8e4d8;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%232a5c3f' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
+  font-family:'Source Sans 3',sans-serif;color:var(--text);
+  padding:32px 16px 64px;display:flex;flex-direction:column;align-items:center;gap:40px;min-height:100vh;
+}
+
+/* ── PAGE HEADER ── */
+.page-header{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.page-header h1{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--forest)}
+.page-header p{font-size:13px;color:var(--text-muted);max-width:500px;text-align:center}
+
+.section-title{font-family:'Playfair Display',serif;font-size:16px;color:var(--forest);font-weight:700;
+  border-left:4px solid var(--forest-lt);padding-left:10px;margin-bottom:12px}
+.section-title-wide{width:100%;max-width:980px}
+
+/* ── PHONE SHELL ── */
+.phone{width:375px;background:var(--cream);border-radius:44px;border:2.5px solid var(--border-dk);
+  overflow:hidden;box-shadow:0 30px 60px rgba(42,92,63,.22),0 0 0 1px rgba(255,255,255,.6) inset}
+.phone-notch{height:44px;background:var(--cream);display:flex;align-items:center;justify-content:center}
+.notch-pill{width:120px;height:30px;background:var(--text);border-radius:20px}
+.status-bar{display:flex;justify-content:space-between;padding:0 24px 8px;font-size:12px;font-weight:600;color:var(--text-mid)}
+
+/* ── SCREENS ── */
+.screen{display:none;flex-direction:column;min-height:720px}
+.screen.active{display:flex}
+
+/* ── APP HEADER ── */
+.app-header{background:var(--forest);padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.header-brand{display:flex;align-items:center;gap:10px}
+.header-logo{width:36px;height:36px;background:white;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.header-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:white}
+.header-sub{font-size:11px;color:rgba(255,255,255,.65);margin-top:1px}
+.header-role{background:rgba(255,255,255,.18);color:white;font-size:11px;font-weight:600;
+  padding:4px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em}
+
+.sub-header{background:var(--forest);padding:12px 20px;display:flex;align-items:center;gap:12px}
+.back-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:white;
+  font-family:'Source Sans 3',sans-serif;font-size:13px;font-weight:600;border-radius:20px;
+  padding:5px 12px;cursor:pointer;display:flex;align-items:center;gap:4px}
+.sub-header-title{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:white;flex:1}
+.step-lbl{font-size:11px;color:rgba(255,255,255,.65);white-space:nowrap}
+
+.stepper{display:flex;gap:5px;padding:10px 20px 0;background:var(--forest)}
+.step-dot{height:3px;flex:1;background:rgba(255,255,255,.25);border-radius:2px;transition:background .3s}
+.step-dot.done,.step-dot.active{background:var(--warm-lt)}
+
+.scroll-area{flex:1;overflow-y:auto;padding:18px 20px 16px;display:flex;flex-direction:column;gap:14px;background:var(--cream)}
+
+/* ── CARDS ── */
+.card{background:white;border-radius:var(--radius);border:1px solid var(--border);padding:16px;box-shadow:var(--shadow)}
+.card-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:12px}
+
+/* ── SÉJOUR HERO ── */
+.sejour-card{background:var(--forest);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
+.sejour-card::after{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;
+  background:radial-gradient(circle,rgba(255,255,255,.08) 0%,transparent 70%);pointer-events:none}
+.sejour-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);
+  color:rgba(255,255,255,.9);font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;margin-bottom:10px}
+.badge-dot{width:6px;height:6px;background:#7dffaa;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.sejour-name{font-family:'Playfair Display',serif;font-size:21px;font-weight:800;color:white;margin-bottom:3px}
+.sejour-dates{font-size:13px;color:rgba(255,255,255,.7);margin-bottom:14px}
+
+/* NEW: category summary chips */
+.cat-chips{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.cat-chip{background:rgba(255,255,255,.1);border-radius:8px;padding:9px 12px;
+  display:flex;justify-content:space-between;align-items:center}
+.cat-chip-name{font-size:12px;color:rgba(255,255,255,.8)}
+.cat-chip-val{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--warm-lt)}
+.cat-chip-price{font-size:10px;color:rgba(255,255,255,.5);margin-top:1px}
+
+.horaires-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.horaire-chip{background:rgba(255,255,255,.1);border-radius:8px;padding:8px 10px;text-align:center}
+.horaire-type{font-size:10px;color:rgba(255,255,255,.6)}
+.horaire-time{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:white}
+.horaire-real{color:#7dffaa}
+
+/* ── ACTIONS ── */
+.actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.action-btn{background:white;border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 12px;
+  cursor:pointer;display:flex;flex-direction:column;gap:7px;transition:all .15s;text-align:left;box-shadow:var(--shadow)}
+.action-btn:active{transform:scale(.97);border-color:var(--forest)}
+.action-btn.full{grid-column:1/-1;background:var(--forest);border-color:var(--forest)}
+.action-btn.full .action-label{color:white}
+.action-btn.full .action-sub{color:rgba(255,255,255,.6)}
+.action-icon{font-size:20px}
+.action-label{font-weight:600;font-size:13px;color:var(--text)}
+.action-sub{font-size:11px;color:var(--text-muted)}
+
+/* ── CONTACT ── */
+.contact-row{display:flex;justify-content:space-between;align-items:center}
+.contact-name{font-weight:600;font-size:15px}
+.contact-detail{font-size:12px;color:var(--text-muted);margin-top:2px}
+.divider{height:1px;background:var(--border);margin:10px 0}
+.option-tag{display:inline-block;background:var(--green-dim);color:var(--forest-mid);border:1px solid var(--border);
+  font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;margin:2px}
+
+/* ── FORM ── */
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}
+.form-input{background:var(--cream);border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  padding:13px 14px;font-family:'Source Sans 3',sans-serif;font-size:16px;color:var(--text);
+  width:100%;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--forest);background:white}
+textarea.form-input{resize:none;min-height:80px}
+
+/* ── NUMBER INPUT ── */
+.number-input{display:flex;align-items:center;background:var(--cream);border:1.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+.num-btn{width:54px;height:54px;background:none;border:none;color:var(--forest);font-size:24px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.num-btn:active{background:var(--green-dim)}
+.num-val{flex:1;text-align:center;font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--text)}
+
+/* ── MULTI-TARIF CATEGORY INPUT (NEW) ── */
+.categorie-block{display:flex;flex-direction:column;gap:10px}
+.cat-entry{background:white;border:1.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow)}
+.cat-header{background:var(--forest);padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+.cat-header-name{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:white}
+.cat-header-price{font-size:11px;color:rgba(255,255,255,.7)}
+.cat-body{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.cat-prevue{font-size:11px;color:var(--text-muted);padding:7px 10px;background:var(--cream);border-radius:6px}
+.cat-prevue strong{color:var(--text-mid)}
+
+/* ── INFO / WARN BOXES ── */
+.info-box{background:var(--green-dim);border:1px solid var(--border);border-left:3px solid var(--forest-lt);
+  border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:var(--forest);display:flex;gap:8px}
+.warn-box{background:var(--warm-dim);border:1px solid rgba(200,121,58,.3);border-left:3px solid var(--warm);
+  border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:#7a3a10;display:flex;gap:8px}
+.teal-box{background:var(--teal-dim);border:1px solid rgba(26,122,122,.25);border-left:3px solid var(--teal);
+  border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:var(--teal);display:flex;gap:8px}
+
+/* ── SUPPLEMENTS ── */
+.supplement-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.supplement-item:last-child{border-bottom:none}
+.suppl-name{font-size:14px;font-weight:500}
+.suppl-price{font-size:11px;color:var(--text-muted);margin-top:2px}
+.suppl-controls{display:flex;align-items:center;gap:10px}
+.suppl-count{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;min-width:22px;text-align:center;color:var(--forest)}
+.suppl-btn{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--cream);color:var(--text);font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-weight:600;transition:all .15s}
+.suppl-btn:active{background:var(--forest);color:white;border-color:var(--forest)}
+.libre-btn{background:none;border:1.5px dashed var(--border-dk);border-radius:var(--radius-sm);padding:12px 14px;
+  width:100%;display:flex;align-items:center;gap:8px;color:var(--forest-mid);font-size:13px;font-weight:600;cursor:pointer;font-family:'Source Sans 3',sans-serif;transition:all .15s}
+.libre-btn:active{background:var(--green-dim);border-color:var(--forest)}
+
+/* ── RECAP ── */
+.recap-line{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+.recap-line:last-child{border-bottom:none}
+.recap-line.total{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--forest);
+  padding-top:12px;margin-top:2px;border-top:2px solid var(--border);border-bottom:none}
+.recap-line.sub{font-size:12px;color:var(--text-muted);padding:4px 0 4px 12px;border-bottom:none}
+.recap-lbl{color:var(--text-mid)}
+.recap-val{font-weight:600;white-space:nowrap}
+.warn-badge{display:inline-flex;align-items:center;gap:4px;background:var(--warm-dim);color:var(--warm);
+  border:1px solid rgba(200,121,58,.3);font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;text-transform:uppercase}
+
+/* ── PAYMENT ── */
+.pay-mode{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pay-chip{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:13px 10px;text-align:center;
+  cursor:pointer;background:var(--cream);transition:all .15s;display:flex;flex-direction:column;gap:5px;align-items:center}
+.pay-chip.selected{border-color:var(--forest);background:var(--green-dim)}
+.pay-chip.disabled{opacity:.4;cursor:not-allowed}
+.pay-icon{font-size:22px}
+.pay-label{font-size:12px;font-weight:600;color:var(--text-mid)}
+.pay-chip.selected .pay-label{color:var(--forest)}
+
+/* ── PHOTO ── */
+.photo-area{background:var(--cream);border:2px dashed var(--border-dk);border-radius:var(--radius);
+  padding:28px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:border-color .2s}
+.photo-area.done{border-style:solid;border-color:var(--forest-lt);background:var(--green-dim)}
+
+/* ── BUTTONS ── */
+.btn-primary{background:var(--forest);border:none;border-radius:var(--radius-sm);padding:15px;width:100%;
+  font-family:'Source Sans 3',sans-serif;font-size:15px;font-weight:700;color:white;cursor:pointer;transition:all .15s;letter-spacing:.03em}
+.btn-primary:active{background:var(--forest-mid);transform:scale(.98)}
+.btn-primary.warm{background:var(--warm)}
+.btn-primary.warm:active{background:#b86e30}
+.btn-secondary{background:var(--cream-dk);border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  padding:14px;width:100%;font-family:'Source Sans 3',sans-serif;font-size:14px;font-weight:600;color:var(--text);cursor:pointer}
+.bottom-bar{padding:12px 20px 0;display:flex;flex-direction:column;gap:8px}
+
+/* ── SUCCESS ── */
+.success-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px;gap:14px;text-align:center;background:var(--cream)}
+.success-circle{width:84px;height:84px;background:var(--green-dim);border:2px solid var(--forest-lt);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:38px;
+  animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.success-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;color:var(--forest)}
+.success-sub{font-size:13px;color:var(--text-muted);line-height:1.7}
+
+/* ── DESKTOP LAYOUT ── */
+.desktop-container{width:100%;max-width:980px;display:flex;flex-direction:column;gap:18px}
+.desktop-header{background:var(--forest);border-radius:var(--radius);padding:20px 28px;
+  display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-lg)}
+.dh-brand{display:flex;align-items:center;gap:12px}
+.dh-logo{width:44px;height:44px;background:white;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.dh-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;color:white}
+.dh-sub{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+.dh-role{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:white;
+  font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;text-transform:uppercase;letter-spacing:.06em}
+
+.desktop-tabs{display:flex;gap:4px;background:var(--cream-dk);border-radius:var(--radius);padding:5px}
+.dtab{flex:1;padding:10px 16px;border:none;background:none;font-family:'Source Sans 3',sans-serif;
+  font-size:13px;font-weight:600;color:var(--text-muted);border-radius:10px;cursor:pointer;transition:all .15s}
+.dtab.active{background:white;color:var(--forest);box-shadow:var(--shadow)}
+
+.dscreen{display:none;flex-direction:column;gap:16px}
+.dscreen.active{display:flex}
+
+.dcard{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+.dcard-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--forest);
+  margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.dcard-title-add{font-family:'Source Sans 3',sans-serif;font-size:12px;font-weight:600;background:var(--forest);
+  color:white;padding:5px 12px;border-radius:20px;cursor:pointer;border:none}
+.dcard-title-add.teal{background:var(--teal)}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid.cols3{grid-template-columns:1fr 1fr 1fr}
+.form-grid.cols4{grid-template-columns:1fr 1fr 1fr 1fr}
+.dform-group{display:flex;flex-direction:column;gap:6px}
+.dform-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}
+.dform-input{background:var(--cream);border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  padding:11px 14px;font-family:'Source Sans 3',sans-serif;font-size:14px;color:var(--text);width:100%;outline:none;transition:border-color .2s}
+.dform-input:focus{border-color:var(--forest);background:white}
+textarea.dform-input{resize:vertical;min-height:70px}
+
+/* ── TRÉSORIER — TARIF TABLE ── */
+.tarif-table-wrap{overflow-x:auto;margin:12px 0 0;border-radius:10px;box-shadow:0 1px 6px rgba(42,92,63,.1)}
+.tarif-table{width:100%;border-collapse:collapse;font-size:13px;background:white}
+.tarif-table thead tr{background:var(--forest)}
+.tarif-table thead th{color:white;text-align:left;padding:10px 14px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.07em}
+.tarif-table tbody tr{border-bottom:1px solid var(--border)}
+.tarif-table tbody tr:last-child{border-bottom:none}
+.tarif-table tbody tr:hover td{background:var(--cream)}
+.tarif-table td{padding:12px 14px;vertical-align:middle}
+.price-big{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--forest)}
+.tbl-edit{background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;
+  font-size:11px;cursor:pointer;color:var(--text-mid);font-family:'Source Sans 3',sans-serif}
+.tbl-del{background:none;border:1px solid rgba(192,57,43,.25);border-radius:6px;padding:5px 12px;
+  font-size:11px;cursor:pointer;color:var(--red)}
+.actif-badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase}
+.actif-badge.on{background:var(--green-dim);color:var(--forest)}
+.actif-badge.off{background:var(--red-dim);color:var(--red)}
+
+/* drag handle */
+.drag-handle{color:var(--text-muted);cursor:grab;font-size:16px;padding:0 4px}
+
+/* new tarif form inline */
+.tarif-new-form{background:rgba(26,122,122,.06);border:1.5px dashed rgba(26,122,122,.35);
+  border-radius:var(--radius-sm);padding:16px;display:grid;grid-template-columns:2fr 1fr 2fr auto;gap:10px;align-items:end}
+.tnf-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:5px}
+.tnf-input{background:white;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;
+  font-family:'Source Sans 3',sans-serif;font-size:14px;color:var(--text);outline:none;width:100%}
+.tnf-input:focus{border-color:var(--teal)}
+.tnf-btn{background:var(--teal);border:none;border-radius:var(--radius-sm);padding:11px 18px;
+  font-family:'Source Sans 3',sans-serif;font-size:13px;font-weight:700;color:white;cursor:pointer;white-space:nowrap}
+
+/* config_site table */
+.config-table{width:100%;border-collapse:collapse;font-size:13px;background:white}
+.config-table tr{border-bottom:1px solid var(--border)}
+.config-table tr:last-child{border-bottom:none}
+.config-table td{padding:13px 14px;vertical-align:middle}
+.config-table td:first-child{color:var(--text-muted);font-size:12px;width:40%}
+.config-table td:nth-child(2){font-weight:600;font-family:'JetBrains Mono',monospace;font-size:13px}
+.config-table td:last-child{width:80px;text-align:right}
+
+/* stat cards */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat-card{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.stat-val{font-family:'Playfair Display',serif;font-size:26px;font-weight:800;color:var(--forest);margin-bottom:4px}
+.stat-lbl{font-size:11px;color:var(--text-muted)}
+
+/* Nav pills */
+.screen-nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:375px}
+.nav-pill{background:white;border:1.5px solid var(--border);border-radius:20px;padding:7px 14px;
+  font-size:12px;color:var(--text-muted);cursor:pointer;font-family:'Source Sans 3',sans-serif;
+  transition:all .15s;box-shadow:var(--shadow)}
+.nav-pill:hover,.nav-pill.active{background:var(--forest);border-color:var(--forest);color:white}
+
+/* IBAN */
+.iban-box{background:var(--cream);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+.iban-val{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-mid);letter-spacing:.05em}
+</style>
+</head>
+<body>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <svg viewBox="0 0 52 52" width="48" height="48">
+    <polygon points="26,2 50,48 2,48" fill="#2a5c3f" stroke="#f5f0e6" stroke-width="1.5"/>
+    <text x="26" y="38" text-anchor="middle" font-family="serif" font-size="16" font-weight="bold" fill="#f5f0e6">Y</text>
+  </svg>
+  <h1>UCJG Salm — LocaGest v2</h1>
+  <p>Interface Gardien (mobile) · Interface Resp. Location · Interface Trésorier</p>
+</div>
+
+
+<!-- ════════════════ GARDIEN ════════════════ -->
+<div class="section-title" style="width:375px;">Interface Gardien (mobile)</div>
+
+<div class="phone">
+  <div class="phone-notch"><div class="notch-pill"></div></div>
+  <div class="status-bar"><span>9:41</span><span>●●● 🔋</span></div>
+
+  <!-- G1 ACCUEIL -->
+  <div class="screen active" id="g1">
+    <div class="app-header">
+      <div class="header-brand">
+        <div class="header-logo"><svg viewBox="0 0 36 36" width="30" height="30"><polygon points="18,2 34,32 2,32" fill="#2a5c3f"/><text x="18" y="26" text-anchor="middle" font-family="serif" font-size="13" font-weight="bold" fill="white">Y</text></svg></div>
+        <div><div class="header-name">Salm</div><div class="header-sub">UCJG / YMCA</div></div>
+      </div>
+      <div class="header-role">Gardien</div>
+    </div>
+    <div class="scroll-area">
+      <div class="sejour-card">
+        <div class="sejour-badge"><div class="badge-dot"></div> En cours</div>
+        <div class="sejour-name">Famille Dupont</div>
+        <div class="sejour-dates">Sam 22 – Sam 29 mars 2025 · 7 nuits</div>
+        <div class="horaires-row">
+          <div class="horaire-chip"><div class="horaire-type">Arrivée prévue</div><div class="horaire-time">15h00</div></div>
+          <div class="horaire-chip"><div class="horaire-type">Arrivée réelle</div><div class="horaire-time horaire-real">15h30</div></div>
+          <div class="horaire-chip"><div class="horaire-type">Départ prévu</div><div class="horaire-time">10h00</div></div>
+          <div class="horaire-chip"><div class="horaire-type">Départ réel</div><div class="horaire-time horaire-real">—</div></div>
+        </div>
+        <!-- NEW: category summary -->
+        <div class="cat-chips">
+          <div class="cat-chip">
+            <div><div class="cat-chip-name">Membre de l'union</div><div class="cat-chip-price">14,00 €/pers/nuit · prévu 25</div></div>
+            <div class="cat-chip-val">— saisi</div>
+          </div>
+          <div class="cat-chip">
+            <div><div class="cat-chip-name">Groupe de jeunes</div><div class="cat-chip-price">12,00 €/pers/nuit · prévu 15</div></div>
+            <div class="cat-chip-val">— saisi</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions-grid">
+        <button class="action-btn full" onclick="go('g2')">
+          <div class="action-icon">✏️</div>
+          <div class="action-label">Saisir le séjour</div>
+          <div class="action-sub">Personnes par catégorie + suppléments</div>
+        </button>
+        <button class="action-btn" onclick="go('g2')"><div class="action-icon">📄</div><div class="action-label">Voir facture</div><div class="action-sub">En attente</div></button>
+        <button class="action-btn" onclick="go('g5')"><div class="action-icon">💳</div><div class="action-label">Encaisser</div><div class="action-sub">Chèque / virement</div></button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Contact locataire</div>
+        <div class="contact-row">
+          <div><div class="contact-name">Jean-Pierre Dupont</div><div class="contact-detail">jp.dupont@email.fr · 06 12 34 56 78</div></div>
+          <span style="font-size:26px;cursor:pointer">📞</span>
+        </div>
+        <div class="divider"></div>
+        <div><span class="option-tag">Linge inclus</span><span class="option-tag">Animaux autorisés</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- G2 PERSONNES MULTI-TARIF -->
+  <div class="screen" id="g2">
+    <div class="sub-header">
+      <button class="back-btn" onclick="go('g1')">← Accueil</button>
+      <div class="sub-header-title">Personnes</div>
+      <div class="step-lbl">1/3</div>
+    </div>
+    <div class="stepper"><div class="step-dot done"></div><div class="step-dot"></div><div class="step-dot"></div></div>
+    <div class="scroll-area">
+
+      <div class="teal-box"><span>ℹ️</span><span>Saisissez le nombre réel par catégorie. Le minimum total est de <strong>40 personnes</strong> facturées.</span></div>
+
+      <!-- CATÉGORIES -->
+      <div class="categorie-block">
+        <div class="cat-entry">
+          <div class="cat-header">
+            <div>
+              <div class="cat-header-name">Membre de l'union</div>
+              <div class="cat-header-price">14,00 € / personne / nuit</div>
+            </div>
+          </div>
+          <div class="cat-body">
+            <div class="cat-prevue">Prévu par le responsable : <strong>25 personnes</strong></div>
+            <div class="form-label">PRÉSENTS RÉELS</div>
+            <div class="number-input">
+              <button class="num-btn">−</button>
+              <div class="num-val">25</div>
+              <button class="num-btn">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="cat-entry">
+          <div class="cat-header" style="background:var(--teal)">
+            <div>
+              <div class="cat-header-name">Groupe de jeunes</div>
+              <div class="cat-header-price">12,00 € / personne / nuit</div>
+            </div>
+          </div>
+          <div class="cat-body">
+            <div class="cat-prevue">Prévu par le responsable : <strong>15 personnes</strong></div>
+            <div class="form-label">PRÉSENTS RÉELS</div>
+            <div class="number-input">
+              <button class="num-btn">−</button>
+              <div class="num-val">13</div>
+              <button class="num-btn">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Adultes (taxe de séjour) -->
+      <div class="card" style="gap:10px;display:flex;flex-direction:column">
+        <div class="card-title">Taxe de séjour</div>
+        <div class="form-group">
+          <div class="form-label">Dont adultes (+18 ans) · toutes catégories</div>
+          <div class="number-input">
+            <button class="num-btn">−</button>
+            <div class="num-val">22</div>
+            <button class="num-btn">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calcul auto -->
+      <div class="card" style="background:var(--cream-dk)">
+        <div class="card-title">Calcul automatique</div>
+        <div class="recap-line"><span class="recap-lbl">Membres de l'union (25)</span><span class="recap-val">25 × 14 × 7 = 2 450 €</span></div>
+        <div class="recap-line"><span class="recap-lbl">Groupe de jeunes (13)</span><span class="recap-val">13 × 12 × 7 = 1 092 €</span></div>
+        <div class="recap-line" style="color:var(--warm)"><span class="recap-lbl">Total présents : 38 &lt; min 40</span><span></span></div>
+        <div class="recap-line" style="color:var(--warm);font-weight:600"><span class="recap-lbl">Complément min. (2 × 13,24 × 7)</span><span class="recap-val">185 €</span></div>
+        <div class="recap-line"><span class="recap-lbl">Taxe séjour (22 × 7 × 0,88 €)</span><span class="recap-val">135,52 €</span></div>
+        <div class="recap-line"><span class="recap-lbl">Forfait énergies (2 × 80 €)</span><span class="recap-val">160,00 €</span></div>
+      </div>
+    </div>
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="go('g3')">Suivant — Suppléments →</button>
+    </div>
+  </div>
+
+  <!-- G3 SUPPLÉMENTS -->
+  <div class="screen" id="g3">
+    <div class="sub-header">
+      <button class="back-btn" onclick="go('g2')">← Personnes</button>
+      <div class="sub-header-title">Suppléments</div>
+      <div class="step-lbl">2/3</div>
+    </div>
+    <div class="stepper"><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot"></div></div>
+    <div class="scroll-area">
+      <div class="card">
+        <div class="card-title">Casse & dégradations</div>
+        <div class="supplement-item"><div><div class="suppl-name">Assiette cassée</div><div class="suppl-price">8,00 € / unité</div></div><div class="suppl-controls"><button class="suppl-btn">−</button><div class="suppl-count">1</div><button class="suppl-btn">+</button></div></div>
+        <div class="supplement-item"><div><div class="suppl-name">Verre cassé</div><div class="suppl-price">4,00 € / unité</div></div><div class="suppl-controls"><button class="suppl-btn">−</button><div class="suppl-count">2</div><button class="suppl-btn">+</button></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Locations & options</div>
+        <div class="supplement-item"><div><div class="suppl-name">Location barbecue</div><div class="suppl-price">25,00 € / séjour</div></div><div class="suppl-controls"><button class="suppl-btn">−</button><div class="suppl-count">1</div><button class="suppl-btn">+</button></div></div>
+        <div class="supplement-item"><div><div class="suppl-name">Nettoyage supplémentaire</div><div class="suppl-price">60,00 € / intervention</div></div><div class="suppl-controls"><button class="suppl-btn">−</button><div class="suppl-count" style="color:var(--text-muted)">0</div><button class="suppl-btn">+</button></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="warn-box"><span>⚠️</span><span>Saisie libre → marquée <strong>« À confirmer »</strong> par le trésorier ou resp.</span></div>
+        <div class="card" style="display:flex;flex-direction:column;gap:10px">
+          <div class="form-group"><div class="form-label">Description</div><input class="form-input" type="text" value="Drap taché (1)"></div>
+          <div class="form-group"><div class="form-label">Montant estimé (€)</div><input class="form-input" type="text" value="15,00" inputmode="decimal"></div>
+        </div>
+        <button class="libre-btn">＋ Ajouter un autre élément</button>
+      </div>
+    </div>
+    <div class="bottom-bar"><button class="btn-primary" onclick="go('g4')">Suivant — Récapitulatif →</button></div>
+  </div>
+
+  <!-- G4 RÉCAP -->
+  <div class="screen" id="g4">
+    <div class="sub-header">
+      <button class="back-btn" onclick="go('g3')">← Suppléments</button>
+      <div class="sub-header-title">Récapitulatif</div>
+      <div class="step-lbl">3/3</div>
+    </div>
+    <div class="stepper"><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div></div>
+    <div class="scroll-area">
+      <div class="card">
+        <div class="card-title">Hébergement</div>
+        <div class="recap-line"><span class="recap-lbl">25 × Membre de l'union × 7 nuits</span><span class="recap-val">2 450,00 €</span></div>
+        <div class="recap-line sub"><span class="recap-lbl">14,00 €/pers/nuit</span></div>
+        <div class="recap-line"><span class="recap-lbl">13 × Groupe de jeunes × 7 nuits</span><span class="recap-val">1 092,00 €</span></div>
+        <div class="recap-line sub"><span class="recap-lbl">12,00 €/pers/nuit</span></div>
+        <div class="recap-line" style="color:var(--warm)"><span class="recap-lbl">Complément min. 2 pers. × 13,24 × 7</span><span class="recap-val" style="color:var(--warm)">185,36 €</span></div>
+        <div class="recap-line"><span class="recap-lbl">Forfait énergies (2 nuits × 80 €)</span><span class="recap-val">160,00 €</span></div>
+        <div class="recap-line"><span class="recap-lbl">Taxe de séjour</span><span class="recap-val">135,52 €</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Suppléments</div>
+        <div class="recap-line"><span class="recap-lbl">1 × Assiette cassée</span><span class="recap-val">8,00 €</span></div>
+        <div class="recap-line"><span class="recap-lbl">2 × Verre cassé</span><span class="recap-val">8,00 €</span></div>
+        <div class="recap-line"><span class="recap-lbl">1 × Location barbecue</span><span class="recap-val">25,00 €</span></div>
+        <div class="recap-line" style="opacity:.7">
+          <span class="recap-lbl" style="display:flex;align-items:center;gap:6px">Drap taché <span class="warn-badge">⚠ À confirmer</span></span>
+          <span class="recap-val">15,00 €</span>
+        </div>
+      </div>
+      <div class="card" style="background:var(--cream-dk)">
+        <div class="recap-line"><span class="recap-lbl">Sous-total</span><span class="recap-val">4 063,88 €</span></div>
+        <div class="recap-line total"><span>TOTAL DÛ</span><span>4 063,88 €</span></div>
+      </div>
+      <div class="info-box"><span>📬</span><span>Facture envoyée à <strong>jp.dupont@email.fr</strong> après validation.</span></div>
+    </div>
+    <div class="bottom-bar">
+      <button class="btn-primary" onclick="go('g5')">Valider et envoyer la facture</button>
+      <button class="btn-secondary">Enregistrer sans envoyer</button>
+    </div>
+  </div>
+
+  <!-- G5 ENCAISSEMENT -->
+  <div class="screen" id="g5">
+    <div class="sub-header">
+      <button class="back-btn" onclick="go('g4')">← Récap</button>
+      <div class="sub-header-title">Encaissement</div>
+    </div>
+    <div class="scroll-area">
+      <div style="text-align:center;padding:6px 0">
+        <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:800;color:var(--forest)">4 063,88 €</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Montant total dû</div>
+      </div>
+      <div class="card-title" style="margin-bottom:4px">Mode de paiement</div>
+      <div class="pay-mode">
+        <div class="pay-chip selected"><div class="pay-icon">📝</div><div class="pay-label">Chèque</div></div>
+        <div class="pay-chip"><div class="pay-icon">🏦</div><div class="pay-label">Virement</div></div>
+        <div class="pay-chip disabled" style="grid-column:1/-1"><div class="pay-icon">💳</div><div class="pay-label">Carte — bientôt</div></div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;gap:12px">
+        <div class="card-title">Photo du chèque</div>
+        <div class="photo-area done"><div style="font-size:32px">✅</div><div style="font-size:13px;color:var(--forest)">Photo enregistrée</div></div>
+        <div class="form-group"><div class="form-label">N° du chèque</div><input class="form-input" type="text" value="7654321"></div>
+        <div class="form-group"><div class="form-label">Banque émettrice</div><input class="form-input" type="text" value="Crédit Agricole"></div>
+      </div>
+    </div>
+    <div class="bottom-bar"><button class="btn-primary" onclick="go('g6')">Confirmer l'encaissement ✓</button></div>
+  </div>
+
+  <!-- G6 SUCCESS -->
+  <div class="screen" id="g6">
+    <div class="app-header">
+      <div class="header-brand"><div class="header-logo"><svg viewBox="0 0 36 36" width="30" height="30"><polygon points="18,2 34,32 2,32" fill="#2a5c3f"/><text x="18" y="26" text-anchor="middle" font-family="serif" font-size="13" font-weight="bold" fill="white">Y</text></svg></div><div><div class="header-name">Salm</div><div class="header-sub">UCJG / YMCA</div></div></div>
+      <div class="header-role">Gardien</div>
+    </div>
+    <div class="success-screen">
+      <div class="success-circle">✓</div>
+      <div class="success-title">Facture envoyée !</div>
+      <div class="success-sub">Envoyée à <strong>jp.dupont@email.fr</strong><br>et au responsable location.<br><br>Chèque n°7654321 · Crédit Agricole<br>4 063,88 €</div>
+      <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="go('g1')">Retour à l'accueil</button>
+    </div>
+  </div>
+</div>
+
+<!-- Gardien nav pills -->
+<div class="screen-nav" id="gnav">
+  <div class="nav-pill active" onclick="gnav(this,'g1')">① Accueil</div>
+  <div class="nav-pill" onclick="gnav(this,'g2')">② Personnes</div>
+  <div class="nav-pill" onclick="gnav(this,'g3')">③ Suppléments</div>
+  <div class="nav-pill" onclick="gnav(this,'g4')">④ Récap</div>
+  <div class="nav-pill" onclick="gnav(this,'g5')">⑤ Encaissement</div>
+  <div class="nav-pill" onclick="gnav(this,'g6')">⑥ Succès</div>
+</div>
+
+
+<!-- ════════════ RESP. LOCATION ════════════ -->
+<div class="section-title section-title-wide" style="margin-top:20px">Interface Responsable Location</div>
+
+<div class="desktop-container">
+  <div class="desktop-header">
+    <div class="dh-brand">
+      <div class="dh-logo"><svg viewBox="0 0 44 44" width="36" height="36"><polygon points="22,2 42,40 2,40" fill="#2a5c3f"/><text x="22" y="33" text-anchor="middle" font-family="serif" font-size="17" font-weight="bold" fill="white">Y</text></svg></div>
+      <div><div class="dh-name">UCJG Salm — LocaGest</div><div class="dh-sub">Maison de vacances · 53 rue du Haut-Fourneau</div></div>
+    </div>
+    <div class="dh-role">Responsable Location</div>
+  </div>
+
+  <div class="desktop-tabs">
+    <button class="dtab active" onclick="dtab(this,'rl1')">📋 Nouveau séjour</button>
+    <button class="dtab" onclick="dtab(this,'rl2')">⚠️ À confirmer <span style="background:var(--warm);color:white;font-size:10px;padding:1px 6px;border-radius:20px;margin-left:4px">1</span></button>
+    <button class="dtab" onclick="dtab(this,'rl3')">📊 Séjours & factures</button>
+  </div>
+
+  <!-- RL1 NOUVEAU SÉJOUR -->
+  <div class="dscreen active" id="rl1">
+    <div class="dcard">
+      <div class="dcard-title">Locataire & dates</div>
+      <div class="form-grid">
+        <div class="dform-group"><div class="dform-label">Nom / organisation</div><input class="dform-input" type="text" value="Famille Dupont"></div>
+        <div class="dform-group"><div class="dform-label">Email</div><input class="dform-input" type="email" value="jp.dupont@email.fr"></div>
+        <div class="dform-group"><div class="dform-label">Téléphone</div><input class="dform-input" type="tel" value="06 12 34 56 78"></div>
+        <div class="dform-group"><div class="dform-label">Adresse facturation</div><input class="dform-input" type="text" value="12 rue des Lilas, 67000 Strasbourg"></div>
+        <div class="dform-group"><div class="dform-label">Arrivée</div><input class="dform-input" type="date" value="2025-03-22"></div>
+        <div class="dform-group"><div class="dform-label">Départ</div><input class="dform-input" type="date" value="2025-03-29"></div>
+        <div class="dform-group"><div class="dform-label">🕐 Heure arrivée prévue</div><input class="dform-input" type="time" value="15:00"></div>
+        <div class="dform-group"><div class="dform-label">🕐 Heure départ prévu</div><input class="dform-input" type="time" value="10:00"></div>
+      </div>
+    </div>
+
+    <!-- NEW: Catégories de personnes -->
+    <div class="dcard">
+      <div class="dcard-title">
+        Catégories de personnes & tarifs
+        <span style="font-size:12px;color:var(--text-muted);font-family:'Source Sans 3',sans-serif;font-weight:400">(définis par le Trésorier)</span>
+      </div>
+
+      <div style="background:var(--teal-dim);border:1px solid rgba(26,122,122,.2);border-left:3px solid var(--teal);border-radius:8px;padding:11px 14px;font-size:13px;color:var(--teal);margin-bottom:16px">
+        ℹ️ Cochez les catégories qui s'appliquent à ce séjour et indiquez les effectifs prévus.
+      </div>
+
+      <div style="overflow-x:auto">
+        <table class="tarif-table">
+          <thead><tr>
+            <th style="width:32px">✓</th>
+            <th>Catégorie</th>
+            <th>Prix / pers / nuit</th>
+            <th>Effectif prévu</th>
+            <th>Sous-total estimé (7 nuits)</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td><input type="checkbox" checked style="width:16px;height:16px;accent-color:var(--forest)"></td>
+              <td><strong>Membre de l'union</strong></td>
+              <td class="price-big">14,00 €</td>
+              <td><input class="dform-input" type="number" value="25" style="width:100px;padding:7px 10px"></td>
+              <td style="font-weight:600;color:var(--forest)">25 × 14 × 7 = <strong>2 450 €</strong></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" checked style="width:16px;height:16px;accent-color:var(--forest)"></td>
+              <td><strong>Groupe de jeunes</strong></td>
+              <td class="price-big">12,00 €</td>
+              <td><input class="dform-input" type="number" value="15" style="width:100px;padding:7px 10px"></td>
+              <td style="font-weight:600;color:var(--forest)">15 × 12 × 7 = <strong>1 260 €</strong></td>
+            </tr>
+            <tr style="opacity:.5">
+              <td><input type="checkbox" style="width:16px;height:16px;accent-color:var(--forest)"></td>
+              <td>Extérieur</td>
+              <td class="price-big">18,00 €</td>
+              <td><input class="dform-input" type="number" value="0" style="width:100px;padding:7px 10px;opacity:.5" disabled></td>
+              <td style="color:var(--text-muted)">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="dform-group">
+          <div class="dform-label">Minimum total facturé</div>
+          <input class="dform-input" type="number" value="40">
+        </div>
+        <div style="background:var(--cream);border-radius:var(--radius-sm);padding:12px 14px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Effectif total prévu</div>
+          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--forest)">40</div>
+          <div style="font-size:11px;color:var(--forest-lt)">≥ minimum ✓</div>
+        </div>
+        <div style="background:var(--cream);border-radius:var(--radius-sm);padding:12px 14px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Hébergement estimé</div>
+          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--forest)">3 710 €</div>
+          <div style="font-size:11px;color:var(--text-muted)">hors taxes & énergies</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dcard">
+      <div class="dcard-title">Conditions de paiement</div>
+      <div class="form-grid cols3">
+        <div class="dform-group">
+          <div class="dform-label">Mode de paiement</div>
+          <select class="dform-input"><option selected>Chèque</option><option>Virement bancaire</option><option>Chèque ou virement</option></select>
+        </div>
+        <div class="dform-group">
+          <div class="dform-label">Date limite paiement (virement)</div>
+          <input class="dform-input" type="date" value="2025-04-05">
+        </div>
+        <div class="dform-group">
+          <div class="dform-label">IBAN (si virement)</div>
+          <div class="iban-box"><span class="iban-val">FR76 3000…</span><button style="background:none;border:none;cursor:pointer;color:var(--forest);font-size:12px;font-weight:600">✎</button></div>
+        </div>
+      </div>
+      <div style="margin-top:14px" class="dform-group">
+        <div class="dform-label">Options présaisies</div>
+        <textarea class="dform-input" rows="2">Linge de maison inclus, animaux autorisés</textarea>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn-secondary" style="width:auto;padding:10px 20px">Annuler</button>
+        <button class="btn-primary" style="width:auto;padding:10px 24px">Enregistrer le séjour</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RL2 À CONFIRMER -->
+  <div class="dscreen" id="rl2">
+    <div class="dcard">
+      <div class="dcard-title">Saisies libres gardien — en attente</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="background:var(--cream);border:1px solid var(--border);border-left:4px solid var(--warm);border-radius:var(--radius-sm);padding:14px 16px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="warn-badge">⚠ À confirmer</span><span style="font-size:12px;color:var(--text-muted)">Famille Dupont · 22 mars 2025</span></div>
+            <div style="font-size:15px;font-weight:600">Drap taché (1)</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:2px">Montant proposé par le gardien : <strong>15,00 €</strong></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="dform-group"><div class="dform-label">Montant validé</div><input class="dform-input" type="text" value="15,00" style="width:90px;padding:8px 10px"></div>
+            <button style="background:var(--forest);border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;color:white;cursor:pointer">✓ Valider</button>
+            <button style="background:var(--red-dim);border:1px solid rgba(192,57,43,.2);border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;color:var(--red);cursor:pointer">✕ Rejeter</button>
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--text-muted);text-align:center;padding:16px">Aucun autre élément en attente.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RL3 SÉJOURS -->
+  <div class="dscreen" id="rl3">
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-val">3 710 €</div><div class="stat-lbl">Hébergement estimé (séjour actuel)</div></div>
+      <div class="stat-card"><div class="stat-val">40</div><div class="stat-lbl">Personnes à facturer</div></div>
+      <div class="stat-card"><div class="stat-val">2</div><div class="stat-lbl">Catégories de tarifs</div></div>
+      <div class="stat-card"><div class="stat-val">Non</div><div class="stat-lbl">Facture générée</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════ TRÉSORIER ════════════ -->
+<div class="section-title section-title-wide" style="margin-top:20px">Interface Trésorier (admin)</div>
+
+<div class="desktop-container">
+  <div class="desktop-header" style="background:var(--teal)">
+    <div class="dh-brand">
+      <div class="dh-logo"><svg viewBox="0 0 44 44" width="36" height="36"><polygon points="22,2 42,40 2,40" fill="#2a5c3f"/><text x="22" y="33" text-anchor="middle" font-family="serif" font-size="17" font-weight="bold" fill="white">Y</text></svg></div>
+      <div><div class="dh-name">UCJG Salm — Administration</div><div class="dh-sub">Paramétrage des tarifs & configuration globale</div></div>
+    </div>
+    <div class="dh-role" style="background:rgba(255,255,255,.2)">Trésorier</div>
+  </div>
+
+  <div class="desktop-tabs">
+    <button class="dtab active" onclick="dtab(this,'tr1')">💶 Tarifs / personne</button>
+    <button class="dtab" onclick="dtab(this,'tr2')">📦 Items suppléments</button>
+    <button class="dtab" onclick="dtab(this,'tr3')">⚙️ Configuration site</button>
+    <button class="dtab" onclick="dtab(this,'tr4')">📊 Tableau de bord</button>
+  </div>
+
+  <!-- TR1 TARIFS PERSONNE -->
+  <div class="dscreen active" id="tr1">
+    <div class="dcard">
+      <div class="dcard-title">
+        Tarifs par personne / nuit
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:12px;color:var(--text-muted);font-weight:400;font-family:'Source Sans 3',sans-serif">Ordre d'affichage : glisser-déposer</span>
+        </div>
+      </div>
+
+      <div style="background:var(--teal-dim);border:1px solid rgba(26,122,122,.2);border-left:3px solid var(--teal);border-radius:8px;padding:11px 14px;font-size:13px;color:var(--teal);margin-bottom:16px">
+        ⚠️ La modification d'un tarif n'affecte <strong>pas les séjours existants</strong> (les prix sont copiés au moment de la création du séjour).
+      </div>
+
+      <div class="tarif-table-wrap">
+        <table class="tarif-table">
+          <thead><tr><th style="width:28px"></th><th>Nom de la catégorie</th><th>Prix / pers / nuit</th><th>Description</th><th>Statut</th><th style="width:140px">Actions</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="drag-handle">⠿</span></td>
+              <td><strong>Membre de l'union</strong></td>
+              <td><span class="price-big">14,00 €</span></td>
+              <td style="font-size:12px;color:var(--text-muted)">Tarif standard UCJG</td>
+              <td><span class="actif-badge on">Actif</span></td>
+              <td><button class="tbl-edit">✎ Modifier</button></td>
+            </tr>
+            <tr>
+              <td><span class="drag-handle">⠿</span></td>
+              <td><strong>Groupe de jeunes</strong></td>
+              <td><span class="price-big">12,00 €</span></td>
+              <td style="font-size:12px;color:var(--text-muted)">Groupes &lt;25 ans</td>
+              <td><span class="actif-badge on">Actif</span></td>
+              <td><button class="tbl-edit">✎ Modifier</button></td>
+            </tr>
+            <tr>
+              <td><span class="drag-handle">⠿</span></td>
+              <td><strong>Extérieur</strong></td>
+              <td><span class="price-big">18,00 €</span></td>
+              <td style="font-size:12px;color:var(--text-muted)">Non-membres UCJG</td>
+              <td><span class="actif-badge on">Actif</span></td>
+              <td><button class="tbl-edit">✎ Modifier</button></td>
+            </tr>
+            <tr>
+              <td><span class="drag-handle">⠿</span></td>
+              <td>Scolaire accompagné</td>
+              <td><span class="price-big" style="color:var(--text-muted)">10,00 €</span></td>
+              <td style="font-size:12px;color:var(--text-muted)">Classes primaires</td>
+              <td><span class="actif-badge off">Inactif</span></td>
+              <td><button class="tbl-edit">✎ Modifier</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Ajout inline -->
+      <div style="margin-top:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">+ Nouveau tarif</div>
+        <div class="tarif-new-form">
+          <div><div class="tnf-label">Nom de la catégorie</div><input class="tnf-input" type="text" placeholder="Ex : Groupe paroissial…"></div>
+          <div><div class="tnf-label">Prix / nuit (€)</div><input class="tnf-input" type="number" placeholder="0,00" step="0.5"></div>
+          <div><div class="tnf-label">Description (optionnel)</div><input class="tnf-input" type="text" placeholder="Précisions..."></div>
+          <button class="tnf-btn">Ajouter</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TR2 ITEMS -->
+  <div class="dscreen" id="tr2">
+    <div class="dcard">
+      <div class="dcard-title">Suppléments & items facturables <button class="dcard-title-add teal">+ Nouvel item</button></div>
+      <div class="tarif-table-wrap">
+        <table class="tarif-table">
+          <thead><tr><th>Désignation</th><th>Catégorie</th><th>Prix unitaire</th><th>Unité</th><th>Statut</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Assiette cassée</strong></td><td>Casse</td><td><span class="price-big">8,00 €</span></td><td>Unité</td><td><span class="actif-badge on">Actif</span></td><td><button class="tbl-edit">✎</button> <button class="tbl-del">✕</button></td></tr>
+            <tr><td><strong>Verre cassé</strong></td><td>Casse</td><td><span class="price-big">4,00 €</span></td><td>Unité</td><td><span class="actif-badge on">Actif</span></td><td><button class="tbl-edit">✎</button> <button class="tbl-del">✕</button></td></tr>
+            <tr><td><strong>Verre à vin</strong></td><td>Casse</td><td><span class="price-big">6,00 €</span></td><td>Unité</td><td><span class="actif-badge on">Actif</span></td><td><button class="tbl-edit">✎</button> <button class="tbl-del">✕</button></td></tr>
+            <tr><td><strong>Location barbecue</strong></td><td>Location</td><td><span class="price-big">25,00 €</span></td><td>Séjour</td><td><span class="actif-badge on">Actif</span></td><td><button class="tbl-edit">✎</button> <button class="tbl-del">✕</button></td></tr>
+            <tr><td><strong>Nettoyage suppl.</strong></td><td>Service</td><td><span class="price-big">60,00 €</span></td><td>Intervention</td><td><span class="actif-badge on">Actif</span></td><td><button class="tbl-edit">✎</button> <button class="tbl-del">✕</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TR3 CONFIG SITE -->
+  <div class="dscreen" id="tr3">
+    <div class="dcard">
+      <div class="dcard-title">Configuration globale du site</div>
+      <div class="tarif-table-wrap">
+        <table class="config-table">
+          <tbody>
+            <tr><td>Prix forfait énergies</td><td>80,00 € / nuit</td><td><button class="tbl-edit">✎</button></td></tr>
+            <tr><td>Nb nuits énergies facturées</td><td>2 nuits</td><td><button class="tbl-edit">✎</button></td></tr>
+            <tr><td>Taxe de séjour (adulte/nuit)</td><td>0,88 €</td><td><button class="tbl-edit">✎</button></td></tr>
+            <tr><td>Minimum personnes (défaut)</td><td>40 personnes</td><td><button class="tbl-edit">✎</button></td></tr>
+            <tr><td>IBAN (affiché sur facture virement)</td><td>FR76 3000 4028 3700 0100 7840 943</td><td><button class="tbl-edit">✎</button></td></tr>
+            <tr><td>Délai de paiement virement</td><td>15 jours</td><td><button class="tbl-edit">✎</button></td></tr>
+            <tr><td>Email responsable location</td><td>location@ucjgsalm.org</td><td><button class="tbl-edit">✎</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:16px;display:flex;justify-content:flex-end"><button class="btn-primary" style="width:auto;padding:10px 24px">Enregistrer les modifications</button></div>
+    </div>
+  </div>
+
+  <!-- TR4 TABLEAU DE BORD -->
+  <div class="dscreen" id="tr4">
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-val" style="color:var(--forest-lt)">18 232 €</div><div class="stat-lbl">Encaissé 2025</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--warm)">4 064 €</div><div class="stat-lbl">En attente</div></div>
+      <div class="stat-card"><div class="stat-val">11</div><div class="stat-lbl">Séjours facturés</div></div>
+      <div class="stat-card"><div class="stat-val">4</div><div class="stat-lbl">Tarifs actifs</div></div>
+    </div>
+    <div class="dcard">
+      <div class="dcard-title">Répartition par tarif (2025)</div>
+      <div class="tarif-table-wrap">
+        <table class="tarif-table">
+          <thead><tr><th>Catégorie</th><th>Nb séjours utilisés</th><th>Pers. facturées</th><th>Montant hébergement</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Membre de l'union</strong> (14 €)</td><td>8</td><td>312</td><td style="font-weight:700">30 576 €</td></tr>
+            <tr><td><strong>Groupe de jeunes</strong> (12 €)</td><td>5</td><td>187</td><td style="font-weight:700">18 700 €</td></tr>
+            <tr><td><strong>Extérieur</strong> (18 €)</td><td>2</td><td>44</td><td style="font-weight:700">5 280 €</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('#gnav .nav-pill').forEach(p=>{p.classList.toggle('active',p.getAttribute('onclick').includes(id))})}
+function gnav(el,id){document.querySelectorAll('#gnav .nav-pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function dtab(el,id){document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));el.classList.add('active');const parent=el.closest('.desktop-container');parent.querySelectorAll('.dscreen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+document.querySelectorAll('.pay-chip:not(.disabled)').forEach(chip=>{chip.addEventListener('click',()=>{chip.closest('.pay-mode').querySelectorAll('.pay-chip:not(.disabled)').forEach(c=>c.classList.remove('selected'));chip.classList.add('selected')})});
+</script>
+</body>
+</html>
