@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocaGest — Modèle de données PostgreSQL</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Source+Sans+3:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --forest:#2a5c3f;--forest-lt:#5a9e74;--forest-dk:#1a3d29;
+  --cream:#f5f0e6;--cream-dk:#ede7d9;--cream-dkr:#ddd5c2;
+  --warm:#c8793a;--warm-dim:rgba(200,121,58,.12);
+  --blue:#2a4a7c;--blue-dim:rgba(42,74,124,.1);--blue-lt:#4a7abf;
+  --purple:#6b3fa0;--purple-dim:rgba(107,63,160,.1);
+  --teal:#1a7a7a;--teal-dim:rgba(26,122,122,.1);
+  --red:#c0392b;--red-dim:rgba(192,57,43,.08);
+  --green-dim:rgba(42,92,63,.08);
+  --text:#1a2f1f;--text-mid:#3d5c44;--text-muted:#7a9481;
+  --border:#c8d8c4;--border-dk:#a0b89a;--white:#fff;
+  --shadow:0 2px 10px rgba(42,92,63,.1);
+  --shadow-lg:0 6px 24px rgba(42,92,63,.14);
+}
+body{background:var(--cream);font-family:'Source Sans 3',sans-serif;color:var(--text);
+  padding:48px 32px 80px;max-width:1120px;margin:0 auto;line-height:1.6}
+
+/* ── HEADER ── */
+.doc-header{border-bottom:3px solid var(--forest);padding-bottom:24px;margin-bottom:36px;display:flex;align-items:flex-start;gap:20px}
+.doc-title{font-family:'Playfair Display',serif;font-size:27px;font-weight:800;color:var(--forest);line-height:1.2}
+.doc-sub{font-size:14px;color:var(--text-muted);margin-top:5px}
+.doc-meta{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap}
+.meta-chip{background:var(--green-dim);border:1px solid var(--border);font-size:11px;font-weight:600;
+  color:var(--forest);padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.06em}
+.meta-chip.new{background:var(--warm-dim);color:var(--warm);border-color:rgba(200,121,58,.3)}
+
+/* ── HEADINGS ── */
+h2{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--forest);
+  margin:40px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:10px}
+.num{background:var(--forest);color:white;width:26px;height:26px;border-radius:50%;display:inline-flex;
+  align-items:center;justify-content:center;font-size:12px;font-family:'Source Sans 3',sans-serif;font-weight:700;flex-shrink:0}
+h3{font-size:13px;font-weight:700;color:var(--text-mid);margin:20px 0 8px;
+  text-transform:uppercase;letter-spacing:.09em}
+p{font-size:14px;margin-bottom:10px;color:var(--text-mid)}
+
+/* ── BOXES ── */
+.info-box{background:var(--green-dim);border:1px solid var(--border);border-left:4px solid var(--forest-lt);
+  border-radius:8px;padding:11px 15px;font-size:13px;color:var(--forest);margin:10px 0}
+.warn-box{background:var(--warm-dim);border:1px solid rgba(200,121,58,.25);border-left:4px solid var(--warm);
+  border-radius:8px;padding:11px 15px;font-size:13px;color:#7a3a10;margin:10px 0}
+.new-box{background:rgba(26,122,122,.08);border:1px solid rgba(26,122,122,.25);border-left:4px solid var(--teal);
+  border-radius:8px;padding:11px 15px;font-size:13px;color:var(--teal);margin:10px 0}
+
+/* ── ERD DIAGRAM ── */
+.erd{display:flex;flex-direction:column;gap:16px;margin:16px 0 28px}
+.erd-row{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+
+.erd-table{background:var(--white);border:2px solid var(--border);border-radius:10px;
+  min-width:200px;flex:1;box-shadow:var(--shadow);overflow:hidden}
+.erd-table.highlight{border-color:var(--forest);border-width:2.5px}
+.erd-table.new-entity{border-color:var(--teal);border-width:2.5px}
+
+.erd-thead{padding:8px 12px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px}
+.erd-thead.config{background:var(--blue-dim);color:var(--blue)}
+.erd-thead.core{background:var(--green-dim);color:var(--forest)}
+.erd-thead.doc{background:var(--warm-dim);color:var(--warm)}
+.erd-thead.pay{background:var(--purple-dim);color:var(--purple)}
+.erd-thead.admin{background:var(--teal-dim);color:var(--teal)}
+.erd-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;
+  letter-spacing:.07em;background:rgba(255,255,255,.6);margin-left:auto}
+
+.erd-body{padding:10px 12px}
+.erd-field{font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:2.5px 0;
+  color:var(--text-muted);display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(0,0,0,.04)}
+.erd-field:last-child{border-bottom:none}
+.erd-field .fname{color:var(--text);font-weight:500}
+.erd-field .ftype{color:var(--text-muted);font-size:9.5px}
+.erd-field .pk{color:var(--warm);font-weight:700}
+.erd-field .fk{color:var(--blue);font-weight:600}
+.erd-field .uk{color:var(--purple);font-weight:600}
+.erd-field .new{color:var(--teal);font-weight:600}
+.erd-field .calc{color:var(--forest-lt);font-size:9px}
+
+/* relation lines (visual only) */
+.rel-arrow{display:flex;align-items:center;justify-content:center;
+  font-size:20px;color:var(--border-dk);padding:0 2px;flex-shrink:0;align-self:center}
+
+/* ── SQL BLOCKS ── */
+.sql-block{background:#1a2410;border-radius:10px;padding:20px 22px;margin:12px 0 20px;
+  overflow-x:auto;box-shadow:var(--shadow)}
+pre{font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.8;color:#c8d8c4;white-space:pre}
+.sql-kw{color:#7dda9a}
+.sql-type{color:#f0c070}
+.sql-str{color:#e09060}
+.sql-comment{color:#5a7a60;font-style:italic}
+.sql-fn{color:#80cccc}
+.sql-num{color:#f0a070}
+.sql-ref{color:#aaa0e0}
+
+/* ── TABLES ── */
+.table-wrap{overflow-x:auto;margin:12px 0 22px;border-radius:10px;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--white)}
+thead tr{background:var(--forest)}
+thead th{color:white;text-align:left;padding:10px 14px;font-weight:600;font-size:11px;
+  text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover td{background:var(--cream)}
+tbody td{padding:9px 14px;vertical-align:top;font-size:13px}
+tr.row-group td{background:var(--cream-dk)!important;font-size:10px!important;font-weight:700!important;
+  color:var(--text-muted)!important;text-transform:uppercase!important;
+  letter-spacing:.1em!important;padding:6px 14px!important;border-top:2px solid var(--border-dk)}
+
+code{font-family:'JetBrains Mono',monospace;font-size:11.5px;background:var(--cream-dk);
+  padding:1px 6px;border-radius:3px;color:var(--text-mid)}
+.pk-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--warm);font-weight:600}
+.fk-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);font-weight:600}
+.new-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--teal);font-weight:600}
+
+/* ── ACCESS PATTERNS ── */
+.ap-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.ap-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:13px;box-shadow:var(--shadow)}
+.ap-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:7px}
+.ap-sql{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--forest);
+  background:var(--green-dim);border-radius:5px;padding:7px 10px;line-height:1.75}
+.ap-note{font-size:10px;color:var(--text-muted);margin-top:5px;display:flex;align-items:center;gap:4px}
+.ap-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase}
+.ap-badge.idx{background:var(--blue-dim);color:var(--blue)}
+.ap-badge.calc{background:var(--green-dim);color:var(--forest)}
+
+/* toc */
+.toc{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin-bottom:30px;font-size:13px}
+.toc-title{font-weight:700;color:var(--forest);margin-bottom:8px;font-size:14px}
+.toc a{color:var(--forest);text-decoration:none}
+.toc a:hover{text-decoration:underline}
+.toc ol{padding-left:18px}
+.toc li{padding:2px 0}
+
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0;font-size:12px}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-dot{width:12px;height:12px;border-radius:3px}
+
+.divider{height:1px;background:var(--border);margin:28px 0}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="doc-header">
+  <svg viewBox="0 0 56 56" width="54" height="54" style="flex-shrink:0">
+    <polygon points="28,3 53,50 3,50" fill="#2a5c3f" stroke="#f5f0e6" stroke-width="1.5"/>
+    <text x="28" y="42" text-anchor="middle" font-family="serif" font-size="18" font-weight="bold" fill="#f5f0e6">Y</text>
+  </svg>
+  <div>
+    <div class="doc-title">LocaGest — Modèle de données</div>
+    <div class="doc-sub">UCJG Salm · Architecture Aurora PostgreSQL · Multi-tarifs par séjour</div>
+    <div class="doc-meta">
+      <span class="meta-chip">v2.0 — fév. 2026</span>
+      <span class="meta-chip">Aurora PostgreSQL 16</span>
+      <span class="meta-chip">Java 21 + Lambda SnapStart</span>
+      <span class="meta-chip new">✦ Multi-tarifs / personne</span>
+      <span class="meta-chip new">✦ Rôle Trésorier</span>
+    </div>
+  </div>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <div class="toc-title">Table des matières</div>
+  <ol>
+    <li><a href="#evolutions">Évolutions vs v1</a></li>
+    <li><a href="#entites">Entités et diagramme</a></li>
+    <li><a href="#regles">Règles de gestion multi-tarifs</a></li>
+    <li><a href="#schema">Schéma SQL complet</a></li>
+    <li><a href="#calculs">Calculs et vues utiles</a></li>
+    <li><a href="#patterns">Requêtes métier principales</a></li>
+    <li><a href="#infra">Infrastructure Aurora &amp; connexions</a></li>
+  </ol>
+</div>
+
+
+<!-- ═══════ 1. ÉVOLUTIONS ═══════ -->
+<h2 id="evolutions"><span class="num">1</span> Évolutions vs v1 (DynamoDB)</h2>
+
+<div class="new-box">
+  <strong>3 changements majeurs :</strong>
+  (1) Migration DynamoDB → <strong>Aurora PostgreSQL</strong> : le SQL devient naturel avec les multi-tarifs et les calculs d'agrégats.
+  (2) La table <strong>tarif_personne</strong> remplace l'unique <code>prix_par_personne_nuit</code> — on peut en avoir autant que voulu.
+  (3) Un nouveau rôle <strong>Trésorier</strong> gère les tarifs et la configuration globale du site.
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Concept</th><th>v1 DynamoDB</th><th>v2 Aurora PostgreSQL</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Prix hébergement</strong></td><td>1 seul tarif global (18 €)</td><td>N <code>tarif_personne</code> — un par catégorie (Membre, Jeune…)</td></tr>
+    <tr><td><strong>Nb personnes</strong></td><td>1 champ nbPersonnesPresentes</td><td>1 ligne <code>sejour_categorie</code> par tarif · détail par catégorie</td></tr>
+    <tr><td><strong>Minimum facturation</strong></td><td>1 minimum global (40)</td><td>Minimum global sur le séjour · calculé sur le total toutes catégories</td></tr>
+    <tr><td><strong>Admin tarifs</strong></td><td>Resp. location uniquement</td><td>Trésorier (nouveau rôle) gère les <code>tarif_personne</code> et <code>config_site</code></td></tr>
+    <tr><td><strong>Transactions</strong></td><td>Transactions DDB limitées</td><td><strong>ACID natif PostgreSQL</strong> — transactions multi-tables garanties</td></tr>
+    <tr><td><strong>Agrégats</strong></td><td>Calculés côté Lambda</td><td>Calculés en SQL (SUM, GENERATED ALWAYS, vues)</td></tr>
+    <tr><td><strong>Clés primaires</strong></td><td>ULID strings (PK/SK)</td><td>UUID v4 (gen_random_uuid())</td></tr>
+  </tbody>
+</table>
+</div>
+
+
+<!-- ═══════ 2. ENTITÉS ═══════ -->
+<h2 id="entites"><span class="num">2</span> Entités et diagramme</h2>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Configuration</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--forest)"></div>Cœur métier</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--warm)"></div>Document</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Paiement</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>Nouveau (multi-tarif)</div>
+</div>
+
+<div class="erd">
+
+  <!-- ROW 1: Config -->
+  <div class="erd-row">
+    <div class="erd-table">
+      <div class="erd-thead config">🔧 config_site <span class="erd-badge">Trésorier</span></div>
+      <div class="erd-body">
+        <div class="erd-field"><span class="pk fname">cle</span><span class="ftype">VARCHAR(50) PK</span></div>
+        <div class="erd-field"><span class="fname">valeur</span><span class="ftype">TEXT</span></div>
+        <div class="erd-field"><span class="fname">updated_at</span><span class="ftype">TIMESTAMPTZ</span></div>
+        <div class="erd-field"><span class="fk fname">updated_by</span><span class="ftype">UUID → users</span></div>
+      </div>
+    </div>
+
+    <div class="erd-table new-entity">
+      <div class="erd-thead admin">💶 tarif_personne <span class="erd-badge" style="background:rgba(26,122,122,.2);color:var(--teal)">NOUVEAU</span></div>
+      <div class="erd-body">
+        <div class="erd-field"><span class="pk fname">id</span><span class="ftype">UUID PK</span></div>
+        <div class="erd-field"><span class="new fname">nom</span><span class="ftype">VARCHAR(100)</span></div>
+        <div class="erd-field"><span class="new fname">prix_nuit</span><span class="ftype">NUMERIC(8,2)</span></div>
+        <div class="erd-field"><span class="fname">description</span><span class="ftype">TEXT</span></div>
+        <div class="erd-field"><span class="fname">actif</span><span class="ftype">BOOLEAN</span></div>
+        <div class="erd-field"><span class="fname">ordre</span><span class="ftype">INT</span></div>
+        <div class="erd-field"><span class="fname">created_at, updated_at</span></div>
+      </div>
+    </div>
+
+    <div class="erd-table">
+      <div class="erd-thead config">📦 config_item <span class="erd-badge">Trésorier</span></div>
+      <div class="erd-body">
+        <div class="erd-field"><span class="pk fname">id</span><span class="ftype">UUID PK</span></div>
+        <div class="erd-field"><span class="fname">designation</span><span class="ftype">VARCHAR(200)</span></div>
+        <div class="erd-field"><span class="fname">categorie</span><span class="ftype">ENUM</span></div>
+        <div class="erd-field"><span class="fname">prix_unitaire</span><span class="ftype">NUMERIC(8,2)</span></div>
+        <div class="erd-field"><span class="fname">unite</span><span class="ftype">ENUM</span></div>
+        <div class="erd-field"><span class="fname">actif</span><span class="ftype">BOOLEAN</span></div>
+        <div class="erd-field"><span class="fname">created_at, updated_at</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Core -->
+  <div class="erd-row">
+    <div class="erd-table">
+      <div class="erd-thead core">👤 locataire</div>
+      <div class="erd-body">
+        <div class="erd-field"><span class="pk fname">id</span><span class="ftype">UUID PK</span></div>
+        <div class="erd-field"><span class="fname">nom</span><span class="ftype">VARCHAR(200)</span></div>
+        <div class="erd-field"><span class="fname">email</span><span class="ftype">VARCHAR(200)</span></div>
+        <div class="erd-field"><span class="fname">telephone</span><span class="ftype">VARCHAR(30)</span></div>
+        <div class="erd-field"><span class="fname">adresse</span><span class="ftype">TEXT</span></div>
+        <div class="erd-field"><span class="fname">created_at</span><span class="ftype">TIMESTAMPTZ</span></div>
+      </div>
+    </div>
+
+    <div class="rel-arrow">→</div>
+
+    <div class="erd-table highlight">
+      <div class="erd-thead core">🏕️ sejour <span class="erd-badge">Entité centrale</span></div>
+      <div class="erd-body">
+        <div class="erd-field"><span class="pk fname">id</span><span class="ftype">UUID PK</span></div>
+        <div class="erd-field"><span class="fk fname">locataire_id</span><span class="ftype">UUID FK</span></div>
+        <div class="erd-field"><span class="fname">statut</span><span class="ftype">ENUM</span></div>
+        <div class="erd-field"><span class="fname">date_arrivee, date_depart</span><span class="ftype">DATE</span></div>
+        <div class="erd-field"><span class="fname calc">nb_nuits</span><span class="ftype calc">GENERATED</span></div>
+        <div class="erd-field"><span class="fname">heure_arrivee_prevue</span><span class="ftype">TIME</span></div>
+        <div class="erd-field"><span class="fname">heure_depart_prevu</span><span class="ftype">TIME</span></div>
+        <div class="erd-field"><span class="new fname">heure_arrivee_reelle</span><span class="ftype">TIME · gardien</span></div>
+        <div class="erd-field"><span class="new fname">heure_depart_reel</span><span class="ftype">TIME · gardien</span></div>
+        <div class="erd-field"><span class="new fname">min_personnes_total</span><span class="ftype">INT (défaut 40)</span></div>
+        <div class="erd-field"><span class="fname">nb_adultes</span><span class="ftype">INT · taxe séjour</span></div>
+        <div class="erd-field"><span class="fname">mode_paiement</span><span class="ftype">ENUM</span></div>
+        <div class="erd-field"><span class="fname">date_limite_paiement</span><span class="ftype">DATE</span></div>
+        <div class="erd-field"><span class="fname">options_presaisies, notes</span><span class="ftype">TEXT</span></div>
+        <div class="erd-field"><span class="fname">created_by, updated_by</span><span class="ftype">UUID → users</span></div>
+      </div>
+    </div>
+
+    <div class="rel-arrow">→</div>
+
+    <div class="erd-table new-entity">
+      <div class="erd-thead admin">👥 sejour_categorie <span class="erd-badge" style="background:rgba(26,122,122,.2);color:var(--teal)">NOUVEAU</span></div>
+      <div class="erd-body">
+        <div class="erd-field"><span class="pk fname">id</span><span class="ftype">UUID PK</span></div>
+        <div class="erd-field"><span class="fk fname">sejour_id</span><span class="ftype">UUID FK</span></div>
+        <div class="erd-field"><span class="fk fname">tarif_id</span><span class="ftype">UUID FK</span></div>
+        <div class="erd-field"><span class="new fname">nom_snapshot</span><span class="ftype">VARCHAR — copie</span></div>
+        <div class="erd-field"><span class="new fname">prix_nuit_snapshot</span><span class="ftype">NUMERIC — copie</span></div>
+        <div class="erd-field"><span class="new fname">nb_prevues</span><span class="ftype">INT · resp. loc.</span></div>
+        <div class="erd-field"><span class="new fname">nb_reelles</span><span class="ftype">INT · gardien</span></div>
+        <div class="erd-field"><span class="fname calc">nb_facturees</span><span class="ftype calc">calculé (voir §3)</span></div>
+        <div class="erd-field"><span class="fname">ordre</span><span class="ftype">INT</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 3: Lines + Doc + Pay -->
+  <div class="erd-row">
+    <div class="erd-table">
+      <div class="erd-thead core">📋 ligne_sejour</div>
+      <div class="erd-body">
+        <div class="erd-field"><span class="pk fname">id</span><span class="ftype">UUID PK</span></div>
+        <div class="erd-field"><span class="fk fname">sejour_id</span><span class="ftype">UUID FK</span></div>
+        <div class="erd-field"><span class="fk new fname">sejour_categorie_id</span><span class="ftype">UUID FK (nullable)</span></div>
+        <div class="erd-field"><span class="fk fname">config_item_id</span><span class="ftype">UUID FK (nullable)</span></div>
+        <div class="erd-field"><span class="fname">type_ligne</span><span class="ftype">ENUM</span></div>
+        <div class="erd-field"><span class="fname">designation</span><span class="ftype">VARCHAR — snapshot</span></div>
+        <div class="erd-field"><span class="fname">quantite, prix_unitaire</span><span class="ftype">NUMERIC</span></div>
+        <div class="erd-field"><span class="fname calc">montant</span><span class="ftype calc">GENERATED</span></div>
+        <div class="erd-field"><span class="fname">statut</span><span class="ftype">CONFIRME|A_CONFIRMER</span></div>
+        <div class="erd-field"><span class="fname">saisi_par</span><span class="ftype">UUID</span></div>
+        <div class="erd-field"><span class="fname">created_at</span></div>
+      </div>
+    </div>
+
+    <div class="rel-arrow">→</div>
+
+    <div class="erd-table">
+      <div class="erd-thead doc">📄 facture</div>
+      <div class="erd-body">
+        <div class="erd-field"><span class="pk fname">id</span><span class="ftype">UUID PK</span></div>
+        <div class="erd-field"><span class="fk fname">sejour_id</span><span class="ftype">UUID FK UNIQUE</span></div>
+        <div class="erd-field"><span class="uk fname">numero</span><span class="ftype">VARCHAR UNIQUE</span></div>
+        <div class="erd-field"><span class="fname">date_generation</span></div>
+        <div class="erd-field"><span class="fname">montant_hebergement</span></div>
+        <div class="erd-field"><span class="fname">montant_energie</span></div>
+        <div class="erd-field"><span class="fname">montant_taxe</span></div>
+        <div class="erd-field"><span class="fname">montant_supplements</span></div>
+        <div class="erd-field"><span class="fname">montant_total</span><span class="ftype">NUMERIC(10,2)</span></div>
+        <div class="erd-field"><span class="fname">statut</span><span class="ftype">ENUM</span></div>
+        <div class="erd-field"><span class="fname">pdf_s3_key</span></div>
+        <div class="erd-field"><span class="fname">email_envoye, email_envoye_at</span></div>
+      </div>
+    </div>
+
+    <div class="rel-arrow">→</div>
+
+    <div class="erd-table">
+      <div class="erd-thead pay">💳 paiement</div>
+      <div class="erd-body">
+        <div class="erd-field"><span class="pk fname">id</span><span class="ftype">UUID PK</span></div>
+        <div class="erd-field"><span class="fk fname">sejour_id</span><span class="ftype">UUID FK</span></div>
+        <div class="erd-field"><span class="fname">mode</span><span class="ftype">CHEQUE|VIREMENT</span></div>
+        <div class="erd-field"><span class="fname">montant</span><span class="ftype">NUMERIC(10,2)</span></div>
+        <div class="erd-field"><span class="fname">date_encaissement</span><span class="ftype">DATE</span></div>
+        <div class="erd-field"><span class="fname">numero_cheque</span></div>
+        <div class="erd-field"><span class="fname">banque_emettrice</span></div>
+        <div class="erd-field"><span class="fname">cheque_s3_key</span></div>
+        <div class="erd-field"><span class="fname">enregistre_par</span><span class="ftype">UUID</span></div>
+        <div class="erd-field"><span class="fname">created_at</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ 3. RÈGLES ═══════ -->
+<h2 id="regles"><span class="num">3</span> Règles de gestion multi-tarifs</h2>
+
+<h3>Principe général</h3>
+<p>Un séjour peut avoir <strong>N catégories de personnes</strong>, chacune avec son propre tarif/nuit. Exemples : "Membre de l'union" à 14 €, "Groupe de jeunes" à 12 €, "Extérieur" à 18 €. Le resp. location choisit les catégories et leurs effectifs prévus au moment de la création du séjour. Le gardien saisit les effectifs réels par catégorie.</p>
+
+<div class="new-box">
+  <strong>Calcul du minimum et de nb_facturees :</strong><br>
+  Le minimum (ex. 40) est global au séjour (<code>sejour.min_personnes_total</code>). Il porte sur la <em>somme</em> de toutes les catégories.<br>
+  → <code>total_reel = SUM(sejour_categorie.nb_reelles)</code><br>
+  → Si <code>total_reel ≥ min</code> : chaque catégorie est facturée à ses nb_reelles.<br>
+  → Si <code>total_reel &lt; min</code> : on ajoute une ligne <code>COMPLEMENT_MINIMUM</code> calculée au tarif moyen pondéré, ou on distribue l'écart proportionnellement. <strong>Recommandation : ligne complément</strong> — plus lisible sur la facture.
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Exemple de séjour</th><th>Catégorie</th><th>Tarif</th><th>Présents (réel)</th><th>Facturés</th><th>Montant (7 nuits)</th></tr></thead>
+  <tbody>
+    <tr>
+      <td rowspan="4"><strong>Famille Dupont</strong><br><small>38 présents, min 40</small></td>
+      <td>Membre de l'union</td>
+      <td>14,00 €/nuit</td>
+      <td>25</td>
+      <td>25</td>
+      <td>25 × 14 × 7 = <strong>2 450 €</strong></td>
+    </tr>
+    <tr>
+      <td>Groupe de jeunes</td>
+      <td>12,00 €/nuit</td>
+      <td>13</td>
+      <td>13</td>
+      <td>13 × 12 × 7 = <strong>1 092 €</strong></td>
+    </tr>
+    <tr>
+      <td><em>Complément minimum</em></td>
+      <td><em>13,24 € moy.</em></td>
+      <td><em>—</em></td>
+      <td><em>2 (= 40 − 38)</em></td>
+      <td><em>2 × 13,24 × 7 = <strong>185 €</strong></em></td>
+    </tr>
+    <tr style="font-weight:700;background:var(--cream)!important">
+      <td colspan="3">Total hébergement</td>
+      <td>40 pers. facturées</td>
+      <td><strong>3 727 €</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="warn-box">
+  <strong>Snapshot obligatoire :</strong> les champs <code>nom_snapshot</code> et <code>prix_nuit_snapshot</code> dans <code>sejour_categorie</code> copient les valeurs du tarif <em>au moment de la création du séjour</em>. Si le trésorier modifie un tarif plus tard, les factures existantes ne sont pas affectées. Ne jamais rejoindre <code>tarif_personne</code> pour calculer une facture — toujours utiliser les snapshots.
+</div>
+
+
+<!-- ═══════ 4. SCHÉMA SQL ═══════ -->
+<h2 id="schema"><span class="num">4</span> Schéma SQL complet</h2>
+
+<div class="sql-block"><pre><span class="sql-comment">-- ════════════════════════════════════════════════════
+-- LocaGest v2 — Aurora PostgreSQL 16
+-- ════════════════════════════════════════════════════</span>
+
+<span class="sql-kw">CREATE EXTENSION IF NOT EXISTS</span> <span class="sql-str">"pgcrypto"</span><span class="sql-comment">; -- gen_random_uuid()</span>
+
+<span class="sql-comment">-- TYPES ENUM</span>
+<span class="sql-kw">CREATE TYPE</span> statut_sejour  <span class="sql-kw">AS ENUM</span> (<span class="sql-str">'PLANIFIE'</span>, <span class="sql-str">'EN_COURS'</span>, <span class="sql-str">'TERMINE'</span>);
+<span class="sql-kw">CREATE TYPE</span> mode_paiement  <span class="sql-kw">AS ENUM</span> (<span class="sql-str">'CHEQUE'</span>, <span class="sql-str">'VIREMENT'</span>);
+<span class="sql-kw">CREATE TYPE</span> statut_facture <span class="sql-kw">AS ENUM</span> (<span class="sql-str">'BROUILLON'</span>, <span class="sql-str">'EMISE'</span>, <span class="sql-str">'PAYEE'</span>);
+<span class="sql-kw">CREATE TYPE</span> statut_ligne   <span class="sql-kw">AS ENUM</span> (<span class="sql-str">'CONFIRME'</span>, <span class="sql-str">'A_CONFIRMER'</span>);
+<span class="sql-kw">CREATE TYPE</span> type_ligne     <span class="sql-kw">AS ENUM</span> (<span class="sql-str">'HEBERGEMENT'</span>, <span class="sql-str">'ENERGIE'</span>, <span class="sql-str">'TAXE'</span>,
+                                        <span class="sql-str">'SUPPLEMENT'</span>, <span class="sql-str">'COMPLEMENT_MINIMUM'</span>, <span class="sql-str">'LIBRE'</span>);
+<span class="sql-kw">CREATE TYPE</span> categorie_item <span class="sql-kw">AS ENUM</span> (<span class="sql-str">'CASSE'</span>, <span class="sql-str">'LOCATION'</span>, <span class="sql-str">'SERVICE'</span>);
+<span class="sql-kw">CREATE TYPE</span> unite_item     <span class="sql-kw">AS ENUM</span> (<span class="sql-str">'UNITE'</span>, <span class="sql-str">'SEJOUR'</span>, <span class="sql-str">'INTERVENTION'</span>);
+
+<span class="sql-comment">-- ─────────────────────────────────────────────
+-- CONFIGURATION SITE (clé-valeur)
+-- Clés : energie_prix_nuit, energie_nb_nuits, taxe_adulte_nuit,
+--        iban, delai_paiement_jours, email_resp_location
+-- ─────────────────────────────────────────────</span>
+<span class="sql-kw">CREATE TABLE</span> config_site (
+    cle         <span class="sql-type">VARCHAR(60)</span>     <span class="sql-kw">PRIMARY KEY</span>,
+    valeur      <span class="sql-type">TEXT</span>            <span class="sql-kw">NOT NULL</span>,
+    updated_at  <span class="sql-type">TIMESTAMPTZ</span>     <span class="sql-kw">DEFAULT</span> <span class="sql-fn">now</span>(),
+    updated_by  <span class="sql-type">UUID</span>            <span class="sql-comment">-- référence Cognito sub</span>
+);
+
+<span class="sql-comment">-- ─────────────────────────────────────────────
+-- TARIFS PAR PERSONNE (gérés par le Trésorier)
+-- ─────────────────────────────────────────────</span>
+<span class="sql-kw">CREATE TABLE</span> tarif_personne (
+    id          <span class="sql-type">UUID</span>            <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+    nom         <span class="sql-type">VARCHAR(100)</span>    <span class="sql-kw">NOT NULL</span>,  <span class="sql-comment">-- "Membre de l'union", "Groupe de jeunes"</span>
+    prix_nuit   <span class="sql-type">NUMERIC(8,2)</span>    <span class="sql-kw">NOT NULL CHECK</span> (prix_nuit &gt;= <span class="sql-num">0</span>),
+    description <span class="sql-type">TEXT</span>,
+    actif       <span class="sql-type">BOOLEAN</span>         <span class="sql-kw">NOT NULL DEFAULT</span> <span class="sql-kw">TRUE</span>,
+    ordre       <span class="sql-type">INT</span>             <span class="sql-kw">NOT NULL DEFAULT</span> <span class="sql-num">0</span>, <span class="sql-comment">-- tri affichage</span>
+    created_at  <span class="sql-type">TIMESTAMPTZ</span>     <span class="sql-kw">DEFAULT</span> <span class="sql-fn">now</span>(),
+    updated_at  <span class="sql-type">TIMESTAMPTZ</span>     <span class="sql-kw">DEFAULT</span> <span class="sql-fn">now</span>(),
+    updated_by  <span class="sql-type">UUID</span>
+);
+
+<span class="sql-comment">-- ─────────────────────────────────────────────
+-- ITEMS SUPPLÉMENTAIRES (gérés par le Trésorier)
+-- ─────────────────────────────────────────────</span>
+<span class="sql-kw">CREATE TABLE</span> config_item (
+    id           <span class="sql-type">UUID</span>            <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+    designation  <span class="sql-type">VARCHAR(200)</span>    <span class="sql-kw">NOT NULL</span>,
+    categorie    categorie_item  <span class="sql-kw">NOT NULL</span>,
+    prix_unitaire <span class="sql-type">NUMERIC(8,2)</span>   <span class="sql-kw">NOT NULL CHECK</span> (prix_unitaire &gt;= <span class="sql-num">0</span>),
+    unite        unite_item      <span class="sql-kw">NOT NULL DEFAULT</span> <span class="sql-str">'UNITE'</span>,
+    actif        <span class="sql-type">BOOLEAN</span>         <span class="sql-kw">NOT NULL DEFAULT</span> <span class="sql-kw">TRUE</span>,
+    created_at   <span class="sql-type">TIMESTAMPTZ</span>     <span class="sql-kw">DEFAULT</span> <span class="sql-fn">now</span>(),
+    updated_at   <span class="sql-type">TIMESTAMPTZ</span>     <span class="sql-kw">DEFAULT</span> <span class="sql-fn">now</span>()
+);
+
+<span class="sql-comment">-- ─────────────────────────────────────────────
+-- LOCATAIRES
+-- ─────────────────────────────────────────────</span>
+<span class="sql-kw">CREATE TABLE</span> locataire (
+    id          <span class="sql-type">UUID</span>            <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+    nom         <span class="sql-type">VARCHAR(200)</span>    <span class="sql-kw">NOT NULL</span>,
+    email       <span class="sql-type">VARCHAR(200)</span>    <span class="sql-kw">NOT NULL</span>,
+    telephone   <span class="sql-type">VARCHAR(30)</span>,
+    adresse     <span class="sql-type">TEXT</span>,
+    created_at  <span class="sql-type">TIMESTAMPTZ</span>     <span class="sql-kw">DEFAULT</span> <span class="sql-fn">now</span>()
+);
+
+<span class="sql-comment">-- ─────────────────────────────────────────────
+-- SÉJOURS
+-- ─────────────────────────────────────────────</span>
+<span class="sql-kw">CREATE TABLE</span> sejour (
+    id                    <span class="sql-type">UUID</span>            <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+    locataire_id          <span class="sql-type">UUID</span>            <span class="sql-kw">NOT NULL REFERENCES</span> locataire(id),
+    statut                statut_sejour   <span class="sql-kw">NOT NULL DEFAULT</span> <span class="sql-str">'PLANIFIE'</span>,
+    date_arrivee          <span class="sql-type">DATE</span>            <span class="sql-kw">NOT NULL</span>,
+    date_depart           <span class="sql-type">DATE</span>            <span class="sql-kw">NOT NULL CHECK</span> (date_depart &gt; date_arrivee),
+    nb_nuits              <span class="sql-type">INT</span>             <span class="sql-kw">GENERATED ALWAYS AS</span> (date_depart - date_arrivee) <span class="sql-kw">STORED</span>,
+    heure_arrivee_prevue  <span class="sql-type">TIME</span>,           <span class="sql-comment">-- saisi par resp. location</span>
+    heure_depart_prevu    <span class="sql-type">TIME</span>,           <span class="sql-comment">-- saisi par resp. location</span>
+    heure_arrivee_reelle  <span class="sql-type">TIME</span>,           <span class="sql-comment">-- saisi par gardien</span>
+    heure_depart_reel     <span class="sql-type">TIME</span>,           <span class="sql-comment">-- saisi par gardien</span>
+    nb_adultes            <span class="sql-type">INT</span>,            <span class="sql-comment">-- pour taxe de séjour (+18 ans)</span>
+    min_personnes_total   <span class="sql-type">INT</span>             <span class="sql-kw">NOT NULL DEFAULT</span> <span class="sql-num">40</span>,
+    mode_paiement         mode_paiement,
+    date_limite_paiement  <span class="sql-type">DATE</span>,
+    options_presaisies    <span class="sql-type">TEXT</span>,
+    notes_internes        <span class="sql-type">TEXT</span>,
+    created_by            <span class="sql-type">UUID</span>            <span class="sql-kw">NOT NULL</span>,
+    updated_by            <span class="sql-type">UUID</span>,
+    created_at            <span class="sql-type">TIMESTAMPTZ</span>     <span class="sql-kw">DEFAULT</span> <span class="sql-fn">now</span>(),
+    updated_at            <span class="sql-type">TIMESTAMPTZ</span>     <span class="sql-kw">DEFAULT</span> <span class="sql-fn">now</span>()
+);
+<span class="sql-kw">CREATE INDEX</span> idx_sejour_statut_date <span class="sql-kw">ON</span> sejour (statut, date_arrivee);
+<span class="sql-kw">CREATE INDEX</span> idx_sejour_locataire   <span class="sql-kw">ON</span> sejour (locataire_id);
+
+<span class="sql-comment">-- ─────────────────────────────────────────────
+-- CATÉGORIES DE PERSONNES PAR SÉJOUR
+-- (multi-tarifs — une ligne par tarif appliqué)
+-- ─────────────────────────────────────────────</span>
+<span class="sql-kw">CREATE TABLE</span> sejour_categorie (
+    id               <span class="sql-type">UUID</span>            <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+    sejour_id        <span class="sql-type">UUID</span>            <span class="sql-kw">NOT NULL REFERENCES</span> sejour(id) <span class="sql-kw">ON DELETE CASCADE</span>,
+    tarif_id         <span class="sql-type">UUID</span>            <span class="sql-kw">REFERENCES</span> tarif_personne(id), <span class="sql-comment">-- null si tarif supprimé</span>
+    nom_snapshot     <span class="sql-type">VARCHAR(100)</span>    <span class="sql-kw">NOT NULL</span>,  <span class="sql-comment">-- COPIE — ne pas rejoindre tarif_personne</span>
+    prix_nuit_snapshot <span class="sql-type">NUMERIC(8,2)</span>  <span class="sql-kw">NOT NULL</span>,  <span class="sql-comment">-- COPIE au moment de la création</span>
+    nb_prevues       <span class="sql-type">INT</span>,            <span class="sql-comment">-- saisi par resp. location</span>
+    nb_reelles       <span class="sql-type">INT</span>,            <span class="sql-comment">-- saisi par le gardien</span>
+    ordre            <span class="sql-type">INT</span>             <span class="sql-kw">NOT NULL DEFAULT</span> <span class="sql-num">0</span>,
+    <span class="sql-kw">CONSTRAINT</span> uq_sejour_tarif <span class="sql-kw">UNIQUE</span> (sejour_id, tarif_id) <span class="sql-comment">-- 1 ligne par tarif par séjour</span>
+);
+<span class="sql-comment">-- Note : nb_facturees N'est PAS une colonne GENERATED ici car elle dépend
+-- du total de toutes les catégories (minimum global). Elle est calculée
+-- en Lambda au moment de la génération de la facture.</span>
+<span class="sql-kw">CREATE INDEX</span> idx_sejour_categorie_sejour <span class="sql-kw">ON</span> sejour_categorie (sejour_id);
+
+<span class="sql-comment">-- ─────────────────────────────────────────────
+-- LIGNES DE FACTURE
+-- ─────────────────────────────────────────────</span>
+<span class="sql-kw">CREATE TABLE</span> ligne_sejour (
+    id                  <span class="sql-type">UUID</span>            <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+    sejour_id           <span class="sql-type">UUID</span>            <span class="sql-kw">NOT NULL REFERENCES</span> sejour(id),
+    sejour_categorie_id <span class="sql-type">UUID</span>            <span class="sql-kw">REFERENCES</span> sejour_categorie(id), <span class="sql-comment">-- si type=HEBERGEMENT|COMPLEMENT</span>
+    config_item_id      <span class="sql-type">UUID</span>            <span class="sql-kw">REFERENCES</span> config_item(id),     <span class="sql-comment">-- si type=SUPPLEMENT</span>
+    type_ligne          type_ligne      <span class="sql-kw">NOT NULL</span>,
+    designation         <span class="sql-type">VARCHAR(300)</span>    <span class="sql-kw">NOT NULL</span>,  <span class="sql-comment">-- snapshot lisible</span>
+    quantite            <span class="sql-type">NUMERIC(10,3)</span>   <span class="sql-kw">NOT NULL</span>,
+    prix_unitaire       <span class="sql-type">NUMERIC(8,2)</span>    <span class="sql-kw">NOT NULL</span>,
+    montant             <span class="sql-type">NUMERIC(10,2)</span>   <span class="sql-kw">GENERATED ALWAYS AS</span> (<span class="sql-fn">ROUND</span>(quantite * prix_unitaire, <span class="sql-num">2</span>)) <span class="sql-kw">STORED</span>,
+    statut              statut_ligne    <span class="sql-kw">NOT NULL DEFAULT</span> <span class="sql-str">'CONFIRME'</span>,
+    saisi_par           <span class="sql-type">UUID</span>,
+    created_at          <span class="sql-type">TIMESTAMPTZ</span>     <span class="sql-kw">DEFAULT</span> <span class="sql-fn">now</span>()
+);
+<span class="sql-kw">CREATE INDEX</span> idx_ligne_sejour         <span class="sql-kw">ON</span> ligne_sejour (sejour_id);
+<span class="sql-kw">CREATE INDEX</span> idx_ligne_a_confirmer    <span class="sql-kw">ON</span> ligne_sejour (statut) <span class="sql-kw">WHERE</span> statut = <span class="sql-str">'A_CONFIRMER'</span>;
+
+<span class="sql-comment">-- ─────────────────────────────────────────────
+-- FACTURES
+-- ─────────────────────────────────────────────</span>
+<span class="sql-kw">CREATE TABLE</span> facture (
+    id                    <span class="sql-type">UUID</span>            <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+    sejour_id             <span class="sql-type">UUID</span>            <span class="sql-kw">NOT NULL UNIQUE REFERENCES</span> sejour(id),
+    numero                <span class="sql-type">VARCHAR(20)</span>     <span class="sql-kw">NOT NULL UNIQUE</span>, <span class="sql-comment">-- FAC-2025-042</span>
+    date_generation       <span class="sql-type">TIMESTAMPTZ</span>     <span class="sql-kw">DEFAULT</span> <span class="sql-fn">now</span>(),
+    montant_hebergement   <span class="sql-type">NUMERIC(10,2)</span>,
+    montant_energie       <span class="sql-type">NUMERIC(10,2)</span>,
+    montant_taxe          <span class="sql-type">NUMERIC(10,2)</span>,
+    montant_supplements   <span class="sql-type">NUMERIC(10,2)</span>,
+    montant_total         <span class="sql-type">NUMERIC(10,2)</span>   <span class="sql-kw">NOT NULL</span>,
+    statut                statut_facture  <span class="sql-kw">NOT NULL DEFAULT</span> <span class="sql-str">'BROUILLON'</span>,
+    pdf_s3_key            <span class="sql-type">VARCHAR(500)</span>,
+    email_envoye          <span class="sql-type">BOOLEAN</span>         <span class="sql-kw">DEFAULT</span> <span class="sql-kw">FALSE</span>,
+    email_envoye_at       <span class="sql-type">TIMESTAMPTZ</span>
+);
+
+<span class="sql-comment">-- ─────────────────────────────────────────────
+-- PAIEMENTS
+-- ─────────────────────────────────────────────</span>
+<span class="sql-kw">CREATE TABLE</span> paiement (
+    id               <span class="sql-type">UUID</span>            <span class="sql-kw">PRIMARY KEY DEFAULT</span> <span class="sql-fn">gen_random_uuid</span>(),
+    sejour_id        <span class="sql-type">UUID</span>            <span class="sql-kw">NOT NULL REFERENCES</span> sejour(id),
+    mode             mode_paiement   <span class="sql-kw">NOT NULL</span>,
+    montant          <span class="sql-type">NUMERIC(10,2)</span>   <span class="sql-kw">NOT NULL CHECK</span> (montant &gt; <span class="sql-num">0</span>),
+    date_encaissement <span class="sql-type">DATE</span>,
+    numero_cheque    <span class="sql-type">VARCHAR(50)</span>,
+    banque_emettrice <span class="sql-type">VARCHAR(100)</span>,
+    cheque_s3_key    <span class="sql-type">VARCHAR(500)</span>,
+    enregistre_par   <span class="sql-type">UUID</span>            <span class="sql-kw">NOT NULL</span>,
+    created_at       <span class="sql-type">TIMESTAMPTZ</span>     <span class="sql-kw">DEFAULT</span> <span class="sql-fn">now</span>()
+);
+<span class="sql-kw">CREATE INDEX</span> idx_paiement_sejour <span class="sql-kw">ON</span> paiement (sejour_id);
+
+<span class="sql-comment">-- ─────────────────────────────────────────────
+-- NUMÉROTATION FACTURES (séquence par année)
+-- ─────────────────────────────────────────────</span>
+<span class="sql-kw">CREATE TABLE</span> facture_sequence (
+    annee   <span class="sql-type">INT</span>  <span class="sql-kw">PRIMARY KEY</span>,
+    counter <span class="sql-type">INT</span>  <span class="sql-kw">NOT NULL DEFAULT</span> <span class="sql-num">0</span>
+);
+<span class="sql-comment">-- Utilisation (dans une transaction) :
+-- INSERT INTO facture_sequence(annee, counter) VALUES(2025, 1)
+--   ON CONFLICT(annee) DO UPDATE SET counter = facture_sequence.counter + 1
+--   RETURNING counter;
+-- → numéro = 'FAC-' || annee || '-' || lpad(counter::text, 3, '0')</span>
+</pre></div>
+
+
+<!-- ═══════ 5. CALCULS ET VUES ═══════ -->
+<h2 id="calculs"><span class="num">5</span> Calculs et vues utiles</h2>
+
+<div class="sql-block"><pre><span class="sql-comment">-- VUE : Détail d'un séjour avec totaux par catégorie</span>
+<span class="sql-kw">CREATE VIEW</span> v_sejour_detail <span class="sql-kw">AS</span>
+<span class="sql-kw">SELECT</span>
+    s.id             <span class="sql-kw">AS</span> sejour_id,
+    s.date_arrivee, s.date_depart, s.nb_nuits,
+    s.min_personnes_total,
+    <span class="sql-fn">COALESCE</span>(<span class="sql-fn">SUM</span>(sc.nb_reelles), <span class="sql-num">0</span>) <span class="sql-kw">AS</span> total_personnes_reelles,
+    <span class="sql-fn">GREATEST</span>(<span class="sql-fn">COALESCE</span>(<span class="sql-fn">SUM</span>(sc.nb_reelles), <span class="sql-num">0</span>), s.min_personnes_total)
+                     <span class="sql-kw">AS</span> total_personnes_facturees,
+    s.nb_adultes,
+    <span class="sql-comment">-- Taxe de séjour</span>
+    s.nb_adultes * s.nb_nuits * (<span class="sql-kw">SELECT</span> valeur::numeric <span class="sql-kw">FROM</span> config_site
+                                  <span class="sql-kw">WHERE</span> cle = <span class="sql-str">'taxe_adulte_nuit'</span>)
+                     <span class="sql-kw">AS</span> montant_taxe,
+    <span class="sql-comment">-- Forfait énergies</span>
+    <span class="sql-fn">LEAST</span>(s.nb_nuits,
+         (<span class="sql-kw">SELECT</span> valeur::int <span class="sql-kw">FROM</span> config_site <span class="sql-kw">WHERE</span> cle = <span class="sql-str">'energie_nb_nuits'</span>))
+    * (<span class="sql-kw">SELECT</span> valeur::numeric <span class="sql-kw">FROM</span> config_site <span class="sql-kw">WHERE</span> cle = <span class="sql-str">'energie_prix_nuit'</span>)
+                     <span class="sql-kw">AS</span> montant_energie
+<span class="sql-kw">FROM</span> sejour s
+<span class="sql-kw">LEFT JOIN</span> sejour_categorie sc <span class="sql-kw">ON</span> sc.sejour_id = s.id
+<span class="sql-kw">GROUP BY</span> s.id;
+
+<span class="sql-comment">-- VUE : Calcul hébergement par catégorie + ligne complément minimum</span>
+<span class="sql-kw">CREATE VIEW</span> v_hebergement_detail <span class="sql-kw">AS</span>
+<span class="sql-kw">WITH</span> totaux <span class="sql-kw">AS</span> (
+    <span class="sql-kw">SELECT</span> sejour_id,
+           <span class="sql-fn">SUM</span>(nb_reelles)            <span class="sql-kw">AS</span> total_reel,
+           <span class="sql-fn">SUM</span>(nb_reelles * prix_nuit_snapshot) / <span class="sql-fn">NULLIF</span>(<span class="sql-fn">SUM</span>(nb_reelles), <span class="sql-num">0</span>)
+                                       <span class="sql-kw">AS</span> prix_moyen_pondere
+    <span class="sql-kw">FROM</span> sejour_categorie <span class="sql-kw">GROUP BY</span> sejour_id
+),
+sejours <span class="sql-kw">AS</span> (
+    <span class="sql-kw">SELECT</span> s.id, s.nb_nuits, s.min_personnes_total,
+           t.total_reel, t.prix_moyen_pondere,
+           <span class="sql-fn">GREATEST</span>(s.min_personnes_total - t.total_reel, <span class="sql-num">0</span>) <span class="sql-kw">AS</span> ecart_minimum
+    <span class="sql-kw">FROM</span> sejour s <span class="sql-kw">JOIN</span> totaux t <span class="sql-kw">ON</span> t.sejour_id = s.id
+)
+<span class="sql-comment">-- Lignes normales</span>
+<span class="sql-kw">SELECT</span> sc.sejour_id, sc.nom_snapshot, sc.prix_nuit_snapshot,
+       sc.nb_reelles              <span class="sql-kw">AS</span> quantite,
+       sc.nb_reelles * sc.prix_nuit_snapshot * sej.nb_nuits <span class="sql-kw">AS</span> montant,
+       <span class="sql-kw">FALSE AS</span> est_complement
+<span class="sql-kw">FROM</span> sejour_categorie sc
+<span class="sql-kw">JOIN</span> sejours sej <span class="sql-kw">ON</span> sej.id = sc.sejour_id
+<span class="sql-kw">WHERE</span> sc.nb_reelles <span class="sql-kw">IS NOT NULL</span>
+<span class="sql-kw">UNION ALL</span>
+<span class="sql-comment">-- Ligne complément minimum (si nécessaire)</span>
+<span class="sql-kw">SELECT</span> id <span class="sql-kw">AS</span> sejour_id, <span class="sql-str">'Complément minimum contractuel'</span>,
+       <span class="sql-fn">ROUND</span>(prix_moyen_pondere, <span class="sql-num">2</span>),
+       ecart_minimum,
+       ecart_minimum * prix_moyen_pondere * nb_nuits,
+       <span class="sql-kw">TRUE</span>
+<span class="sql-kw">FROM</span> sejours <span class="sql-kw">WHERE</span> ecart_minimum &gt; <span class="sql-num">0</span>;
+
+<span class="sql-comment">-- VUE : Éléments en attente de validation (trésorier / resp.)</span>
+<span class="sql-kw">CREATE VIEW</span> v_lignes_a_confirmer <span class="sql-kw">AS</span>
+<span class="sql-kw">SELECT</span> ls.*, s.date_arrivee, l.nom <span class="sql-kw">AS</span> nom_locataire
+<span class="sql-kw">FROM</span> ligne_sejour ls
+<span class="sql-kw">JOIN</span> sejour s <span class="sql-kw">ON</span> s.id = ls.sejour_id
+<span class="sql-kw">JOIN</span> locataire l <span class="sql-kw">ON</span> l.id = s.locataire_id
+<span class="sql-kw">WHERE</span> ls.statut = <span class="sql-str">'A_CONFIRMER'</span>;
+
+<span class="sql-comment">-- TRIGGER : maj updated_at automatique</span>
+<span class="sql-kw">CREATE OR REPLACE FUNCTION</span> <span class="sql-fn">touch_updated_at</span>()
+<span class="sql-kw">RETURNS TRIGGER AS</span> $$
+<span class="sql-kw">BEGIN</span> NEW.updated_at = <span class="sql-fn">now</span>(); <span class="sql-kw">RETURN</span> NEW; <span class="sql-kw">END</span>; $$ <span class="sql-kw">LANGUAGE</span> plpgsql;
+
+<span class="sql-kw">CREATE TRIGGER</span> trg_sejour_updated
+    <span class="sql-kw">BEFORE UPDATE ON</span> sejour
+    <span class="sql-kw">FOR EACH ROW EXECUTE FUNCTION</span> <span class="sql-fn">touch_updated_at</span>();
+<span class="sql-comment">-- (idem pour tarif_personne, config_item)</span>
+</pre></div>
+
+
+<!-- ═══════ 6. REQUÊTES MÉTIER ═══════ -->
+<h2 id="patterns"><span class="num">6</span> Requêtes métier principales</h2>
+
+<div class="ap-grid">
+  <div class="ap-card">
+    <div class="ap-title">P1 — Séjour en cours (accueil gardien)</div>
+    <div class="ap-sql">SELECT s.*, l.nom, l.email, l.telephone,
+  json_agg(sc ORDER BY sc.ordre) AS categories
+FROM sejour s
+JOIN locataire l ON l.id = s.locataire_id
+JOIN sejour_categorie sc ON sc.sejour_id = s.id
+WHERE s.statut = 'EN_COURS'
+ORDER BY s.date_arrivee LIMIT 1;</div>
+    <div class="ap-note"><span class="ap-badge idx">INDEX statut, date_arrivee</span></div>
+  </div>
+
+  <div class="ap-card">
+    <div class="ap-title">P2 — Tous les tarifs actifs (création séjour)</div>
+    <div class="ap-sql">SELECT id, nom, prix_nuit, description
+FROM tarif_personne
+WHERE actif = TRUE
+ORDER BY ordre, nom;</div>
+    <div class="ap-note"><span class="ap-badge idx">Table entière (petite)</span></div>
+  </div>
+
+  <div class="ap-card">
+    <div class="ap-title">P3 — Détail complet d'un séjour pour la facture</div>
+    <div class="ap-sql">SELECT * FROM v_sejour_detail
+WHERE sejour_id = $1;
+
+SELECT * FROM v_hebergement_detail
+WHERE sejour_id = $1;
+
+SELECT * FROM ligne_sejour
+WHERE sejour_id = $1
+ORDER BY type_ligne, created_at;</div>
+    <div class="ap-note"><span class="ap-badge calc">3 requêtes — transaction RO</span></div>
+  </div>
+
+  <div class="ap-card">
+    <div class="ap-title">P4 — Saisie gardien : maj nb_reelles par catégorie</div>
+    <div class="ap-sql">UPDATE sejour_categorie
+SET nb_reelles = $2
+WHERE id = $1
+  AND sejour_id = $3; -- sécurité
+
+UPDATE sejour
+SET nb_adultes = $4, updated_by = $5
+WHERE id = $3;</div>
+    <div class="ap-note"><span class="ap-badge idx">Transaction unique</span></div>
+  </div>
+
+  <div class="ap-card">
+    <div class="ap-title">P5 — Liste séjours à confirmer (resp. / trésorier)</div>
+    <div class="ap-sql">SELECT * FROM v_lignes_a_confirmer
+ORDER BY date_arrivee DESC;</div>
+    <div class="ap-note"><span class="ap-badge idx">INDEX PARTIEL statut = 'A_CONFIRMER'</span></div>
+  </div>
+
+  <div class="ap-card">
+    <div class="ap-title">P6 — Tableau de bord trésorier (encaissements)</div>
+    <div class="ap-sql">SELECT
+  EXTRACT(YEAR FROM p.date_encaissement) AS annee,
+  p.mode,
+  COUNT(*) AS nb,
+  SUM(p.montant) AS total_encaisse,
+  SUM(f.montant_total) - SUM(p.montant) AS reste_a_recouvrer
+FROM paiement p
+JOIN facture f ON f.sejour_id = p.sejour_id
+GROUP BY 1, 2 ORDER BY 1 DESC, 2;</div>
+    <div class="ap-note"><span class="ap-badge calc">Agrégat annuel</span></div>
+  </div>
+
+  <div class="ap-card">
+    <div class="ap-title">P7 — Historique locataire</div>
+    <div class="ap-sql">SELECT s.date_arrivee, s.date_depart, s.nb_nuits,
+  f.numero, f.montant_total, f.statut
+FROM sejour s
+LEFT JOIN facture f ON f.sejour_id = s.id
+WHERE s.locataire_id = $1
+ORDER BY s.date_arrivee DESC;</div>
+    <div class="ap-note"><span class="ap-badge idx">INDEX locataire_id</span></div>
+  </div>
+
+  <div class="ap-card">
+    <div class="ap-title">P8 — Numérotation facture (transaction)</div>
+    <div class="ap-sql">-- Dans une transaction SERIALIZABLE :
+INSERT INTO facture_sequence(annee, counter)
+  VALUES($1, 1)
+  ON CONFLICT(annee) DO UPDATE
+  SET counter = facture_sequence.counter + 1
+RETURNING
+  'FAC-' || $1 || '-'
+  || LPAD(counter::text, 3, '0') AS numero;</div>
+    <div class="ap-note"><span class="ap-badge calc">Atomique — pas de doublon</span></div>
+  </div>
+</div>
+
+
+<!-- ═══════ 7. INFRA ═══════ -->
+<h2 id="infra"><span class="num">7</span> Infrastructure Aurora & connexions Lambda</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Composant</th><th>Recommandation</th><th>Justification</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Aurora PostgreSQL</strong></td><td>Aurora Serverless v2 (PostgreSQL 16)</td><td>Scale-to-zero la nuit / WE — usage 1×/semaine → facturation à l'usage, très économique pour ce volume</td></tr>
+    <tr><td><strong>Connexions</strong></td><td>RDS Proxy devant Aurora</td><td>Les Lambdas créent de nombreuses connexions courtes — RDS Proxy mutualise le pool et évite de saturer Aurora (max_connections)</td></tr>
+    <tr><td><strong>VPC</strong></td><td>Aurora + RDS Proxy en VPC privé, Lambda dans même VPC</td><td>Aurora n'est jamais exposé à Internet. Lambda atteint Aurora via l'endpoint du Proxy.</td></tr>
+    <tr><td><strong>Credentials</strong></td><td>AWS Secrets Manager + IAM auth RDS Proxy</td><td>Pas de mot de passe hardcodé. Lambda assume un rôle IAM → RDS Proxy valide via IAM → Aurora.</td></tr>
+    <tr><td><strong>Driver Java</strong></td><td>HikariCP désactivé / connexion unique par Lambda</td><td>Avec RDS Proxy, pas besoin de pool côté Lambda. Ouvrir 1 connexion par invocation (ou réutiliser hors handler).</td></tr>
+    <tr><td><strong>Migrations</strong></td><td>Flyway (JAR séparé, Lambda de migration)</td><td>Flyway gère le versionning du schéma. Déclenché manuellement ou via CodePipeline au déploiement.</td></tr>
+    <tr><td><strong>Région</strong></td><td>eu-west-1 (Irlande) ou eu-west-3 (Paris)</td><td>Données en Europe (RGPD).</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="info-box">
+  <strong>Coût estimé pour ce volume d'usage</strong> (1 séjour/semaine, ~5 utilisateurs) : Aurora Serverless v2 &lt; 30 €/mois en production, souvent &lt; 5 €/mois en veille. RDS Proxy : ~15 $/mois fixe. À comparer avec DynamoDB on-demand qui serait &lt; 1 $/mois pour ce trafic — le choix PostgreSQL est guidé par la complexité métier, pas le coût.
+</div>
+
+</body>
+</html>
