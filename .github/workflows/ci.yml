@@ -35,6 +35,7 @@ jobs:
   frontend-build:
     name: Frontend – Build & Test
     runs-on: ubuntu-latest
+    if: hashFiles('frontend/package.json') != ''
     defaults:
       run:
         working-directory: frontend
