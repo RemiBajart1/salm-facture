@@ -10,7 +10,7 @@ on:
 
 jobs:
   backend-build:
-    name: Backend – Build & Test
+    name: Backend - Build & Test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,7 +37,7 @@ jobs:
           retention-days: 1
 
   frontend-build:
-    name: Frontend – Build & Test
+    name: Frontend - Build & Test
     runs-on: ubuntu-latest
     if: hashFiles('frontend/package.json') != ''
     defaults:
