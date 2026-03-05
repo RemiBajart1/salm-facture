@@ -83,8 +83,9 @@ class FactureCalculServiceTest {
         var m = service.calculer(sejour, cats, List.of());
 
         // 40 présents = min 40 → pas de complément
+        // (25×14 + 15×12) × 7 = (350 + 180) × 7 = 3 710
         assertThat(m.nbFacturees()).isEqualTo(40);
-        assertThat(m.hebergement()).isEqualByComparingTo("4130.00"); // (25×14 + 15×12) × 7
+        assertThat(m.hebergement()).isEqualByComparingTo("3710.00");
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -255,12 +256,12 @@ class FactureCalculServiceTest {
 
         var m = service.calculer(sejour, cats, supplements);
 
-        // héberg = (25×14 + 15×12) × 7 = 4130
+        // héberg = (25×14 + 15×12) × 7 = (350 + 180) × 7 = 3 710
         // energie = 160
         // taxe = 22×7×0.88 = 135.52
         // supplement = 50
-        // total = 4475.52
-        assertThat(m.total()).isEqualByComparingTo("4475.52");
+        // total = 4055.52
+        assertThat(m.total()).isEqualByComparingTo("4055.52");
     }
 
     // ══════════════════════════════════════════════════════════════════════

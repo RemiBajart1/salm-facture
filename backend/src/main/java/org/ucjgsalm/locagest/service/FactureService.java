@@ -1,6 +1,6 @@
 package org.ucjgsalm.locagest.service;
 
-import io.micronaut.transaction.annotation.Transactional;
+import jakarta.transaction.Transactional;
 import jakarta.inject.Singleton;
 import java.math.BigDecimal;
 import java.time.Year;

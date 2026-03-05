@@ -1,11 +1,15 @@
 plugins {
-    id 'io.micronaut.application'   version '4.4.4'
-    id 'io.micronaut.aot'           version '4.4.4'
+    id 'io.micronaut.application'   version '4.4.3'
+    id 'io.micronaut.aot'           version '4.4.3'
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 version = '1.0.0'
 group   = 'org.ucjgsalm.locagest'
+
+application {
+    mainClass = 'io.micronaut.function.aws.runtime.MicronautLambdaRuntime'
+}
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -35,6 +39,7 @@ dependencies {
     implementation 'io.micronaut.flyway:micronaut-flyway'
     implementation 'io.micronaut.sql:micronaut-jdbc-hikari'
     runtimeOnly     'org.postgresql:postgresql:42.7.3'
+    implementation 'jakarta.transaction:jakarta.transaction-api'
 
     // AWS SDK v2
     implementation platform('software.amazon.awssdk:bom:2.25.60')
@@ -55,6 +60,9 @@ dependencies {
     annotationProcessor        'org.projectlombok:lombok:1.18.32'
     testCompileOnly            'org.projectlombok:lombok:1.18.32'
     testAnnotationProcessor    'org.projectlombok:lombok:1.18.32'
+
+    // YAML support (application.yml)
+    runtimeOnly 'org.yaml:snakeyaml'
 
     // Tests
     testImplementation 'io.micronaut.test:micronaut-test-junit5'

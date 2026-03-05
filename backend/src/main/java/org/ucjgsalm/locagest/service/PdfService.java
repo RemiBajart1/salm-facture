@@ -4,6 +4,7 @@ import jakarta.inject.Singleton;
 import org.apache.pdfbox.pdmodel.*;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.*;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName;
 import org.apache.pdfbox.pdmodel.graphics.color.PDColor;
 import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceRGB;
 import java.io.ByteArrayOutputStream;
@@ -42,9 +43,9 @@ public class PdfService {
             doc.addPage(page);
 
             try (var cs = new PDPageContentStream(doc, page)) {
-                var fontBold    = PDType1Font.HELVETICA_BOLD;
-                var fontRegular = PDType1Font.HELVETICA;
-                var fontMono    = PDType1Font.COURIER;
+                var fontBold    = new PDType1Font(FontName.HELVETICA_BOLD);
+                var fontRegular = new PDType1Font(FontName.HELVETICA);
+                var fontMono    = new PDType1Font(FontName.COURIER);
 
                 float y = PAGE_H - MARGIN;
 
@@ -162,7 +163,7 @@ public class PdfService {
         cs.setFont(bold, 9);
         setFillColor(cs, COLOR_FOREST);
         for (int i = 0; i < hdrs.length; i++) {
-            cs.newLineAtOffset(i == 0 ? colX[i] : colX[i] - (i == 0 ? 0 : cs.getGraphicsState() != null ? 0 : 0), 0);
+            cs.newLineAtOffset(colX[i], 0);
         }
         cs.endText();
 
