@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
 
+public final class Dtos {
+    private Dtos() {}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // SÉJOUR
 // ═════════════════════════════════════════════════════════════════════════════
@@ -237,3 +240,5 @@ public record ConfigSiteRequest(
 
 @Serdeable
 public record ErrorResponse(String code, String message) {}
+
+} // end class Dtos

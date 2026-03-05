@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ucjgsalm.locagest.domain.*;
 import org.ucjgsalm.locagest.domain.enums.*;
-import org.ucjgsalm.locagest.dto.*;
+import static org.ucjgsalm.locagest.dto.Dtos.*;
 import org.ucjgsalm.locagest.repository.*;
 import org.ucjgsalm.locagest.service.*;
 

@@ -6,7 +6,7 @@ import io.micronaut.http.server.exceptions.ExceptionHandler;
 import jakarta.inject.Singleton;
 import java.util.NoSuchElementException;
 import lombok.extern.slf4j.Slf4j;
-import org.ucjgsalm.locagest.dto.ErrorResponse;
+import static org.ucjgsalm.locagest.dto.Dtos.ErrorResponse;
 
 /**
  * Transforme les exceptions métier en réponses JSON propres.

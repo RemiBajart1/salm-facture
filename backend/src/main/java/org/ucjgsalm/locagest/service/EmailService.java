@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.ses.model.*;
 import jakarta.mail.Session;
 import jakarta.mail.internet.*;
 import jakarta.activation.*;
+import jakarta.mail.util.ByteArrayDataSource;
 import java.io.ByteArrayOutputStream;
 import java.util.Properties;
 import org.ucjgsalm.locagest.domain.*;
