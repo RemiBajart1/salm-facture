@@ -40,15 +40,18 @@ jobs:
   frontend-build:
     name: Frontend - Build & Test
     runs-on: ubuntu-latest
-    if: hashFiles('frontend/package.json') != ''
     defaults:
       run:
         working-directory: frontend
-
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check frontend exists
+        id: check
+        run: echo "exists=$(test -f frontend/package.json && echo true || echo false)" >> $GITHUB_OUTPUT
+
       - name: Setup Node
+        if: steps.check.outputs.exists == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -56,10 +59,13 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
+        if: steps.check.outputs.exists == 'true'
         run: npm ci
 
       - name: Build
+        if: steps.check.outputs.exists == 'true'
         run: npm run build
 
       - name: Test
+        if: steps.check.outputs.exists == 'true'
         run: npm test -- --watchAll=false
