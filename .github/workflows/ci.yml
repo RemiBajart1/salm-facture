@@ -40,9 +40,6 @@ jobs:
   frontend-build:
     name: Frontend - Build & Test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
 
@@ -61,11 +58,14 @@ jobs:
       - name: Install dependencies
         if: steps.check.outputs.exists == 'true'
         run: npm ci
+        working-directory: frontend
 
       - name: Build
         if: steps.check.outputs.exists == 'true'
         run: npm run build
+        working-directory: frontend
 
       - name: Test
         if: steps.check.outputs.exists == 'true'
         run: npm test -- --watchAll=false
+        working-directory: frontend
