@@ -126,6 +126,47 @@ public class FactureService {
     }
 
     /**
+     * Renvoie la facture par email pour un séjour.
+     * Réutilise le PDF existant en S3 si disponible, sinon le régénère et l'upload.
+     *
+     * @param sejourId identifiant du séjour
+     * @param userId   identifiant Cognito de l'appelant
+     * @throws NoSuchElementException si le séjour, la facture ou le locataire est introuvable
+     * @throws IllegalStateException  si aucune facture n'existe pour ce séjour
+     */
+    public void renvoyer(UUID sejourId, String userId) throws Exception {
+        log.info("Renvoi facture pour séjour={} par {}", sejourId, userId);
+
+        var sejour = sejourRepo.findById(sejourId)
+            .orElseThrow(() -> new NoSuchElementException("Séjour " + sejourId + " introuvable"));
+
+        var facture = factureRepo.findBySejourId(sejourId)
+            .orElseThrow(() -> new IllegalStateException(
+                "Aucune facture pour le séjour " + sejourId));
+
+        var locataire = locataireRepo.findById(sejour.locataireId())
+            .orElseThrow(() -> new NoSuchElementException(
+                "Locataire " + sejour.locataireId() + " introuvable"));
+
+        byte[] pdfBytes;
+        if (facture.pdfS3Key() != null && s3.exists(facture.pdfS3Key())) {
+            pdfBytes = s3.downloadPdf(facture.pdfS3Key());
+            log.debug("PDF existant réutilisé : {}", facture.pdfS3Key());
+        } else {
+            var toutes = ligneRepo.findBySejourId(sejourId);
+            pdfBytes  = pdf.generer(facture, sejour, toutes, config.getAll());
+            String s3Key = s3.uploadPdf(pdfBytes, facture.numero(), sejour.dateArrivee().getYear());
+            factureRepo.updatePdfKey(facture.id(), s3Key);
+            log.debug("PDF régénéré et uploadé : {}", s3Key);
+        }
+
+        String emailResp = config.get("email_resp_location").orElse("");
+        email.envoyerFacture(facture, sejour, locataire.email(), pdfBytes, emailResp);
+        factureRepo.marquerEmailEnvoye(facture.id());
+        log.info("Facture {} renvoyée à {}", facture.numero(), locataire.email());
+    }
+
+    /**
      * Supprime les anciennes lignes calculées (HEBERGEMENT/ENERGIE/TAXE) et insère les nouvelles.
      * Appelée dans un contexte {@code @Transactional} : toutes les opérations partagent la même transaction.
      */

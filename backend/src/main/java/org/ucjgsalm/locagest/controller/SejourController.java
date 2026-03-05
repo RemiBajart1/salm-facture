@@ -58,14 +58,26 @@ public class SejourController {
         return HttpResponse.ok(toResponse(sejour.get()));
     }
 
-    /** Liste les séjours filtrés par statut (défaut : PLANIFIE). */
+    /**
+     * Liste les séjours filtrés par statut, avec pagination.
+     *
+     * @param statut statut cible (défaut : PLANIFIE)
+     * @param page   numéro de page 0-based (défaut : 0)
+     * @param size   taille de page (défaut : 20)
+     */
     @Get
     @Secured({"resp_location", "tresorier"})
-    public List<SejourResponse> list(
-            @QueryValue(defaultValue = "PLANIFIE") String statut) throws Exception {
-        log.debug("Listing séjours avec statut={}", statut);
-        return sejourService.listByStatut(StatutSejour.valueOf(statut.toUpperCase()))
-            .stream().map(this::toResponse).toList();
+    public PagedResponse<SejourResponse> list(
+            @QueryValue(defaultValue = "PLANIFIE") String statut,
+            @QueryValue(defaultValue = "0")        int page,
+            @QueryValue(defaultValue = "20")       int size) throws Exception {
+        log.debug("Listing séjours statut={} page={} size={}", statut, page, size);
+        var statutEnum  = StatutSejour.valueOf(statut.toUpperCase());
+        long total      = sejourService.countByStatut(statutEnum);
+        var content     = sejourService.listByStatutPagine(statutEnum, page, size)
+                            .stream().map(this::toResponse).toList();
+        int totalPages  = size > 0 ? (int) Math.ceil((double) total / size) : 0;
+        return new PagedResponse<>(content, page, size, total, totalPages);
     }
 
     /** Retourne le détail complet d'un séjour avec ses catégories. */
@@ -180,6 +192,19 @@ public class SejourController {
         var facture = factureService.generer(id, req.envoyer(), userId(auth));
         log.info("Facture {} générée (statut={})", facture.numero(), facture.statut());
         return toFactureResponse(facture);
+    }
+
+    /**
+     * Renvoie la facture du séjour par email.
+     * Réutilise le PDF S3 existant si disponible, sinon le régénère.
+     * Erreur 404 si le séjour ou la facture n'existent pas.
+     */
+    @Post("/{id}/facture/renvoyer")
+    @Secured({"resp_location", "tresorier"})
+    @Status(HttpStatus.NO_CONTENT)
+    public void renvoyerFacture(UUID id, Authentication auth) throws Exception {
+        log.info("Renvoi facture séjour={} par {}", id, userId(auth));
+        factureService.renvoyer(id, userId(auth));
     }
 
     /** Retourne la facture d'un séjour, avec URL présignée S3 du PDF si disponible. */

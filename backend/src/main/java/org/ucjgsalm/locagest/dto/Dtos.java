@@ -235,6 +235,33 @@ public record ConfigSiteRequest(
 ) {}
 
 // ═════════════════════════════════════════════════════════════════════════════
+// LOCATAIRE
+// ═════════════════════════════════════════════════════════════════════════════
+
+@Serdeable
+public record LocataireResponse(
+    UUID           id,
+    String         nom,
+    String         email,
+    String         telephone,
+    String         adresse,
+    OffsetDateTime createdAt
+) {}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PAGINATION
+// ═════════════════════════════════════════════════════════════════════════════
+
+@Serdeable
+public record PagedResponse<T>(
+    List<T> content,
+    int     page,
+    int     size,
+    long    totalElements,
+    int     totalPages
+) {}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // ERREURS
 // ═════════════════════════════════════════════════════════════════════════════
 

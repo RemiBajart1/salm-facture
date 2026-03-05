@@ -128,6 +128,22 @@ public class SejourService {
         return sejourRepo.findByStatut(statut);
     }
 
+    /**
+     * Liste les séjours filtrés par statut avec pagination.
+     *
+     * @param statut statut cible
+     * @param page   numéro de page (0-based)
+     * @param size   taille de page
+     */
+    public List<Sejour> listByStatutPagine(StatutSejour statut, int page, int size) throws Exception {
+        return sejourRepo.findByStatutPagine(statut, page, size);
+    }
+
+    /** Retourne le nombre total de séjours pour un statut donné. */
+    public long countByStatut(StatutSejour statut) throws Exception {
+        return sejourRepo.countByStatut(statut);
+    }
+
     /** Retourne les catégories de tarifs d'un séjour. */
     public List<SejourCategorie> categories(UUID sejourId) throws Exception {
         return catRepo.findBySejourId(sejourId);

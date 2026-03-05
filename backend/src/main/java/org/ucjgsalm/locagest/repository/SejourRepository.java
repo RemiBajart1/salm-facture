@@ -61,6 +61,31 @@ public class SejourRepository {
         }
     }
 
+    public List<Sejour> findByStatutPagine(StatutSejour statut, int page, int size) throws SQLException {
+        String sql = """
+            SELECT * FROM sejour
+            WHERE statut = ?::statut_sejour
+            ORDER BY date_arrivee
+            LIMIT ? OFFSET ?
+            """;
+        try (var conn = ds.getConnection(); var ps = conn.prepareStatement(sql)) {
+            ps.setString(1, statut.name());
+            ps.setInt(2, size);
+            ps.setInt(3, page * size);
+            return mapAll(ps.executeQuery());
+        }
+    }
+
+    public long countByStatut(StatutSejour statut) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM sejour WHERE statut = ?::statut_sejour";
+        try (var conn = ds.getConnection(); var ps = conn.prepareStatement(sql)) {
+            ps.setString(1, statut.name());
+            var rs = ps.executeQuery();
+            rs.next();
+            return rs.getLong(1);
+        }
+    }
+
     // ── Écriture ───────────────────────────────────────────────────────────
 
     public Sejour insert(Sejour s) throws SQLException {

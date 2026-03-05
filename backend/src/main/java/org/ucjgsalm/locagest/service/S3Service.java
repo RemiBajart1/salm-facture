@@ -9,6 +9,8 @@ import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 
 /**
@@ -88,6 +90,21 @@ public class S3Service {
             .getObjectRequest(r -> r.bucket(bucket).key(s3Key))
             .build();
         return presigner.presignGetObject(request).url().toString();
+    }
+
+    /**
+     * Télécharge un fichier depuis S3 et retourne son contenu en bytes.
+     *
+     * @param s3Key clé S3 du fichier
+     * @return contenu du fichier
+     */
+    public byte[] downloadPdf(String s3Key) {
+        try (var response = s3.getObject(
+                GetObjectRequest.builder().bucket(bucket).key(s3Key).build())) {
+            return response.readAllBytes();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Erreur lecture S3 : " + s3Key, e);
+        }
     }
 
     /**
