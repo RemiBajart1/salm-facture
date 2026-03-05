@@ -1,5 +1,15 @@
 # CLAUDE.md — LocaGest
 Il s'agit d'un projet d'un systeme de facturation pour la maison de vacances UCJG Salm.
+L'application est pour simplifier le travail des gardiens de la maison, qui ne sont pas comptables ou informaticiens, et pour éviter les erreurs de calculs ou d'oublis d'items facturables.
+Egalement elle permet au trésorier d'avoir des factures et un process standardisé.
+
+La maison est loué essentiellement les week-ends dans l'année ; 
+une 20aine de gardiens se partagent ces séjours
+Les séjours sont créés par le responsable location, qui sélectionne les catégories de tarifs et effectifs prévus.
+Le gardien y indiquent les valeurs réelles (nombres de nuitées), les suppléments (casse de vaisselle), pour générer la facture finale.
+
+L'application doit être simple, rapide et intuitive pour les gardiens, qui ne sont pas à l'aise avec les outils informatiques.
+
 
 
 ## Fichiers de référence

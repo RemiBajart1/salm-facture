@@ -17,6 +17,38 @@ Les rôles sont gérés par **AWS Cognito** (groupes : `tresorier`, `resp_locati
 
 ---
 
+
+## Règles critiques à ne jamais violer
+
+### 1. Snapshots — règle d'or
+
+**Ne jamais rejoindre `tarif_personne` pour calculer une facture.**
+Toujours lire `prix_nuit_snapshot` et `nom_snapshot` depuis `sejour_categorie`.
+
+### 2. Immuabilité des factures
+
+Une facture `EMISE` ou `PAYEE` ne peut pas être recalculée → `409 CONFLICT`.
+Seule une facture `BROUILLON` peut être regénérée.
+
+### 3. Ligne HEBERGEMENT — forfait minimum par nuit (défaut 40 personnes)
+
+Le calcul produit **une seule ligne** `HEBERGEMENT`. Les catégories de tarifs s'appliquent normalement ; le forfait est un **plancher par nuit**.
+
+```
+Pour chaque nuit :
+  montant_reel = Σ (nb_reelles_cat × prix_snapshot_cat)
+  total_reel   = Σ nb_reelles_cat
+
+  si total_reel >= min_forfait  →  montant_nuit = montant_reel
+  si total_reel < min_forfait   →  montant_nuit = min_forfait × prix_moyen_pondéré
+
+montant_total = Σ montant_nuit
+```
+
+- Le `min_personnes_total` est configurable par séjour (défaut : 40). Ex : 30 pour un groupe membres.
+- Voir `instructions/specs-fonctionnelles.md` §4.1 pour les exemples complets.
+ ---
+
 ## Règles de gestion
 
 ### 4.1 Hébergement — forfait minimum 40 personnes par nuit
