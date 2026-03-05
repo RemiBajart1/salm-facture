@@ -11,7 +11,7 @@ import org.ucjgsalm.locagest.domain.enums.*;
 public class ConfigItemRepository {
 
     private final DataSource ds;
-    ConfigItemRepository(DataSource ds) { this.ds = ds; }
+    public ConfigItemRepository(DataSource ds) { this.ds = ds; }
 
     public Optional<ConfigItem> findById(UUID id) throws SQLException {
         try (var conn = ds.getConnection();

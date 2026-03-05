@@ -10,7 +10,7 @@ import org.ucjgsalm.locagest.domain.*;
 public class TarifPersonneRepository {
 
     private final DataSource ds;
-    TarifPersonneRepository(DataSource ds) { this.ds = ds; }
+    public TarifPersonneRepository(DataSource ds) { this.ds = ds; }
 
     public List<TarifPersonne> findActifs() throws SQLException {
         return findAll("WHERE actif = TRUE");
