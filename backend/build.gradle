@@ -37,6 +37,8 @@ dependencies {
 
     // Database
     implementation 'io.micronaut.flyway:micronaut-flyway'
+    // Flyway 10.x a séparé le support par SGBD dans des modules distincts
+    implementation 'org.flywaydb:flyway-database-postgresql:10.17.1'
     implementation 'io.micronaut.sql:micronaut-jdbc-hikari'
     runtimeOnly     'org.postgresql:postgresql:42.7.3'
     implementation 'jakarta.transaction:jakarta.transaction-api'
@@ -64,14 +66,19 @@ dependencies {
     // YAML support (application.yml)
     runtimeOnly 'org.yaml:snakeyaml'
 
-    // Tests
+    // Tests unitaires
     testImplementation 'io.micronaut.test:micronaut-test-junit5'
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
     testRuntimeOnly    'org.junit.jupiter:junit-jupiter-engine'
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.mockito:mockito-core:5.14.2'
-    testRuntimeOnly    'com.h2database:h2:2.2.224'
+
+    // Tests d'intégration (Testcontainers PostgreSQL)
+    testImplementation platform('org.testcontainers:testcontainers-bom:1.20.4')
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.postgresql:postgresql:42.7.3'
 }
 
 micronaut {

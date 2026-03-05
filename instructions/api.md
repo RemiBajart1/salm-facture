@@ -7,7 +7,7 @@
 | Méthode | Route | Rôles | Description |
 |---|---|---|---|
 | `GET` | `/api/v1/sejours/current` | tous | Séjour EN_COURS — accueil gardien |
-| `GET` | `/api/v1/sejours?statut=PLANIFIE` | resp, trésorier | Liste par statut |
+| `GET` | `/api/v1/sejours?statut=PLANIFIE&page=0&size=20` | resp, trésorier | Liste paginée par statut → `PagedResponse<SejourResponse>` |
 | `POST` | `/api/v1/sejours` | resp, trésorier | Créer un séjour avec catégories |
 | `GET` | `/api/v1/sejours/{id}` | tous | Détail complet + catégories |
 | `PATCH` | `/api/v1/sejours/{id}/horaires` | gardien, resp | Saisir horaires réels |
@@ -16,8 +16,15 @@
 | `GET` | `/api/v1/sejours/{id}/lignes` | tous | Toutes les lignes du séjour |
 | `POST` | `/api/v1/sejours/{id}/facture` | tous | Générer (+ envoyer) la facture |
 | `GET` | `/api/v1/sejours/{id}/facture` | tous | Lire la facture |
+| `POST` | `/api/v1/sejours/{id}/facture/renvoyer` | resp, trésorier | Renvoyer la facture par email (réutilise le PDF S3 si disponible) |
 | `POST` | `/api/v1/sejours/{id}/paiements` | gardien, resp | Enregistrer un paiement |
 | `GET` | `/api/v1/sejours/{id}/paiements` | tous | Lister les paiements |
+
+### Locataires (`/api/v1/locataires`)
+
+| Méthode | Route | Rôles | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/locataires?q=dupont` | resp, trésorier | Recherche par nom ou email (ILIKE, max 20 résultats) |
 
 ### Administration (`/api/v1/admin`)
 

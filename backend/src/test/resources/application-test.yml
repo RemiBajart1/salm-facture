@@ -1,0 +1,38 @@
+# Configuration Micronaut pour les tests d'intégration (environnement "test")
+# Les propriétés datasource sont surchargées dynamiquement par TestPropertyProvider (Testcontainers).
+micronaut:
+  security:
+    enabled: false   # JWT désactivé : pas de Cognito en test
+    token:
+      jwt:
+        enabled: false
+        signatures:
+          jwks:
+            cognito:
+              url: "http://localhost/test-not-used"  # écrase ${COGNITO_JWKS_URL}
+
+# Valeurs factices remplacées par TestPropertyProvider au démarrage
+datasources:
+  default:
+    url:      "jdbc:postgresql://localhost:5432/locagest_placeholder"
+    username: "test"
+    password: "test"
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle:      1
+
+# Valeurs factices pour éviter l'instanciation des clients AWS
+# (S3Service / EmailService sont remplacés par des @MockBean dans les TI)
+aws:
+  region: eu-west-3
+  s3:
+    bucket: test-bucket
+  ses:
+    from-address: test@test.com
+
+logger:
+  levels:
+    org.ucjgsalm.locagest: DEBUG
+    org.testcontainers:    INFO
+    com.zaxxer.hikari:     WARN
