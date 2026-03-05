@@ -7,6 +7,10 @@ plugins {
 version = '1.0.0'
 group   = 'org.ucjgsalm.locagest'
 
+application {
+    mainClass = 'io.micronaut.function.aws.runtime.MicronautLambdaRuntime'
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
