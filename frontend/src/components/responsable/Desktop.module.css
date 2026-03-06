@@ -1,0 +1,446 @@
+/* ── Styles partagés interfaces desktop (Responsable + Trésorier) ── */
+
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px 16px;
+}
+
+/* ── Cartes desktop ── */
+.dcard {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+
+.dcardTitle {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--forest);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dcardTitleAdd {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--forest);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: none;
+}
+
+.dcardTitleAdd.teal {
+  background: var(--teal);
+}
+
+/* ── Formulaires desktop ── */
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.formGrid.cols3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.formGrid.cols4 {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+.dformGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dformLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.dformInput {
+  background: var(--cream);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--text);
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.dformInput:focus {
+  border-color: var(--forest);
+  background: white;
+}
+
+textarea.dformInput {
+  resize: vertical;
+  min-height: 70px;
+}
+
+/* ── Tables ── */
+.tableWrap {
+  overflow-x: auto;
+  margin: 12px 0 0;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px rgba(42, 92, 63, 0.1);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: white;
+}
+
+.table thead tr {
+  background: var(--forest);
+}
+
+.table thead th {
+  color: white;
+  text-align: left;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid var(--border);
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.table tbody tr:hover td {
+  background: var(--cream);
+}
+
+.table td {
+  padding: 12px 14px;
+  vertical-align: middle;
+}
+
+.priceCell {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--forest);
+}
+
+.tblEdit {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--text-mid);
+  font-family: 'Source Sans 3', sans-serif;
+}
+
+.tblDel {
+  background: none;
+  border: 1px solid rgba(192, 57, 43, 0.25);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--red);
+}
+
+.actifBadge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.actifBadgeOn {
+  background: var(--green-dim);
+  color: var(--forest);
+}
+
+.actifBadgeOff {
+  background: var(--red-dim);
+  color: var(--red);
+}
+
+.dragHandle {
+  color: var(--text-muted);
+  cursor: grab;
+  font-size: 16px;
+  padding: 0 4px;
+}
+
+/* ── Nouveau tarif inline form ── */
+.tarifNewForm {
+  background: rgba(26, 122, 122, 0.06);
+  border: 1.5px dashed rgba(26, 122, 122, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 16px;
+}
+
+.tnfLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.tnfInput {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+}
+
+.tnfInput:focus {
+  border-color: var(--teal);
+}
+
+.tnfBtn {
+  background: var(--teal);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 11px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── Config site table ── */
+.configTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: white;
+}
+
+.configTable tr {
+  border-bottom: 1px solid var(--border);
+}
+
+.configTable tr:last-child {
+  border-bottom: none;
+}
+
+.configTable td {
+  padding: 13px 14px;
+  vertical-align: middle;
+}
+
+.configTable td:first-child {
+  color: var(--text-muted);
+  font-size: 12px;
+  width: 40%;
+}
+
+.configTable td:nth-child(2) {
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+
+.configTable td:last-child {
+  width: 80px;
+  text-align: right;
+}
+
+/* ── Stats ── */
+.statRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.statCard {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.statVal {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--forest);
+  margin-bottom: 4px;
+}
+
+.statLbl {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── Info boxes ── */
+.infoBox {
+  background: var(--green-dim);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--forest-lt);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 13px;
+  color: var(--forest);
+  margin-bottom: 16px;
+}
+
+.tealBox {
+  background: var(--teal-dim);
+  border: 1px solid rgba(26, 122, 122, 0.2);
+  border-left: 3px solid var(--teal);
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 13px;
+  color: var(--teal);
+  margin-bottom: 16px;
+}
+
+.warnBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--warm-dim);
+  color: var(--warm);
+  border: 1px solid rgba(200, 121, 58, 0.3);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+/* ── Lignes libres à confirmer ── */
+.ligneLibreItem {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--warm);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ligneLibreActions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btnValider {
+  background: var(--forest);
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+}
+
+.btnRejeter {
+  background: var(--red-dim);
+  border: 1px solid rgba(192, 57, 43, 0.2);
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--red);
+  cursor: pointer;
+}
+
+/* ── Résumé catégories tableau ── */
+.summaryRow {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.summaryChip {
+  background: var(--cream);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.summaryChipLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.summaryChipValue {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--forest);
+}
+
+.summaryChipSub {
+  font-size: 11px;
+  color: var(--forest-lt);
+}
+
+/* ── Actions formulaire ── */
+.formActions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.ibanBox {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ibanVal {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-mid);
+  letter-spacing: 0.05em;
+}

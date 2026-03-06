@@ -25,6 +25,12 @@ hs_err_pid*
 replay_pid*
 /claude.sh
 
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env*.local
+
 # IntelliJ IDEA
 .idea/
 *.iml
