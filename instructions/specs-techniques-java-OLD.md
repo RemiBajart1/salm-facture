@@ -190,7 +190,6 @@ Utilise des records dès que possible pour les Dtos et modèles.
 - Tests end-to-end avec Cypress pour les scénarios principaux (ex: création séjour → génération facture → encaissement paiement)
 - Respecte les règles d'accessibilité (ex: labels pour les champs de formulaire, contrastes de couleurs, navigation clavier)
 - Vérifie systématiquement lors de l'implémentation que les variables récupérées et envoyées par le front correspondent (nom + format) à celles attendues par le backend (ex: `tarifForfaitCategorieId` doit être un entier correspondant à une catégorie existante, `dateDebut` doit être au format ISO 8601, etc.)
-     
 
 Les erreurs doivent apparaitre clairement si l'utilisateur peut y faire quelquechose. Si c'est une erreur technique (ex: échec de l'appel API), un message générique doit être affiché ("Une erreur est survenue, veuillez réessayer plus tard") et le détail de l'erreur doit être loggé côté client pour le debugging (ex: `console.error(error)`).
 
