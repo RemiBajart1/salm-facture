@@ -32,6 +32,13 @@ salm-facture/
 
 Deux modes disponibles : **frontend seul (mocké)** ou **frontend + backend connecté**.
 
+**Raccourcis :**
+
+```bash
+./dev-frontend.sh   # frontend seul (Node auto, mocks MSW)
+./dev-full.sh       # backend Micronaut + frontend connecté
+```
+
 ---
 
 ### Mode 1 — Frontend seul (sans backend)
