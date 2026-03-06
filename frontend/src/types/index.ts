@@ -59,6 +59,7 @@ export interface Sejour {
   heureArriveeReelle?: string | null
   heureDepartReelle?: string | null
   minPersonnesTotal: number
+  tarifForfaitCategorieId?: number | null
   categories: SejourCategorie[]
   options?: string
   modePaiement?: ModePaiement
@@ -135,6 +136,7 @@ export interface CreateSejourRequest {
   heureArriveePrevue?: string
   heureDepartPrevu?: string
   minPersonnesTotal?: number
+  tarifForfaitCategorieId?: number
   modePaiement?: ModePaiement
   dateLimitePaiement?: string
   options?: string
