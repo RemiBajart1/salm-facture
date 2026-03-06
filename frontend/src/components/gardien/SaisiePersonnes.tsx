@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import styles from './Gardien.module.css'
 import { NumberInput } from '../common/NumberInput'
 import { ErrorBanner } from '../common/ErrorBanner'
@@ -21,10 +21,13 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
   const [saveError, setSaveError] = useState<string | null>(null)
 
   // Initialise les effectifs avec les valeurs prévues (si pas encore saisis)
-  const getEffectif = (catId: number, effectifPrevu: number) => {
-    if (effectifs[catId] !== undefined) return effectifs[catId]
-    return effectifPrevu
-  }
+  const getEffectif = useCallback(
+    (catId: number, effectifPrevu: number) => {
+      if (effectifs[catId] !== undefined) return effectifs[catId]
+      return effectifPrevu
+    },
+    [effectifs],
+  )
 
   const prixForfaitReference = useMemo(() => {
     if (!sejour) return 0
@@ -41,8 +44,7 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
       effectifReel: getEffectif(c.id, c.effectifPrevu),
     }))
     return calculerHebergement(catsAvecReel, sejour.nbNuits, sejour.minPersonnesTotal, prixForfaitReference)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sejour, effectifs, prixForfaitReference])
+  }, [sejour, getEffectif, prixForfaitReference])
 
   const taxeSejour = useMemo(() => {
     if (!sejour) return 0
