@@ -26,15 +26,23 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
     return effectifPrevu
   }
 
+  const prixForfaitReference = useMemo(() => {
+    if (!sejour) return 0
+    const catRef = sejour.tarifForfaitCategorieId
+      ? sejour.categories.find((c) => c.id === sejour.tarifForfaitCategorieId)
+      : sejour.categories[0]
+    return catRef?.prixNuitSnapshot ?? sejour.categories[0]?.prixNuitSnapshot ?? 0
+  }, [sejour])
+
   const calcul = useMemo(() => {
     if (!sejour) return null
     const catsAvecReel = sejour.categories.map((c) => ({
       ...c,
       effectifReel: getEffectif(c.id, c.effectifPrevu),
     }))
-    return calculerHebergement(catsAvecReel, sejour.nbNuits, sejour.minPersonnesTotal)
+    return calculerHebergement(catsAvecReel, sejour.nbNuits, sejour.minPersonnesTotal, prixForfaitReference)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sejour, effectifs])
+  }, [sejour, effectifs, prixForfaitReference])
 
   const taxeSejour = useMemo(() => {
     if (!sejour) return 0
@@ -160,7 +168,7 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
                 </div>
                 <div className={`${styles.recapLine} ${styles.recapLineForfait}`}>
                   <span className={styles.recapLbl}>
-                    Complément min. ({calcul.minPersonnesTotal - calcul.totalReelParNuit} × prix moyen × {sejour.nbNuits} nuits)
+                    Forfait min. {calcul.minPersonnesTotal} × {formatEuros(prixForfaitReference)} × {sejour.nbNuits} nuits
                   </span>
                   <span className={styles.recapVal}>
                     {formatEuros(calcul.montantTotal - sejour.categories.reduce(

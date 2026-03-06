@@ -50,6 +50,7 @@ const mockSejourCurrent: Sejour = {
   heureArriveeReelle: '15:30',
   heureDepartReelle: null,
   minPersonnesTotal: 40,
+  tarifForfaitCategorieId: 1,
   categories: [
     {
       id: 1,
@@ -84,6 +85,7 @@ const mockSejours: Sejour[] = [
     heureArriveePrevue: '16:00',
     heureDepartPrevu: '10:00',
     minPersonnesTotal: 40,
+    tarifForfaitCategorieId: 3,
     categories: [
       {
         id: 3,
@@ -108,6 +110,7 @@ const mockSejours: Sejour[] = [
     heureArriveeReelle: '14:15',
     heureDepartReelle: '11:00',
     minPersonnesTotal: 40,
+    tarifForfaitCategorieId: 4,
     categories: [
       {
         id: 4,
@@ -346,6 +349,7 @@ export const handlers = [
       dateDepart: String(body.dateDepart ?? ''),
       nbNuits: 1,
       minPersonnesTotal: Number(body.minPersonnesTotal ?? 40),
+      tarifForfaitCategorieId: body.tarifForfaitCategorieId as number | undefined,
       categories: [],
       modePaiement: (body.modePaiement as 'CHEQUE' | 'VIREMENT') ?? 'CHEQUE',
     }

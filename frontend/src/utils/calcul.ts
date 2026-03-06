@@ -9,12 +9,14 @@ import type { SejourCategorie, CalculHebergementResult } from '../types'
 /**
  * Calcule le montant hébergement en temps réel (affichage G2).
  * Règle : forfait minimum si total_reel < min_personnes_total.
+ * Le forfait = min_personnes_total × prixForfaitReference (catégorie choisie par le resp. location).
  * §4.1 specs-fonctionnelles.md
  */
 export function calculerHebergement(
   categories: SejourCategorie[],
   nbNuits: number,
   minPersonnesTotal: number,
+  prixForfaitReference: number,
 ): CalculHebergementResult {
   const categoriesAvecReel = categories.filter(
     (c) => c.effectifReel !== null && c.effectifReel !== undefined,
@@ -52,10 +54,8 @@ export function calculerHebergement(
     if (totalReel >= minPersonnesTotal) {
       montantFacture = montantReel
     } else {
-      // Prix moyen pondéré
-      const prixMoyen =
-        totalReel > 0 ? montantReel / totalReel : categories[0]?.prixNuitSnapshot ?? 0
-      montantFacture = minPersonnesTotal * prixMoyen
+      // Forfait : min_personnes_total × prix de la catégorie de référence
+      montantFacture = minPersonnesTotal * prixForfaitReference
       forfaitCetteNuit = true
       forfaitApplique = true
     }

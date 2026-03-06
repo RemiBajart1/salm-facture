@@ -33,6 +33,7 @@ export function NouveauSejour() {
   // Catégories
   const [categories, setCategories] = useState<CategorieSelectionnee[]>([])
   const [minPersonnes, setMinPersonnes] = useState(40)
+  const [tarifForfaitCategorieId, setTarifForfaitCategorieId] = useState<number | null>(null)
 
   // Paiement
   const [modePaiement, setModePaiement] = useState<ModePaiement>('CHEQUE')
@@ -87,14 +88,20 @@ export function NouveauSejour() {
 
   const estimHeberg = useMemo(() => {
     if (nbNuits === 0) return 0
-    return categories
+    const montantReel = categories
       .filter((c) => c.active)
       .reduce((s, c) => {
         const tarif = tarifs.find((t) => t.id === c.tarifPersonneId)
         if (!tarif) return s
         return s + c.effectifPrevu * tarif.prixNuit * nbNuits
       }, 0)
-  }, [categories, tarifs, nbNuits])
+    // Application du forfait minimum
+    if (totalEffectif < minPersonnes && tarifForfaitCategorieId) {
+      const tarifRef = tarifs.find((t) => t.id === tarifForfaitCategorieId)
+      if (tarifRef) return minPersonnes * tarifRef.prixNuit * nbNuits
+    }
+    return montantReel
+  }, [categories, tarifs, nbNuits, totalEffectif, minPersonnes, tarifForfaitCategorieId])
 
   const handleSelectLocataire = (l: Locataire) => {
     setLocataireNom(l.nom)
@@ -106,13 +113,21 @@ export function NouveauSejour() {
   }
 
   const handleCategorieToggle = (idx: number) => {
-    setCategories((prev) =>
-      prev.map((c, i) =>
+    setCategories((prev) => {
+      const next = prev.map((c, i) =>
         i === idx
           ? { ...c, active: !c.active, effectifPrevu: !c.active ? c.effectifPrevu : 0 }
           : c,
-      ),
-    )
+      )
+      // Si la catégorie de référence est désactivée, on la réinitialise
+      const activeTarifIds = next
+        .filter((c) => c.active)
+        .map((c) => c.tarifPersonneId)
+      setTarifForfaitCategorieId((prev) =>
+        prev && activeTarifIds.includes(prev) ? prev : activeTarifIds[0] ?? null,
+      )
+      return next
+    })
   }
 
   const handleEffectifChange = (idx: number, value: string) => {
@@ -140,6 +155,7 @@ export function NouveauSejour() {
         heureArriveePrevue: heureArrivee || undefined,
         heureDepartPrevu: heureDepart || undefined,
         minPersonnesTotal: minPersonnes,
+        tarifForfaitCategorieId: tarifForfaitCategorieId ?? undefined,
         modePaiement,
         dateLimitePaiement: dateLimitePaiement || undefined,
         options: options || undefined,
@@ -299,6 +315,7 @@ export function NouveauSejour() {
                 <th>Prix / pers / nuit</th>
                 <th>Effectif prévu</th>
                 <th>Sous-total estimé ({nbNuits} nuits)</th>
+                <th title="Catégorie utilisée comme tarif de référence pour le forfait minimum">Réf. forfait</th>
               </tr>
             </thead>
             <tbody>
@@ -337,6 +354,17 @@ export function NouveauSejour() {
                       {sousTot !== null && cat.effectifPrevu > 0
                         ? `${cat.effectifPrevu} × ${tarif.prixNuit} × ${nbNuits} = ${formatEuros(sousTot)}`
                         : '—'}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <input
+                        type="radio"
+                        name="tarifForfaitRef"
+                        checked={tarifForfaitCategorieId === tarif.id}
+                        onChange={() => setTarifForfaitCategorieId(tarif.id)}
+                        disabled={!cat.active}
+                        style={{ accentColor: 'var(--teal)', width: 16, height: 16 }}
+                        aria-label={`Référence forfait ${tarif.nom}`}
+                      />
                     </td>
                   </tr>
                 )
