@@ -38,9 +38,17 @@ Deux modes disponibles : **frontend seul (mocké)** ou **frontend + backend conn
 
 Le frontend tourne entièrement sans backend grâce à **MSW** (Mock Service Worker) qui intercepte tous les appels API avec des données fictives réalistes. C'est le mode par défaut.
 
-**Prérequis :** Node 20+ (le projet utilise [fnm](https://github.com/Schniz/fnm))
+**Prérequis :** Node 20 (le projet utilise [fnm](https://github.com/Schniz/fnm))
 
 ```bash
+# Installer fnm (si pas déjà fait)
+curl -fsSL https://fnm.vercel.app/install | bash
+
+# Installer Node 20 et l'activer
+fnm install 20
+fnm use 20                   # .node-version et .nvmrc sont déjà présents dans frontend/
+
+# Lancer le frontend
 cd frontend
 cp .env.example .env.local
 npm install
@@ -67,7 +75,7 @@ npm run coverage             # rapport de couverture (seuil : 90%)
 
 ### Mode 2 — Frontend + backend connecté
 
-**Prérequis :** Node 20+, Java 25, Docker
+**Prérequis :** Node 20 (voir ci-dessus), Java 25, Docker
 
 **1. Lancer le backend :**
 
