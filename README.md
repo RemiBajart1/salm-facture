@@ -87,11 +87,29 @@ npm run coverage             # rapport de couverture (seuil : 90%)
 **1. Lancer le backend :**
 
 ```bash
+# Démarrer PostgreSQL local (première fois)
+docker run -d --name locagest-pg \
+  -e POSTGRES_DB=locagest \
+  -e POSTGRES_USER=locagest_app \
+  -e POSTGRES_PASSWORD=locagest \
+  -p 5432:5432 postgres:16
+
+# Lancer Micronaut en mode HTTP (Netty, port 8080)
+# La sécurité JWT/Cognito est désactivée (application-local.yml)
 cd backend
-./gradlew run                # démarre Micronaut sur http://localhost:8080
+./gradlew runLocal
 ```
 
-Ou via SAM CLI (Lambda en local) :
+Variables d'environnement facultatives (des valeurs par défaut sont fournies) :
+
+```bash
+export DB_URL=jdbc:postgresql://localhost:5432/locagest
+export DB_USER=locagest_app
+export DB_PASSWORD=locagest
+./gradlew runLocal
+```
+
+Ou via SAM CLI pour tester le comportement Lambda exact :
 
 ```bash
 cd backend
@@ -99,7 +117,7 @@ cd backend
 sam local start-api --template template.yaml   # http://localhost:3000/api/v1/...
 ```
 
-> SAM local requiert les variables d'environnement Aurora (voir [`instructions/api.md`](instructions/api.md)).
+> SAM local requiert toutes les variables d'environnement (voir [`instructions/api.md`](instructions/api.md)), dont `COGNITO_JWKS_URL`.
 
 **2. Configurer le frontend pour désactiver MSW :**
 
@@ -126,8 +144,9 @@ npm run dev                  # les appels /api/v1/... sont proxifiés vers le ba
 
 ```bash
 cd backend
+./gradlew runLocal           # HTTP local port 8080 (Netty, JWT désactivé)
 ./gradlew test               # tests unitaires + intégration (Testcontainers PostgreSQL)
-./gradlew shadowJar          # build du fat-jar pour Lambda
+./gradlew shadowJar          # build du fat-jar pour Lambda (mainClass = MicronautLambdaRuntime)
 ```
 
 ---
