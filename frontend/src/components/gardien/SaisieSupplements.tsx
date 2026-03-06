@@ -32,7 +32,7 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [quantites, setQuantites] = useState<Record<number, number>>({})
-  const [ligresLibres, setLignesLibres] = useState<LigneLibre[]>([
+  const [lignesLibres, setLignesLibres] = useState<LigneLibre[]>([
     { description: '', montant: '' },
   ])
   const [saving, setSaving] = useState(false)
@@ -104,7 +104,7 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
         )
 
       // Saisies libres
-      const libresValides = ligresLibres.filter(
+      const libresValides = lignesLibres.filter(
         (l) => l.description.trim() && l.montant.trim(),
       )
       libresValides.forEach((l) => {
@@ -184,7 +184,7 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
               Saisie libre → marquée <strong>« À confirmer »</strong> par le trésorier ou resp.
             </span>
           </div>
-          {ligresLibres.map((ligne, idx) => (
+          {lignesLibres.map((ligne, idx) => (
             <div key={idx} className={styles.card} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel} htmlFor={`libre-desc-${idx}`}>

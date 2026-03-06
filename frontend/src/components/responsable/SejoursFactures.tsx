@@ -75,8 +75,10 @@ export function SejoursFactures() {
               sejours
                 .filter((s) => s.statut === 'TERMINE')
                 .reduce((sum, s) => {
-                  const eff = totalEffectifPrevu(s)
-                  return sum + eff * 14 * s.nbNuits
+                  return sum + s.categories.reduce((catSum, c) => {
+                    const eff = c.effectifReel ?? c.effectifPrevu
+                    return catSum + eff * c.prixNuitSnapshot * s.nbNuits
+                  }, 0)
                 }, 0),
             )}
           </div>
