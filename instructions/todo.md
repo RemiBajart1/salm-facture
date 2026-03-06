@@ -15,9 +15,13 @@
 - le gardien devra saisir des comptes-rendus de séjour : 
   - travaux à prévoir, 
   - réparations urgentes, 
-  - commentaire libre + photos...
-  - Relevés de compteurs (eau, électricité) à l'arrivée et au départ du groupe
-  - Nombre de poubelles sorties (utile au trésorier pour la gestion budgetaire)
+  - commentaire libre 
+  - photos
+  - relevés à l'arrivée et au départ du groupe
+    - Relevés de compteurs (température des chauffe-eau) à l'arrivée et au départ du groupe
+    - Nombre de poubelles sorties (utile au trésorier pour la gestion budgetaire)
+    - Nombre de personnes présentes (automatiquement saisi depuis les effectifs réels, mais le gardien peut le corriger s'il y a des arrivées ou départs en cours de séjour)
+    - Autres champs, le resp. location doit pouvoir gérer ctte liste (ajout/suppression)
 - Checklist d'ouverture et de fermeture de la maison (liste gérée par le resp. location, à cocher par le gardien)
 - Ces comptes-rendus seront visibles dans l'application par les autres gardiens, le responsable location et le trésorier, pour assurer un suivi de l'état de la maison et des travaux nécessaires.
 - visibles par les autres gardiens, le resp. location, le trésorier.

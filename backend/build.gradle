@@ -2,6 +2,7 @@ plugins {
     id 'io.micronaut.application'   version '4.6.2'
     id 'io.micronaut.aot'           version '4.6.2'
     id 'com.gradleup.shadow'        version '9.3.2'
+    id 'jacoco'
 }
 
 version = '1.0.0'
@@ -104,6 +105,60 @@ shadowJar {
     mergeServiceFiles()
 }
 
+// ── Classes exclues du calcul de couverture ────────────────────────────────
+// - Classes générées par Micronaut (introspection AOT, $...$Introspection)
+// - Records de domaine et DTOs : porteurs de données sans logique métier
+// - Couche contrôleur : couche mince de mapping HTTP/JSON, testée via TI API
+// - Adaptateurs infrastructure AWS (S3, SES) et PDF : requièrent des
+//   services externes réels ; remplacés par @MockBean dans les TI
+// - GlobalExceptionHandler : gestionnaire HTTP global, pas de logique métier
+def jacocoExcludes = [
+    '**/$*',                                             // classes Micronaut générées (préfixe $)
+    'org/ucjgsalm/locagest/domain/**',                   // records de domaine
+    'org/ucjgsalm/locagest/dto/**',                      // DTOs (records request/response)
+    'org/ucjgsalm/locagest/controller/**',               // contrôleurs HTTP (mapping pur)
+    'org/ucjgsalm/locagest/util/AwsClientFactory*',      // factory AWS
+    'org/ucjgsalm/locagest/util/GlobalExceptionHandler*',// gestionnaire d'erreurs HTTP global
+    'org/ucjgsalm/locagest/service/S3Service*',          // adaptateur AWS S3
+    'org/ucjgsalm/locagest/service/EmailService*',       // adaptateur AWS SES
+    'org/ucjgsalm/locagest/service/PdfService*',         // génération PDF (sortie binaire)
+]
+
+jacoco {
+    toolVersion = '0.8.13'  // Java 25 support
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required  = true    // pour les outils CI (GitHub Actions, SonarQube…)
+        html.required = true    // rapport lisible : build/reports/jacoco/test/html/
+        csv.required  = false
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: jacocoExcludes)
+        }))
+    }
+}
+
+jacocoTestCoverageVerification {
+    dependsOn test
+    violationRules {
+        rule {
+            // Seuil global : 70 % de lignes couvertes (conforme aux specs TI)
+            limit {
+                counter = 'LINE'
+                value   = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+        }
+    }
+    afterEvaluate {
+        classDirectories.setFrom(jacocoTestReport.classDirectories)
+    }
+}
+
 test {
     useJUnitPlatform()
     // Byte Buddy (Mockito) requiert ces ouvertures pour instrumenter les classes sous Java 21+
@@ -111,4 +166,8 @@ test {
             '--add-opens=java.base/java.lang=ALL-UNNAMED',
             '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
             '-Dnet.bytebuddy.experimental=true'
+    finalizedBy jacocoTestReport   // rapport généré automatiquement après chaque run de tests
 }
+
+// jacocoTestCoverageVerification est inclus dans le cycle 'check' standard
+check.dependsOn jacocoTestCoverageVerification

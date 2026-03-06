@@ -194,3 +194,10 @@ Les erreurs doivent apparaitre clairement si l'utilisateur peut y faire queqleuc
 - Au moins 90% de couverture en TU
 - Les tests E2E doivent couvrir au minimum les cas d'usage "heureux" (ex: création séjour → génération facture → encaissement paiement)
 - Si possible, couvrir aussi les cas d'erreur côté client (ex: saisie incorrecte, échec de l'appel API) avec des tests unitaires et/ou E2E
+                                                                                                                                                 
+
+# Design decisions
+### Pourquoi SQL plutôt que nosql/DynamoDB ?
+
+Le modèle multi-tarifs rend DynamoDB inconfortable : calculer un prix moyen pondéré sur N catégories, gérer le minimum global, produire des agrégats annuels — tout ça se fait naturellement en SQL. Aurora Serverless v2 scale-to-zero entre les séjours (usage ~1/semaine), le coût est comparable.
+
