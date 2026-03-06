@@ -37,7 +37,7 @@ Resources:
     Properties:
       FunctionName: !Sub salm-facture-backend-${Environment}
       Handler: com.salm.facture.Handler::handleRequest
-      CodeUri: target/salm-facture.jar
+      CodeUri: build/libs/salm-facture-1.0.0-all.jar
       Description: salm-facture backend handler
       Policies:
         - S3ReadPolicy:
