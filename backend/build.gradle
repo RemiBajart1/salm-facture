@@ -105,6 +105,25 @@ shadowJar {
     mergeServiceFiles()
 }
 
+// ── Lancement local (Netty HTTP, sans Lambda runtime) ─────────────────────
+// Usage : ./gradlew runLocal
+// Variables d'environnement facultatives (valeurs par défaut fournies) :
+//   DB_URL, DB_USER, DB_PASSWORD, S3_BUCKET, SES_FROM, AWS_REGION
+tasks.register('runLocal', JavaExec) {
+    group = 'application'
+    description = 'Lance le backend en mode HTTP local (Netty, port 8080, sécurité désactivée)'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.ucjgsalm.locagest.Application'
+    systemProperty 'micronaut.environments', 'local'
+    environment 'DB_URL',      System.getenv('DB_URL')      ?: 'jdbc:postgresql://localhost:5432/locagest'
+    environment 'DB_USER',     System.getenv('DB_USER')     ?: 'locagest_app'
+    environment 'DB_PASSWORD', System.getenv('DB_PASSWORD') ?: 'locagest'
+    environment 'AWS_REGION',  System.getenv('AWS_REGION')  ?: 'eu-west-3'
+    environment 'S3_BUCKET',   System.getenv('S3_BUCKET')   ?: 'locagest-docs-local'
+    environment 'SES_FROM',    System.getenv('SES_FROM')    ?: 'noreply@localhost'
+    // COGNITO_JWKS_URL non requis : JWT désactivé dans application-local.yml
+}
+
 // ── Classes exclues du calcul de couverture ────────────────────────────────
 // - Classes générées par Micronaut (introspection AOT, $...$Introspection)
 // - Records de domaine et DTOs : porteurs de données sans logique métier

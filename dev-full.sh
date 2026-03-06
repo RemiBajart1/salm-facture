@@ -32,7 +32,7 @@ fi
 # ── Démarrage du backend ───────────────────────────────────────────────────
 echo "🔧 Démarrage du backend Micronaut (port $BACKEND_PORT)..."
 cd "$BACKEND_DIR"
-./gradlew run --no-daemon &
+./gradlew runLocal --no-daemon &
 BACKEND_PID=$!
 
 # Nettoyage du backend à la sortie du script
