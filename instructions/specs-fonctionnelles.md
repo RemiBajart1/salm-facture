@@ -30,23 +30,11 @@ Toujours lire `prix_nuit_snapshot` et `nom_snapshot` depuis `sejour_categorie`.
 Une facture `EMISE` ou `PAYEE` ne peut pas être recalculée → `409 CONFLICT`.
 Seule une facture `BROUILLON` peut être regénérée.
 
-### 3. Ligne HEBERGEMENT — forfait minimum par nuit (défaut 40 personnes)
+### 3. Ligne HEBERGEMENT — forfait minimum par nuit (défaut 40 personnes au tarif plein)
 
 Le calcul produit **une seule ligne** `HEBERGEMENT`. Les catégories de tarifs s'appliquent normalement ; le forfait est un **plancher par nuit**.
-
-```
-Pour chaque nuit :
-  montant_reel = Σ (nb_reelles_cat × prix_snapshot_cat)
-  total_reel   = Σ nb_reelles_cat
-
-  si total_reel >= min_forfait  →  montant_nuit = montant_reel
-  si total_reel < min_forfait   →  montant_nuit = min_forfait × prix_moyen_pondéré
-
-montant_total = Σ montant_nuit
-```
-
 - Le `min_personnes_total` est configurable par séjour (défaut : 40). Ex : 30 pour un groupe membres.
-- Voir `instructions/specs-fonctionnelles.md` §4.1 pour les exemples complets.
+- Voir §4.1 pour les exemples complets.
  ---
 
 ## Règles de gestion
@@ -57,7 +45,7 @@ Le calcul produit **une seule ligne** `TypeLigne.HEBERGEMENT` sur la facture.
 
 Les catégories de tarifs (`sejour_categorie`) s'appliquent normalement. Le **forfait** est un plancher configurable par séjour : on ne facture jamais moins de `min_forfait` personnes par nuit.
 
-- **Valeur par défaut** : 40 personnes
+- **Valeur par défaut** : 40 personnes au tarif standard (18€/nuit)
 - **Configurable par le responsable location** au moment de la création du séjour (ex : 30 pour un groupe membres de l'union)
 - Stocké dans `sejour.min_personnes_total` (DTO : `minPersonnesTotal`, `null` = utilise `config_site.min_personnes_defaut`)
 
@@ -85,14 +73,14 @@ montant_total = Σ montant_nuit  (sur toutes les nuits)
 
 **Exemples :**
 
-| Situation | Catégories | Total réel/nuit | Facturé | Montant |
-|---|---|---|---|---|
-| 1 nuit | 15 non-adhérents (20€) + 8 membres (15€) = 23 | 23 < 40 → forfait | 40 × 18,26€* | ~730 € |
-| 1 nuit | 27 présents (18€ moy.) | 27 < 40 → forfait | 40 × 18€ | 720 € |
-| 2 nuits | 48 puis 55 présents | >40 chaque nuit | (48+55) × 18€ | 1 854 € |
-| 3 nuits | 35 / 42 / 38 présents | nuit 2 > 40, autres forfait | (40+42+40) × prix | — |
+| Situation                     | Catégories                                    | Total réel/nuit | Facturé           | Montant |
+|-------------------------------|-----------------------------------------------|---|-------------------|------|
+|  1 nuit, tarif standard        | 27 présents (18€ )                        | 27 < 40 → forfait | 40 × 18€          | 720 € |
+| 2 nuits                       | 48 puis 55 présents                           | >40 chaque nuit | (48+55) × 18€     | 1 854 € |
+| 3 nuits                       | 35 / 42 / 38 présents                         | nuit 2 > 40, autres forfait | (40+42+40) × prix |
+| 1 nuit, tarif négocié membres | 15 non-adhérents (18€) + 8 membres (15€) = 23 | 23 < 40 → forfait | 40 × 15€*         | 600 €  |
 
-\* prix moyen pondéré : (15×20 + 8×15) / 23 ≈ 18,26 €
+
 
 ### 4.2 Énergies
 
@@ -136,11 +124,6 @@ Une facture `EMISE` ou `PAYEE` ne peut plus être recalculée (erreur `409 CONFL
 ---
 
 ## Design decisions
-
-### Pourquoi Aurora PostgreSQL plutôt que DynamoDB ?
-
-Le modèle multi-tarifs rend DynamoDB inconfortable : calculer un prix moyen pondéré sur N catégories, gérer le minimum global, produire des agrégats annuels — tout ça se fait naturellement en SQL. Aurora Serverless v2 scale-to-zero entre les séjours (usage ~1/semaine), le coût est comparable.
-
 ### Pourquoi "promouvoir" plutôt que "valider/rejeter" ?
 
 Valider/rejeter implique un workflow à deux états avec notifications. La réalité métier est plus simple : si la saisie du gardien est correcte, on l'ajoute au catalogue pour ne plus avoir à la ressaisir. Si elle est incorrectement valorisée, le resp. peut modifier le montant/libellé avant de le promouvoir. Il n'y a pas de "rejet" — une ligne LIBRE reste visible jusqu'à ce qu'on décide quoi en faire.
