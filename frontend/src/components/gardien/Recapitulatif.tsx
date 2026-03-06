@@ -17,6 +17,7 @@ interface RecapitulatifProps {
 export function Recapitulatif({ onNavigate, onFactureGenerated }: RecapitulatifProps) {
   const { sejour } = useCurrentSejour()
   const [lignes, setLignes] = useState<LigneSejour[]>([])
+  const [factureStatut, setFactureStatut] = useState<Facture['statut'] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
@@ -24,11 +25,16 @@ export function Recapitulatif({ onNavigate, onFactureGenerated }: RecapitulatifP
 
   useEffect(() => {
     if (!sejour) return
-    sejourApi
-      .getLignes(sejour.id)
-      .then(setLignes)
+    Promise.all([
+      sejourApi.getLignes(sejour.id),
+      sejourApi.getFacture(sejour.id).catch(() => null),
+    ])
+      .then(([lignesData, factureData]) => {
+        setLignes(lignesData)
+        setFactureStatut(factureData?.statut ?? null)
+      })
       .catch((err) => {
-        console.error('Erreur chargement lignes:', err)
+        console.error('Erreur chargement facture:', err)
         setError('Impossible de charger la facture')
       })
       .finally(() => setLoading(false))
@@ -133,12 +139,23 @@ export function Recapitulatif({ onNavigate, onFactureGenerated }: RecapitulatifP
       </div>
 
       <div className={styles.bottomBar}>
-        <button className="btn-primary" onClick={handleEnvoyer} disabled={sending}>
-          {sending ? 'Envoi en cours...' : 'Valider et envoyer la facture'}
-        </button>
-        <button className="btn-secondary" onClick={handleSauvegarder} disabled={sending}>
-          Enregistrer sans envoyer
-        </button>
+        {factureStatut === 'EMISE' || factureStatut === 'PAYEE' ? (
+          <div className={styles.infoBox} style={{ margin: 0 }}>
+            <span>🔒</span>
+            <span>
+              Facture <strong>{factureStatut === 'PAYEE' ? 'payée' : 'déjà envoyée'}</strong> — aucune modification possible.
+            </span>
+          </div>
+        ) : (
+          <>
+            <button className="btn-primary" onClick={handleEnvoyer} disabled={sending}>
+              {sending ? 'Envoi en cours...' : 'Valider et envoyer la facture'}
+            </button>
+            <button className="btn-secondary" onClick={handleSauvegarder} disabled={sending}>
+              Enregistrer sans envoyer
+            </button>
+          </>
+        )}
       </div>
     </>
   )
