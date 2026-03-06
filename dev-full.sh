@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# dev-full.sh — Lance le backend Micronaut + le frontend connecté (sans mocks MSW)
+# dev-full.sh — Lance PostgreSQL (Docker), le backend Micronaut et le frontend connecté.
+# Aucune configuration requise : tout démarre avec les valeurs par défaut.
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -8,7 +9,19 @@ BACKEND_DIR="$SCRIPT_DIR/backend"
 BACKEND_PORT="${BACKEND_PORT:-8080}"
 BACKEND_URL="http://localhost:$BACKEND_PORT"
 
-# ── Java 25 ────────────────────────────────────────────────────────────────
+PG_CONTAINER="locagest-pg"
+PG_PORT="5432"
+PG_DB="locagest"
+PG_USER="locagest_app"
+PG_PASSWORD="locagest"
+
+# ── Docker ─────────────────────────────────────────────────────────────────
+if ! command -v docker &>/dev/null; then
+  echo "❌ Docker non trouvé. Installez Docker Desktop : https://docs.docker.com/get-docker/"
+  exit 1
+fi
+
+# ── Java ───────────────────────────────────────────────────────────────────
 if ! command -v java &>/dev/null; then
   echo "❌ Java non trouvé. Java 25 requis."
   exit 1
@@ -29,24 +42,52 @@ else
   exit 1
 fi
 
+# ── PostgreSQL via Docker ──────────────────────────────────────────────────
+CONTAINER_STATUS=$(docker inspect -f '{{.State.Status}}' "$PG_CONTAINER" 2>/dev/null || echo "absent")
+
+if [[ "$CONTAINER_STATUS" == "running" ]]; then
+  echo "✅ PostgreSQL déjà actif (conteneur $PG_CONTAINER)"
+elif [[ "$CONTAINER_STATUS" == "exited" ]]; then
+  echo "▶️  Redémarrage du conteneur PostgreSQL existant..."
+  docker start "$PG_CONTAINER" &>/dev/null
+else
+  echo "🐘 Création du conteneur PostgreSQL..."
+  docker run -d \
+    --name "$PG_CONTAINER" \
+    -e POSTGRES_DB="$PG_DB" \
+    -e POSTGRES_USER="$PG_USER" \
+    -e POSTGRES_PASSWORD="$PG_PASSWORD" \
+    -p "${PG_PORT}:5432" \
+    postgres:16 &>/dev/null
+fi
+
+# Attendre que PostgreSQL accepte les connexions
+echo -n "⏳ Attente PostgreSQL"
+until docker exec "$PG_CONTAINER" pg_isready -U "$PG_USER" -d "$PG_DB" &>/dev/null; do
+  echo -n "."
+  sleep 1
+done
+echo " ✅"
+
 # ── Démarrage du backend ───────────────────────────────────────────────────
 echo "🔧 Démarrage du backend Micronaut (port $BACKEND_PORT)..."
 cd "$BACKEND_DIR"
 ./gradlew runLocal --no-daemon &
 BACKEND_PID=$!
 
-# Nettoyage du backend à la sortie du script
+# Nettoyage à la sortie (Ctrl+C) : arrêt Micronaut uniquement, PostgreSQL persiste
 cleanup() {
   echo ""
   echo "🛑 Arrêt du backend (PID $BACKEND_PID)..."
   kill "$BACKEND_PID" 2>/dev/null || true
   wait "$BACKEND_PID" 2>/dev/null || true
+  echo "   PostgreSQL conservé (docker stop $PG_CONTAINER pour l'éteindre manuellement)"
 }
 trap cleanup EXIT INT TERM
 
 # Attendre que le backend soit prêt
 echo -n "⏳ Attente du backend"
-MAX_WAIT=60
+MAX_WAIT=120
 ELAPSED=0
 until curl -sf "$BACKEND_URL/api/v1/admin/config" &>/dev/null; do
   if [[ $ELAPSED -ge $MAX_WAIT ]]; then
@@ -70,7 +111,6 @@ fi
 
 if [[ ! -f .env.local ]]; then
   cp .env.example .env.local
-  echo "📄 .env.local créé depuis .env.example"
 fi
 
 # Désactiver MSW pour pointer vers le backend réel
@@ -79,13 +119,13 @@ if grep -q "^VITE_USE_MOCK=" .env.local; then
 else
   echo "VITE_USE_MOCK=false" >> .env.local
 fi
-echo "✅ VITE_USE_MOCK=false (appels vers $BACKEND_URL)"
 
-# ── Lancement du frontend ──────────────────────────────────────────────────
+# ── Lancement ──────────────────────────────────────────────────────────────
 echo ""
-echo "🚀 Frontend LocaGest — connecté au backend local"
+echo "🚀 LocaGest — stack complète"
 echo "   Frontend : http://localhost:5173"
 echo "   Backend  : $BACKEND_URL"
+echo "   Base     : postgresql://localhost:$PG_PORT/$PG_DB"
 echo "   Comptes  : gardien@test.fr / resp@test.fr / tresorier@test.fr  (mdp : test)"
 echo ""
 npm run dev
