@@ -187,6 +187,7 @@ Utilise des records dès que possible pour les Dtos et modèles.
 - Gestion des erreurs utilisateur avec des messages clairs et des feedbacks visuels
 - Tests unitaires avec Jest + React Testing Library pour les composants critiques (ex: formulaire de création de séjour, affichage de facture)
 - Tests end-to-end avec Cypress pour les scénarios principaux (ex: création séjour → génération facture → encaissement paiement)
+- Respecte les règles d'accessibilité (ex: labels pour les champs de formulaire, contrastes de couleurs, navigation clavier)
 
 Les erreurs doivent apparaitre clairement si l'utilisateur peut y faire queqleuchose. Si c'est une erreur technique (ex: échec de l'appel API), un message générique doit être affiché ("Une erreur est survenue, veuillez réessayer plus tard") et le détail de l'erreur doit être loggé côté client pour le debugging (ex: `console.error(error)`).
 
