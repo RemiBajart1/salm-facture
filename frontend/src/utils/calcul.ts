@@ -19,7 +19,7 @@ export function calculerHebergement(
   prixForfaitReference: number,
 ): CalculHebergementResult {
   const categoriesAvecReel = categories.filter(
-    (c) => c.effectifReel !== null && c.effectifReel !== undefined,
+    (c) => c.nbReelles !== null && c.nbReelles !== undefined,
   )
 
   if (categoriesAvecReel.length === 0) {
@@ -35,7 +35,7 @@ export function calculerHebergement(
   let montantTotal = 0
   let forfaitApplique = false
   const totalReelParNuit = categoriesAvecReel.reduce(
-    (sum, c) => sum + (c.effectifReel ?? 0),
+    (sum, c) => sum + (c.nbReelles ?? 0),
     0,
   )
 
@@ -43,7 +43,7 @@ export function calculerHebergement(
 
   for (let nuit = 1; nuit <= nbNuits; nuit++) {
     const montantReel = categoriesAvecReel.reduce(
-      (sum, c) => sum + (c.effectifReel ?? 0) * c.prixNuitSnapshot,
+      (sum, c) => sum + (c.nbReelles ?? 0) * c.prixNuit,
       0,
     )
     const totalReel = totalReelParNuit

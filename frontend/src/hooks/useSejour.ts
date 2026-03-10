@@ -49,7 +49,7 @@ export function useCurrentSejour(): UseSejourResult {
 }
 
 /** Charge un séjour par ID */
-export function useSejour(id: number): UseSejourResult {
+export function useSejour(id: string): UseSejourResult {
   const [sejour, setSejour] = useState<Sejour | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

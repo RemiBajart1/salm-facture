@@ -15,7 +15,7 @@ export function Dashboard() {
   useEffect(() => {
     sejourApi
       .list()
-      .then((data) => setSejours(data.content))
+      .then((data) => setSejours(data.content ?? []))
       .catch((err) => {
         console.error('Erreur chargement séjours:', err)
         setError('Impossible de charger les données')
