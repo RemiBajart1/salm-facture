@@ -1,5 +1,6 @@
 package org.ucjgsalm.locagest.controller;
 
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.*;
 import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
@@ -96,7 +97,7 @@ public class SejourController {
     @Secured({"resp_location", "tresorier"})
     @Status(HttpStatus.CREATED)
     public SejourResponse create(@Valid @Body CreerSejourRequest req,
-                                  Authentication auth) throws Exception {
+                                  @Nullable Authentication auth) throws Exception {
         log.info("Création séjour du {} au {} par {}", req.dateArrivee(), req.dateDepart(), userId(auth));
 
         var locataire = locataireRepo.upsertByEmail(
@@ -128,7 +129,7 @@ public class SejourController {
     @Secured({"gardien", "resp_location"})
     public HttpResponse<?> patchHoraires(UUID id,
                                          @Body SaisieHorairesRequest req,
-                                         Authentication auth) throws Exception {
+                                         @Nullable Authentication auth) throws Exception {
         log.info("Saisie horaires séjour={} par {}", id, userId(auth));
         sejourService.updateHorairesReels(id, req.heureArriveeReelle(), req.heureDepartReel(), userId(auth));
         return HttpResponse.noContent();
@@ -139,7 +140,7 @@ public class SejourController {
     @Secured({"gardien", "resp_location"})
     public HttpResponse<?> patchPersonnes(UUID id,
                                           @Valid @Body SaisiePersonnesRequest req,
-                                          Authentication auth) throws Exception {
+                                          @Nullable Authentication auth) throws Exception {
         log.info("Saisie personnes séjour={} par {}", id, userId(auth));
         var saisies = req.categories().stream()
             .map(c -> new SejourService.SaisieCategorie(c.categorieId(), c.nbReelles()))
@@ -154,7 +155,7 @@ public class SejourController {
     @Status(HttpStatus.CREATED)
     public LigneSejourResponse addSupplement(UUID id,
                                              @Valid @Body AjouterSupplementRequest req,
-                                             Authentication auth) throws Exception {
+                                             @Nullable Authentication auth) throws Exception {
         boolean libre = (req.configItemId() == null);
         log.info("Ajout {} séjour={} par {}", libre ? "saisie libre" : "supplément", id, userId(auth));
         var ligne = new LigneSejour(
@@ -187,7 +188,7 @@ public class SejourController {
     @Status(HttpStatus.CREATED)
     public FactureResponse genererFacture(UUID id,
                                           @Body GenererFactureRequest req,
-                                          Authentication auth) throws Exception {
+                                          @Nullable Authentication auth) throws Exception {
         log.info("Génération facture séjour={} envoyer={} par {}", id, req.envoyer(), userId(auth));
         var facture = factureService.generer(id, req.envoyer(), userId(auth));
         log.info("Facture {} générée (statut={})", facture.numero(), facture.statut());
@@ -202,7 +203,7 @@ public class SejourController {
     @Post("/{id}/facture/renvoyer")
     @Secured({"resp_location", "tresorier"})
     @Status(HttpStatus.NO_CONTENT)
-    public void renvoyerFacture(UUID id, Authentication auth) throws Exception {
+    public void renvoyerFacture(UUID id, @Nullable Authentication auth) throws Exception {
         log.info("Renvoi facture séjour={} par {}", id, userId(auth));
         factureService.renvoyer(id, userId(auth));
     }
@@ -221,7 +222,7 @@ public class SejourController {
     @Status(HttpStatus.CREATED)
     public PaiementResponse enregistrerPaiement(UUID id,
                                                  @Valid @Body EnregistrerPaiementRequest req,
-                                                 Authentication auth) throws Exception {
+                                                 @Nullable Authentication auth) throws Exception {
         log.info("Enregistrement paiement {} {} pour séjour={}", req.montant(), req.mode(), id);
         var p = paiementService.enregistrer(
             id,
@@ -290,7 +291,7 @@ public class SejourController {
             photoUrl, p.enregistrePar(), p.createdAt());
     }
 
-    private String userId(Authentication auth) {
-        return auth.getName();
+    private String userId(@Nullable Authentication auth) {
+        return auth != null ? auth.getName() : "local-dev";
     }
 }

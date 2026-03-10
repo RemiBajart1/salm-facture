@@ -67,6 +67,9 @@ dependencies {
     // YAML support (application.yml)
     runtimeOnly 'org.yaml:snakeyaml'
 
+    // Logging (SLF4J → Logback)
+    runtimeOnly 'ch.qos.logback:logback-classic'
+
     // Tests unitaires
     testImplementation 'io.micronaut.test:micronaut-test-junit5'
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
@@ -113,7 +116,6 @@ tasks.register('runLocal', JavaExec) {
     group = 'application'
     description = 'Lance le backend en mode HTTP local (Netty, port 8080, sécurité désactivée)'
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'org.ucjgsalm.locagest.Application'
     systemProperty 'micronaut.environments', 'local'
     environment 'DB_URL',      System.getenv('DB_URL')      ?: 'jdbc:postgresql://localhost:5432/locagest'
     environment 'DB_USER',     System.getenv('DB_USER')     ?: 'locagest_app'
@@ -122,6 +124,15 @@ tasks.register('runLocal', JavaExec) {
     environment 'S3_BUCKET',   System.getenv('S3_BUCKET')   ?: 'locagest-docs-local'
     environment 'SES_FROM',    System.getenv('SES_FROM')    ?: 'noreply@localhost'
     // COGNITO_JWKS_URL non requis : JWT désactivé dans application-local.yml
+}
+
+// Le plugin io.micronaut.application écrase mainClass sur tous les JavaExec
+// via afterEvaluate. On force notre mainClass dans un second afterEvaluate
+// qui s'exécute après celui du plugin.
+afterEvaluate {
+    tasks.named('runLocal', JavaExec) {
+        mainClass.set('org.ucjgsalm.locagest.Application')
+    }
 }
 
 // ── Classes exclues du calcul de couverture ────────────────────────────────
