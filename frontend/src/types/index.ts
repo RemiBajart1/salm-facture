@@ -31,77 +31,86 @@ export type ModePaiement =
 /* ── Entités ── */
 
 export interface Locataire {
-  id: number
+  id: string        // UUID
   nom: string
   email: string
   telephone?: string
   adresse?: string
+  createdAt?: string
 }
 
 export interface SejourCategorie {
-  id: number
-  tarifPersonneId: number
-  nomSnapshot: string
-  prixNuitSnapshot: number
-  effectifPrevu: number
-  effectifReel?: number | null
+  id: string        // UUID
+  nom: string
+  prixNuit: number
+  nbPrevues: number
+  nbReelles?: number | null
 }
 
 export interface Sejour {
-  id: number
+  id: string        // UUID
   statut: StatutSejour
-  locataire: Locataire
+  nomLocataire: string
+  emailLocataire: string
+  telephoneLocataire?: string
   dateArrivee: string
   dateDepart: string
   nbNuits: number
   heureArriveePrevue?: string
   heureDepartPrevu?: string
   heureArriveeReelle?: string | null
-  heureDepartReelle?: string | null
+  heureDepartReel?: string | null
+  nbAdultes?: number | null
   minPersonnesTotal: number
-  tarifForfaitCategorieId?: number | null
-  categories: SejourCategorie[]
-  options?: string
   modePaiement?: ModePaiement
-  dateLimitePaiement?: string
+  dateLimitePaiement?: string | null
+  optionsPresaisies?: string | null
+  notesInternes?: string | null
+  categories: SejourCategorie[]
 }
 
 export interface LigneSejour {
-  id: number
-  sejourId: number
+  id: string        // UUID
   typeLigne: TypeLigne
   statut: StatutLigne
-  libelle: string
+  designation: string
   quantite: number
   prixUnitaire: number
-  prixTotal: number
-  configItemId?: number | null
+  montant: number
+  configItemId?: string | null  // UUID
+  saisiPar?: string | null
+  createdAt?: string
 }
 
 export interface Facture {
-  id: number
-  sejourId: number
+  id: string        // UUID
+  sejourId: string  // UUID
   numero: string
   statut: StatutFacture
+  dateGeneration?: string
+  montantHebergement: number
+  montantEnergie: number
+  montantTaxe: number
+  montantSupplements: number
   montantTotal: number
-  dateEmission?: string
-  pdfUrl?: string
-  lignes: LigneSejour[]
+  emailEnvoye: boolean
+  pdfUrl?: string | null
 }
 
 export interface Paiement {
-  id: number
-  sejourId: number
+  id: string        // UUID
   montant: number
   mode: ModePaiement
   dateEncaissement: string
-  numeroCheque?: string
-  banqueEmettrice?: string
-  photoUrl?: string
+  numeroCheque?: string | null
+  banqueEmettrice?: string | null
+  chequePhotoUrl?: string | null
+  enregistrePar?: string
+  createdAt?: string
 }
 
 export interface TarifPersonne {
-  id: number
+  id: string        // UUID
   nom: string
   prixNuit: number
   description?: string
@@ -110,11 +119,11 @@ export interface TarifPersonne {
 }
 
 export interface ConfigItem {
-  id: number
-  nom: string
+  id: string        // UUID
+  designation: string
+  categorie: string
   prixUnitaire: number
-  unite: string
-  categorieItem: string
+  unite: 'UNITE' | 'SEJOUR' | 'INTERVENTION'
   actif: boolean
 }
 
@@ -127,52 +136,51 @@ export interface ConfigSiteEntry {
 /* ── DTOs Requêtes ── */
 
 export interface CreateSejourRequest {
-  locataireNom: string
-  locataireEmail: string
-  locataireTelephone?: string
-  locataireAdresse?: string
+  nomLocataire: string
+  emailLocataire: string
+  telephoneLocataire?: string
+  adresseLocataire?: string
   dateArrivee: string
   dateDepart: string
   heureArriveePrevue?: string
   heureDepartPrevu?: string
   minPersonnesTotal?: number
-  tarifForfaitCategorieId?: number
   modePaiement?: ModePaiement
-  dateLimitePaiement?: string
-  options?: string
+  optionsPresaisies?: string
+  notesInternes?: string
   categories: {
-    tarifPersonneId: number
-    effectifPrevu: number
+    tarifId: string  // UUID
+    nbPrevues: number
   }[]
 }
 
 export interface PatchPersonnesRequest {
   categories: {
-    sejourCategorieId: number
-    effectifReel: number
+    categorieId: string  // UUID
+    nbReelles: number
   }[]
   nbAdultes: number
 }
 
 export interface AddSupplementRequest {
-  configItemId?: number
-  libelle: string
+  configItemId?: string  // UUID, null si saisie libre
+  designation: string
   quantite: number
   prixUnitaire: number
-  typeLigne: 'SUPPLEMENT' | 'LIBRE'
 }
 
 export interface CreatePaiementRequest {
   montant: number
   mode: ModePaiement
+  dateEncaissement?: string
   numeroCheque?: string
   banqueEmettrice?: string
 }
 
 export interface PromouvoirLigneRequest {
   categorieItem: string
-  unite: string
-  nomCatalogue: string
+  unite: 'UNITE' | 'SEJOUR' | 'INTERVENTION'
+  nomCatalogue?: string
 }
 
 /* ── DTOs Réponses paginées ── */
@@ -181,7 +189,7 @@ export interface PagedResponse<T> {
   content: T[]
   totalElements: number
   totalPages: number
-  number: number
+  page: number
   size: number
 }
 
