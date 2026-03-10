@@ -79,7 +79,7 @@ import type {
 export const sejourApi = {
   getCurrent: () => request<Sejour>('GET', '/sejours/current'),
 
-  getById: (id: number) => request<Sejour>('GET', `/sejours/${id}`),
+  getById: (id: string) => request<Sejour>('GET', `/sejours/${id}`),
 
   list: (statut?: string, page = 0, size = 20) => {
     const params = new URLSearchParams()
@@ -92,33 +92,33 @@ export const sejourApi = {
   create: (data: CreateSejourRequest) =>
     request<Sejour>('POST', '/sejours', data),
 
-  patchPersonnes: (id: number, data: PatchPersonnesRequest) =>
+  patchPersonnes: (id: string, data: PatchPersonnesRequest) =>
     request<void>('PATCH', `/sejours/${id}/personnes`, data),
 
   patchHoraires: (
-    id: number,
-    data: { heureArriveeReelle?: string; heureDepartReelle?: string },
+    id: string,
+    data: { heureArriveeReelle?: string; heureDepartReel?: string },
   ) => request<void>('PATCH', `/sejours/${id}/horaires`, data),
 
-  addSupplement: (id: number, data: AddSupplementRequest) =>
+  addSupplement: (id: string, data: AddSupplementRequest) =>
     request<LigneSejour>('POST', `/sejours/${id}/supplements`, data),
 
-  getLignes: (id: number) =>
+  getLignes: (id: string) =>
     request<LigneSejour[]>('GET', `/sejours/${id}/lignes`),
 
-  generateFacture: (id: number) =>
-    request<Facture>('POST', `/sejours/${id}/facture`),
+  generateFacture: (id: string) =>
+    request<Facture>('POST', `/sejours/${id}/facture`, { envoyer: false }),
 
-  getFacture: (id: number) =>
+  getFacture: (id: string) =>
     request<Facture>('GET', `/sejours/${id}/facture`),
 
-  renvoyerFacture: (id: number) =>
+  renvoyerFacture: (id: string) =>
     request<void>('POST', `/sejours/${id}/facture/renvoyer`),
 
-  addPaiement: (id: number, data: CreatePaiementRequest) =>
+  addPaiement: (id: string, data: CreatePaiementRequest) =>
     request<Paiement>('POST', `/sejours/${id}/paiements`, data),
 
-  getPaiements: (id: number) =>
+  getPaiements: (id: string) =>
     request<Paiement[]>('GET', `/sejours/${id}/paiements`),
 }
 
@@ -146,7 +146,7 @@ export const adminApi = {
   createTarif: (data: Omit<TarifPersonne, 'id'>) =>
     request<TarifPersonne>('POST', '/admin/tarifs', data),
 
-  updateTarif: (id: number, data: Partial<TarifPersonne>) =>
+  updateTarif: (id: string, data: Partial<TarifPersonne>) =>
     request<TarifPersonne>('PUT', `/admin/tarifs/${id}`, data),
 
   getItems: () => request<ConfigItem[]>('GET', '/admin/items'),
@@ -154,15 +154,15 @@ export const adminApi = {
   createItem: (data: Omit<ConfigItem, 'id'>) =>
     request<ConfigItem>('POST', '/admin/items', data),
 
-  updateItem: (id: number, data: Partial<ConfigItem>) =>
+  updateItem: (id: string, data: Partial<ConfigItem>) =>
     request<ConfigItem>('PUT', `/admin/items/${id}`, data),
 
-  deleteItem: (id: number) => request<void>('DELETE', `/admin/items/${id}`),
+  deleteItem: (id: string) => request<void>('DELETE', `/admin/items/${id}`),
 
   getLignesLibres: () =>
     request<LigneSejour[]>('GET', '/admin/lignes-libres'),
 
-  promouvoirLigne: (id: number, data: PromouvoirLigneRequest) =>
+  promouvoirLigne: (id: string, data: PromouvoirLigneRequest) =>
     request<void>('POST', `/admin/lignes-libres/${id}/promouvoir`, data),
 
   getConfig: () => request<ConfigSiteEntry[]>('GET', '/admin/config'),
