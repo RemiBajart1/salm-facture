@@ -11,9 +11,9 @@ export function LignesLibres() {
   const [lignes, setLignes] = useState<LigneSejour[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [montantsValides, setMontantsValides] = useState<Record<number, string>>({})
+  const [montantsValides, setMontantsValides] = useState<Record<string, string>>({})
   const [actionError, setActionError] = useState<string | null>(null)
-  const [processing, setProcessing] = useState<number | null>(null)
+  const [processing, setProcessing] = useState<string | null>(null)
 
   const chargerLignes = () => {
     setLoading(true)
@@ -21,8 +21,8 @@ export function LignesLibres() {
       .getLignesLibres()
       .then((data) => {
         setLignes(data)
-        const initial: Record<number, string> = {}
-        data.forEach((l) => { initial[l.id] = l.prixTotal.toFixed(2).replace('.', ',') })
+        const initial: Record<string, string> = {}
+        data.forEach((l) => { initial[l.id] = l.montant.toFixed(2).replace('.', ',') })
         setMontantsValides(initial)
       })
       .catch((err) => {
@@ -41,7 +41,7 @@ export function LignesLibres() {
       await adminApi.promouvoirLigne(ligne.id, {
         categorieItem: 'CASSE',
         unite: 'unité',
-        nomCatalogue: ligne.libelle,
+        nomCatalogue: ligne.designation,
       })
       setLignes((prev) => prev.filter((l) => l.id !== ligne.id))
     } catch (err) {
@@ -88,13 +88,13 @@ export function LignesLibres() {
               >
                 <span className={styles.warnBadge}>⚠ À confirmer</span>
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  Séjour #{ligne.sejourId}
+                  Ligne libre
                 </span>
               </div>
-              <div style={{ fontSize: 15, fontWeight: 600 }}>{ligne.libelle}</div>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>{ligne.designation}</div>
               <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
                 Montant proposé par le gardien :{' '}
-                <strong>{formatEuros(ligne.prixTotal)}</strong>
+                <strong>{formatEuros(ligne.montant)}</strong>
               </div>
             </div>
 
@@ -109,7 +109,7 @@ export function LignesLibres() {
                     setMontantsValides((prev) => ({ ...prev, [ligne.id]: e.target.value }))
                   }
                   style={{ width: 90, padding: '8px 10px' }}
-                  aria-label={`Montant validé pour ${ligne.libelle}`}
+                  aria-label={`Montant validé pour ${ligne.designation}`}
                 />
               </div>
               <button

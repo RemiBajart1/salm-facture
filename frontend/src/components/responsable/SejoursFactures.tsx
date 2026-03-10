@@ -17,7 +17,7 @@ export function SejoursFactures() {
     setLoading(true)
     sejourApi
       .list(statutFiltre || undefined)
-      .then((data) => setSejours(data.content))
+      .then((data) => setSejours(data.content ?? []))
       .catch((err) => {
         console.error('Erreur chargement séjours:', err)
         setError('Impossible de charger les séjours')
@@ -43,7 +43,7 @@ export function SejoursFactures() {
   }
 
   const totalEffectifPrevu = (s: Sejour) =>
-    s.categories.reduce((sum, c) => sum + c.effectifPrevu, 0)
+    s.categories.reduce((sum, c) => sum + c.nbPrevues, 0)
 
   if (loading) return <LoadingSpinner message="Chargement des séjours..." />
   if (error) return <ErrorBanner message={error} />
@@ -76,8 +76,8 @@ export function SejoursFactures() {
                 .filter((s) => s.statut === 'TERMINE')
                 .reduce((sum, s) => {
                   return sum + s.categories.reduce((catSum, c) => {
-                    const eff = c.effectifReel ?? c.effectifPrevu
-                    return catSum + eff * c.prixNuitSnapshot * s.nbNuits
+                    const eff = c.nbReelles ?? c.nbPrevues
+                    return catSum + eff * c.prixNuit * s.nbNuits
                   }, 0)
                 }, 0),
             )}
@@ -118,9 +118,9 @@ export function SejoursFactures() {
               {sejours.map((sejour) => (
                 <tr key={sejour.id}>
                   <td>
-                    <strong>{sejour.locataire.nom}</strong>
+                    <strong>{sejour.nomLocataire}</strong>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      {sejour.locataire.email}
+                      {sejour.emailLocataire}
                     </div>
                   </td>
                   <td>

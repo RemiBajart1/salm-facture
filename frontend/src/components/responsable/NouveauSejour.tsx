@@ -6,9 +6,9 @@ import type { TarifPersonne, Locataire, ModePaiement } from '../../types'
 import { formatEuros } from '../../utils/calcul'
 
 interface CategorieSelectionnee {
-  tarifPersonneId: number
+  tarifId: string
   active: boolean
-  effectifPrevu: number
+  nbPrevues: number
 }
 
 /** RL1 — Formulaire de création d'un nouveau séjour */
@@ -33,7 +33,7 @@ export function NouveauSejour() {
   // Catégories
   const [categories, setCategories] = useState<CategorieSelectionnee[]>([])
   const [minPersonnes, setMinPersonnes] = useState(40)
-  const [tarifForfaitCategorieId, setTarifForfaitCategorieId] = useState<number | null>(null)
+  const [tarifForfaitCategorieId, setTarifForfaitCategorieId] = useState<string | null>(null)
 
   // Paiement
   const [modePaiement, setModePaiement] = useState<ModePaiement>('CHEQUE')
@@ -52,7 +52,7 @@ export function NouveauSejour() {
         const actifs = data.filter((t) => t.actif)
         setTarifs(actifs)
         setCategories(
-          actifs.map((t) => ({ tarifPersonneId: t.id, active: false, effectifPrevu: 0 })),
+          actifs.map((t) => ({ tarifId: t.id, active: false, nbPrevues: 0 })),
         )
       })
       .catch((err) => {
@@ -84,16 +84,16 @@ export function NouveauSejour() {
 
   const totalEffectif = categories
     .filter((c) => c.active)
-    .reduce((s, c) => s + c.effectifPrevu, 0)
+    .reduce((s, c) => s + c.nbPrevues, 0)
 
   const estimHeberg = useMemo(() => {
     if (nbNuits === 0) return 0
     const montantReel = categories
       .filter((c) => c.active)
       .reduce((s, c) => {
-        const tarif = tarifs.find((t) => t.id === c.tarifPersonneId)
+        const tarif = tarifs.find((t) => t.id === c.tarifId)
         if (!tarif) return s
-        return s + c.effectifPrevu * tarif.prixNuit * nbNuits
+        return s + c.nbPrevues * tarif.prixNuit * nbNuits
       }, 0)
     // Application du forfait minimum
     if (totalEffectif < minPersonnes && tarifForfaitCategorieId) {
@@ -116,13 +116,13 @@ export function NouveauSejour() {
     setCategories((prev) => {
       const next = prev.map((c, i) =>
         i === idx
-          ? { ...c, active: !c.active, effectifPrevu: !c.active ? c.effectifPrevu : 0 }
+          ? { ...c, active: !c.active, nbPrevues: !c.active ? c.nbPrevues : 0 }
           : c,
       )
       // Si la catégorie de référence est désactivée, on la réinitialise
       const activeTarifIds = next
         .filter((c) => c.active)
-        .map((c) => c.tarifPersonneId)
+        .map((c) => c.tarifId)
       setTarifForfaitCategorieId((prev) =>
         prev && activeTarifIds.includes(prev) ? prev : activeTarifIds[0] ?? null,
       )
@@ -133,7 +133,7 @@ export function NouveauSejour() {
   const handleEffectifChange = (idx: number, value: string) => {
     const n = parseInt(value, 10)
     setCategories((prev) =>
-      prev.map((c, i) => (i === idx ? { ...c, effectifPrevu: isNaN(n) ? 0 : n } : c)),
+      prev.map((c, i) => (i === idx ? { ...c, nbPrevues: isNaN(n) ? 0 : n } : c)),
     )
   }
 
@@ -142,23 +142,21 @@ export function NouveauSejour() {
     setSaveError(null)
     try {
       const catsActives = categories
-        .filter((c) => c.active && c.effectifPrevu > 0)
-        .map((c) => ({ tarifPersonneId: c.tarifPersonneId, effectifPrevu: c.effectifPrevu }))
+        .filter((c) => c.active && c.nbPrevues > 0)
+        .map((c) => ({ tarifId: c.tarifId, nbPrevues: c.nbPrevues }))
 
       await sejourApi.create({
-        locataireNom,
-        locataireEmail,
-        locataireTelephone: locataireTel || undefined,
-        locataireAdresse: locataireAdresse || undefined,
+        nomLocataire: locataireNom,
+        emailLocataire: locataireEmail,
+        telephoneLocataire: locataireTel || undefined,
+        adresseLocataire: locataireAdresse || undefined,
         dateArrivee,
         dateDepart,
         heureArriveePrevue: heureArrivee || undefined,
         heureDepartPrevu: heureDepart || undefined,
         minPersonnesTotal: minPersonnes,
-        tarifForfaitCategorieId: tarifForfaitCategorieId ?? undefined,
         modePaiement,
-        dateLimitePaiement: dateLimitePaiement || undefined,
-        options: options || undefined,
+        optionsPresaisies: options || undefined,
         categories: catsActives,
       })
       setSaveSuccess(true)
@@ -323,7 +321,7 @@ export function NouveauSejour() {
                 const cat = categories[idx]
                 if (!cat) return null
                 const sousTot = cat.active && nbNuits > 0
-                  ? cat.effectifPrevu * tarif.prixNuit * nbNuits
+                  ? cat.nbPrevues * tarif.prixNuit * nbNuits
                   : null
                 return (
                   <tr key={tarif.id} style={{ opacity: cat.active ? 1 : 0.5 }}>
@@ -343,7 +341,7 @@ export function NouveauSejour() {
                         className={styles.dformInput}
                         type="number"
                         min={0}
-                        value={cat.effectifPrevu}
+                        value={cat.nbPrevues}
                         onChange={(e) => handleEffectifChange(idx, e.target.value)}
                         disabled={!cat.active}
                         style={{ width: 100, padding: '7px 10px' }}
@@ -351,8 +349,8 @@ export function NouveauSejour() {
                       />
                     </td>
                     <td style={{ fontWeight: 600, color: 'var(--forest)' }}>
-                      {sousTot !== null && cat.effectifPrevu > 0
-                        ? `${cat.effectifPrevu} × ${tarif.prixNuit} × ${nbNuits} = ${formatEuros(sousTot)}`
+                      {sousTot !== null && cat.nbPrevues > 0
+                        ? `${cat.nbPrevues} × ${tarif.prixNuit} × ${nbNuits} = ${formatEuros(sousTot)}`
                         : '—'}
                     </td>
                     <td style={{ textAlign: 'center' }}>
