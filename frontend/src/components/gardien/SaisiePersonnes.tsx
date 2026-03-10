@@ -15,33 +15,30 @@ interface SaisiePersonnesProps {
 /** G2 — Saisie des effectifs réels par catégorie + calcul temps réel */
 export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
   const { sejour, loading, error, refresh } = useCurrentSejour()
-  const [effectifs, setEffectifs] = useState<Record<number, number>>({})
+  const [effectifs, setEffectifs] = useState<Record<string, number>>({})
   const [nbAdultes, setNbAdultes] = useState(0)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
   // Initialise les effectifs avec les valeurs prévues (si pas encore saisis)
   const getEffectif = useCallback(
-    (catId: number, effectifPrevu: number) => {
+    (catId: string, nbPrevues: number) => {
       if (effectifs[catId] !== undefined) return effectifs[catId]
-      return effectifPrevu
+      return nbPrevues
     },
     [effectifs],
   )
 
   const prixForfaitReference = useMemo(() => {
     if (!sejour) return 0
-    const catRef = sejour.tarifForfaitCategorieId
-      ? sejour.categories.find((c) => c.id === sejour.tarifForfaitCategorieId)
-      : sejour.categories[0]
-    return catRef?.prixNuitSnapshot ?? sejour.categories[0]?.prixNuitSnapshot ?? 0
+    return sejour.categories[0]?.prixNuit ?? 0
   }, [sejour])
 
   const calcul = useMemo(() => {
     if (!sejour) return null
     const catsAvecReel = sejour.categories.map((c) => ({
       ...c,
-      effectifReel: getEffectif(c.id, c.effectifPrevu),
+      nbReelles: getEffectif(c.id, c.nbPrevues),
     }))
     return calculerHebergement(catsAvecReel, sejour.nbNuits, sejour.minPersonnesTotal, prixForfaitReference)
   }, [sejour, getEffectif, prixForfaitReference])
@@ -65,8 +62,8 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
     setSaveError(null)
     try {
       const categories = sejour.categories.map((c) => ({
-        sejourCategorieId: c.id,
-        effectifReel: getEffectif(c.id, c.effectifPrevu),
+        categorieId: c.id,
+        nbReelles: getEffectif(c.id, c.nbPrevues),
       }))
       await sejourApi.patchPersonnes(sejour.id, { categories, nbAdultes })
       refresh()
@@ -103,19 +100,19 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
                 style={{ background: catColors[idx % catColors.length] }}
               >
                 <div>
-                  <div className={styles.catHeaderName}>{cat.nomSnapshot}</div>
+                  <div className={styles.catHeaderName}>{cat.nom}</div>
                   <div className={styles.catHeaderPrice}>
-                    {formatEuros(cat.prixNuitSnapshot)} / personne / nuit
+                    {formatEuros(cat.prixNuit)} / personne / nuit
                   </div>
                 </div>
               </div>
               <div className={styles.catBody}>
                 <div className={styles.catPrevue}>
-                  Prévu par le responsable : <strong>{cat.effectifPrevu} personnes</strong>
+                  Prévu par le responsable : <strong>{cat.nbPrevues} personnes</strong>
                 </div>
                 <div className={styles.formLabel}>Présents réels</div>
                 <NumberInput
-                  value={getEffectif(cat.id, cat.effectifPrevu)}
+                  value={getEffectif(cat.id, cat.nbPrevues)}
                   onChange={(v) => setEffectifs((prev) => ({ ...prev, [cat.id]: v }))}
                   min={0}
                   max={200}
@@ -147,15 +144,15 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
             <div className={styles.cardTitle}>Calcul automatique</div>
 
             {sejour.categories.map((cat) => {
-              const eff = getEffectif(cat.id, cat.effectifPrevu)
-              const montant = eff * cat.prixNuitSnapshot * sejour.nbNuits
+              const eff = getEffectif(cat.id, cat.nbPrevues)
+              const montant = eff * cat.prixNuit * sejour.nbNuits
               return (
                 <div key={cat.id} className={styles.recapLine}>
                   <span className={styles.recapLbl}>
-                    {cat.nomSnapshot} ({eff})
+                    {cat.nom} ({eff})
                   </span>
                   <span className={styles.recapVal}>
-                    {eff} × {cat.prixNuitSnapshot} × {sejour.nbNuits} = {formatEuros(montant)}
+                    {eff} × {cat.prixNuit} × {sejour.nbNuits} = {formatEuros(montant)}
                   </span>
                 </div>
               )
@@ -174,7 +171,7 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
                   </span>
                   <span className={styles.recapVal}>
                     {formatEuros(calcul.montantTotal - sejour.categories.reduce(
-                      (s, c) => s + getEffectif(c.id, c.effectifPrevu) * c.prixNuitSnapshot * sejour.nbNuits,
+                      (s, c) => s + getEffectif(c.id, c.nbPrevues) * c.prixNuit * sejour.nbNuits,
                       0,
                     ))}
                   </span>
