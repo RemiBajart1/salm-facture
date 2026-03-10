@@ -254,7 +254,7 @@ public record LocataireResponse(
 
 @Serdeable
 public record PagedResponse<T>(
-    List<T> content,
+    @JsonInclude(JsonInclude.Include.ALWAYS) List<T> content,
     int     page,
     int     size,
     long    totalElements,
