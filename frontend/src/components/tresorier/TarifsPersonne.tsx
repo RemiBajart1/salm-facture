@@ -20,7 +20,7 @@ export function TarifsPersonne() {
   const [saving, setSaving] = useState(false)
 
   // Édition en ligne
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [editNom, setEditNom] = useState('')
   const [editPrix, setEditPrix] = useState('')
   const [editDesc, setEditDesc] = useState('')

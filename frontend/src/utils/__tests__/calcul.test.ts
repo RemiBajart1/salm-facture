@@ -8,28 +8,27 @@ import {
 import type { SejourCategorie } from '../../types'
 
 /* ── Helpers ── */
-const cat = (id: number, prix: number, effectifReel: number): SejourCategorie => ({
+const cat = (id: string, prix: number, nbReelles: number): SejourCategorie => ({
   id,
-  tarifPersonneId: id,
-  nomSnapshot: `Cat ${id}`,
-  prixNuitSnapshot: prix,
-  effectifPrevu: effectifReel,
-  effectifReel,
+  nom: `Cat ${id}`,
+  prixNuit: prix,
+  nbPrevues: nbReelles,
+  nbReelles,
 })
 
 /* ── Tests hébergement §4.1 ── */
 describe('calculerHebergement', () => {
   it('1 nuit, 27 présents < 40 → forfait 40 × 18 = 720 €', () => {
-    const cats = [cat(1, 18, 27)]
+    const cats = [cat('1', 18, 27)]
     const result = calculerHebergement(cats, 1, 40, 18)
     expect(result.forfaitApplique).toBe(true)
     expect(result.montantTotal).toBeCloseTo(720, 1)
   })
 
   it('2 nuits, 48 + 55 présents >= 40 chaque nuit → (48+55) × 18 = 1854 €', () => {
-    const cats = [cat(1, 18, 48)]
+    const cats = [cat('1', 18, 48)]
     const result1 = calculerHebergement(cats, 1, 40, 18)
-    const cats2 = [cat(1, 18, 55)]
+    const cats2 = [cat('1', 18, 55)]
     const result2 = calculerHebergement(cats2, 1, 40, 18)
     // 2 nuits distinctes, on additionne
     const total = result1.montantTotal + result2.montantTotal
@@ -37,7 +36,7 @@ describe('calculerHebergement', () => {
   })
 
   it('1 nuit, 38 présents (25 × 14€ + 13 × 12€), référence 14€ → forfait 40 × 14 = 560 €', () => {
-    const cats = [cat(1, 14, 25), cat(2, 12, 13)]
+    const cats = [cat('1', 14, 25), cat('2', 12, 13)]
     const result = calculerHebergement(cats, 1, 40, 14)
     expect(result.forfaitApplique).toBe(true)
     expect(result.totalReelParNuit).toBe(38)
@@ -46,7 +45,7 @@ describe('calculerHebergement', () => {
 
   it('pas de catégories avec effectif → montant 0', () => {
     const cats: SejourCategorie[] = [
-      { id: 1, tarifPersonneId: 1, nomSnapshot: 'Test', prixNuitSnapshot: 18, effectifPrevu: 10 },
+      { id: '1', nom: 'Test', prixNuit: 18, nbPrevues: 10 },
     ]
     const result = calculerHebergement(cats, 1, 40, 18)
     expect(result.montantTotal).toBe(0)
@@ -54,14 +53,14 @@ describe('calculerHebergement', () => {
   })
 
   it('effectif >= min → pas de forfait', () => {
-    const cats = [cat(1, 18, 42)]
+    const cats = [cat('1', 18, 42)]
     const result = calculerHebergement(cats, 1, 40, 18)
     expect(result.forfaitApplique).toBe(false)
     expect(result.montantTotal).toBeCloseTo(42 * 18, 1)
   })
 
   it('4 nuits, forfait appliqué sur chaque nuit', () => {
-    const cats = [cat(1, 18, 10)]
+    const cats = [cat('1', 18, 10)]
     const result = calculerHebergement(cats, 4, 40, 18)
     expect(result.forfaitApplique).toBe(true)
     // 4 nuits × 40 × 18 = 2880
@@ -71,9 +70,9 @@ describe('calculerHebergement', () => {
   })
 
   it('3 nuits : nuit 2 > 40, autres < 40 → forfait sur 2 nuits', () => {
-    const cats1 = [cat(1, 18, 35)]
-    const cats2 = [cat(1, 18, 42)]
-    const cats3 = [cat(1, 18, 38)]
+    const cats1 = [cat('1', 18, 35)]
+    const cats2 = [cat('1', 18, 42)]
+    const cats3 = [cat('1', 18, 38)]
     const r1 = calculerHebergement(cats1, 1, 40, 18)
     const r2 = calculerHebergement(cats2, 1, 40, 18)
     const r3 = calculerHebergement(cats3, 1, 40, 18)
@@ -85,7 +84,7 @@ describe('calculerHebergement', () => {
   })
 
   it('1 nuit, mix tarifs : 15 non-adhérents (18€) + 8 membres (15€) = 23 < 40, référence membres (15€) → forfait 40 × 15 = 600 €', () => {
-    const cats = [cat(1, 18, 15), cat(2, 15, 8)]
+    const cats = [cat('1', 18, 15), cat('2', 15, 8)]
     const result = calculerHebergement(cats, 1, 40, 15)
     expect(result.forfaitApplique).toBe(true)
     expect(result.totalReelParNuit).toBe(23)
