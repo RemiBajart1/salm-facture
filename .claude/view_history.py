@@ -41,6 +41,14 @@ def display_entry(entry: dict):
     else:
         print("\n🤖 RÉSUMÉ RÉPONSE : (en attente)")
 
+    tokens = entry.get("tokens")
+    if tokens:
+        total_in  = tokens.get("input_tokens", 0) + tokens.get("cache_read_tokens", 0) + tokens.get("cache_write_tokens", 0)
+        total_out = tokens.get("output_tokens", 0)
+        print(f"\n🔢 TOKENS : in={total_in:,}  out={total_out:,}"
+              f"  (cache_read={tokens.get('cache_read_tokens', 0):,}"
+              f"  cache_write={tokens.get('cache_write_tokens', 0):,})")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Historique des prompts Claude Code")
