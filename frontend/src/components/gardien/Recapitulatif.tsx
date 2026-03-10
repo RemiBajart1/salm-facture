@@ -50,7 +50,7 @@ export function Recapitulatif({ onNavigate, onFactureGenerated }: RecapitulatifP
     (l) => l.typeLigne === 'SUPPLEMENT' || l.typeLigne === 'LIBRE',
   )
 
-  const total = lignes.reduce((s, l) => s + l.prixTotal, 0)
+  const total = lignes.reduce((s, l) => s + l.montant, 0)
 
   const handleEnvoyer = async () => {
     if (!sejour) return
@@ -93,8 +93,8 @@ export function Recapitulatif({ onNavigate, onFactureGenerated }: RecapitulatifP
           <div className={styles.cardTitle}>Hébergement</div>
           {[...lignesHeberg, ...lignesEnergie, ...lignesTaxe].map((ligne) => (
             <div key={ligne.id} className={styles.recapLine}>
-              <span className={styles.recapLbl}>{ligne.libelle}</span>
-              <span className={styles.recapVal}>{formatEuros(ligne.prixTotal)}</span>
+              <span className={styles.recapLbl}>{ligne.designation}</span>
+              <span className={styles.recapVal}>{formatEuros(ligne.montant)}</span>
             </div>
           ))}
         </div>
@@ -109,12 +109,12 @@ export function Recapitulatif({ onNavigate, onFactureGenerated }: RecapitulatifP
                   className={styles.recapLbl}
                   style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                 >
-                  {ligne.quantite > 1 ? `${ligne.quantite} × ` : ''}{ligne.libelle}
+                  {ligne.quantite > 1 ? `${ligne.quantite} × ` : ''}{ligne.designation}
                   {ligne.statut === 'A_CONFIRMER' && (
                     <span className={styles.warnBadge}>⚠ À confirmer</span>
                   )}
                 </span>
-                <span className={styles.recapVal}>{formatEuros(ligne.prixTotal)}</span>
+                <span className={styles.recapVal}>{formatEuros(ligne.montant)}</span>
               </div>
             ))}
           </div>
@@ -128,11 +128,11 @@ export function Recapitulatif({ onNavigate, onFactureGenerated }: RecapitulatifP
           </div>
         </div>
 
-        {sejour?.locataire.email && (
+        {sejour?.emailLocataire && (
           <div className={styles.infoBox}>
             <span>📬</span>
             <span>
-              Facture envoyée à <strong>{sejour.locataire.email}</strong> après validation.
+              Facture envoyée à <strong>{sejour.emailLocataire}</strong> après validation.
             </span>
           </div>
         )}

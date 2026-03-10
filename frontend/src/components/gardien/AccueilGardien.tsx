@@ -31,7 +31,7 @@ export function AccueilGardien({ onNavigate }: AccueilGardienProps) {
   }
 
   const hasPersonnesSaisies = sejour.categories.some(
-    (c) => c.effectifReel !== null && c.effectifReel !== undefined,
+    (c) => c.nbReelles !== null && c.nbReelles !== undefined,
   )
 
   return (
@@ -43,7 +43,7 @@ export function AccueilGardien({ onNavigate }: AccueilGardienProps) {
             <span className={styles.badgeDot} />
             En cours
           </div>
-          <div className={styles.sejourName}>{sejour.locataire.nom}</div>
+          <div className={styles.sejourName}>{sejour.nomLocataire}</div>
           <div className={styles.sejourDates}>
             {formatDate(sejour.dateArrivee)} – {formatDate(sejour.dateDepart)} · {sejour.nbNuits} nuit{sejour.nbNuits > 1 ? 's' : ''}
           </div>
@@ -77,14 +77,14 @@ export function AccueilGardien({ onNavigate }: AccueilGardienProps) {
             {sejour.categories.map((cat) => (
               <div key={cat.id} className={styles.catChip}>
                 <div>
-                  <div className={styles.catChipName}>{cat.nomSnapshot}</div>
+                  <div className={styles.catChipName}>{cat.nom}</div>
                   <div className={styles.catChipPrice}>
-                    {cat.prixNuitSnapshot.toFixed(2)} €/pers/nuit · prévu {cat.effectifPrevu}
+                    {cat.prixNuit.toFixed(2)} €/pers/nuit · prévu {cat.nbPrevues}
                   </div>
                 </div>
                 <div className={styles.catChipVal}>
-                  {cat.effectifReel !== null && cat.effectifReel !== undefined
-                    ? `${cat.effectifReel} réels`
+                  {cat.nbReelles !== null && cat.nbReelles !== undefined
+                    ? `${cat.nbReelles} réels`
                     : '— saisi'}
                 </div>
               </div>
@@ -129,23 +129,23 @@ export function AccueilGardien({ onNavigate }: AccueilGardienProps) {
           <div className={styles.cardTitle}>Contact locataire</div>
           <div className={styles.contactRow}>
             <div>
-              <div className={styles.contactName}>{sejour.locataire.nom}</div>
+              <div className={styles.contactName}>{sejour.nomLocataire}</div>
               <div className={styles.contactDetail}>
-                {sejour.locataire.email}
-                {sejour.locataire.telephone && ` · ${sejour.locataire.telephone}`}
+                {sejour.emailLocataire}
+                {sejour.telephoneLocataire && ` · ${sejour.telephoneLocataire}`}
               </div>
             </div>
-            {sejour.locataire.telephone && (
-              <a href={`tel:${sejour.locataire.telephone}`} className={styles.telLink} aria-label="Appeler">
+            {sejour.telephoneLocataire && (
+              <a href={`tel:${sejour.telephoneLocataire}`} className={styles.telLink} aria-label="Appeler">
                 📞
               </a>
             )}
           </div>
-          {sejour.options && (
+          {sejour.optionsPresaisies && (
             <>
               <div className={styles.divider} />
               <div>
-                {sejour.options.split(',').map((opt) => (
+                {sejour.optionsPresaisies.split(',').map((opt) => (
                   <span key={opt.trim()} className={styles.optionTag}>
                     {opt.trim()}
                   </span>
