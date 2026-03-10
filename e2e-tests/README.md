@@ -241,9 +241,17 @@ npm run test:debug
 
 ## Structure
 
-### `specs/workflows.spec.ts`
+### `specs/auth-and-navigation.spec.ts`
 
-Test complet du workflow principal LocaGest :
+Test de l'authentification et navigation basique :
+- Login Resp Location → dashboard responsable
+- Login Gardien → dashboard gardien
+- Validation de la navigation après authentification
+- **Status** : ✅ PASSANT (12s)
+
+### `specs/sejour-creation-full-workflow.spec.ts`
+
+Test complet : Resp Location crée séjours + Gardien remplit données et paiement :
 
 **Scénario 1 : Resp Location**
 1. Crée un 1er séjour avec valeurs personnalisées
