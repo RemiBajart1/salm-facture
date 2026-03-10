@@ -33,7 +33,7 @@ export function Encaissement({ onNavigate }: EncaissementProps) {
         console.error('Erreur chargement facture:', err)
         // Fallback : recalcul depuis les lignes
         sejourApi.getLignes(sejour.id).then((lignes) => {
-          setMontantTotal(lignes.reduce((s, l) => s + l.prixTotal, 0))
+          setMontantTotal(lignes.reduce((s, l) => s + l.montant, 0))
         }).catch(() => {})
       })
       .finally(() => setLoading(false))

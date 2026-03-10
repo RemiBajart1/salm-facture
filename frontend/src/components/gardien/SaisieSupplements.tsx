@@ -13,8 +13,8 @@ interface SaisieSupplementsProps {
 }
 
 interface SupplementSaisi {
-  configItemId: number
-  nom: string
+  configItemId: string
+  designation: string
   prixUnitaire: number
   unite: string
   quantite: number
@@ -31,7 +31,7 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
   const [items, setItems] = useState<ConfigItem[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [quantites, setQuantites] = useState<Record<number, number>>({})
+  const [quantites, setQuantites] = useState<Record<string, number>>({})
   const [lignesLibres, setLignesLibres] = useState<LigneLibre[]>([
     { description: '', montant: '' },
   ])
@@ -43,7 +43,7 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
       .getItems()
       .then((data) => {
         setItems(data.filter((i) => i.actif))
-        const initial: Record<number, number> = {}
+        const initial: Record<string, number> = {}
         data.filter((i) => i.actif).forEach((i) => { initial[i.id] = 0 })
         setQuantites(initial)
       })
@@ -55,7 +55,7 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
   }, [])
 
   const groupedItems = items.reduce<Record<string, ConfigItem[]>>((acc, item) => {
-    const cat = item.categorieItem
+    const cat = item.categorie
     if (!acc[cat]) acc[cat] = []
     acc[cat].push(item)
     return acc
@@ -68,7 +68,7 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
     LINGE: 'Linge',
   }
 
-  const handleQuantite = (itemId: number, delta: number) => {
+  const handleQuantite = (itemId: string, delta: number) => {
     setQuantites((prev) => ({
       ...prev,
       [itemId]: Math.max(0, (prev[itemId] ?? 0) + delta),
@@ -96,10 +96,9 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
         .map((item) =>
           sejourApi.addSupplement(sejour.id, {
             configItemId: item.id,
-            libelle: item.nom,
+            designation: item.designation,
             quantite: quantites[item.id],
             prixUnitaire: item.prixUnitaire,
-            typeLigne: 'SUPPLEMENT',
           }),
         )
 
@@ -110,10 +109,9 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
       libresValides.forEach((l) => {
         promises.push(
           sejourApi.addSupplement(sejour.id, {
-            libelle: l.description.trim(),
+            designation: l.description.trim(),
             quantite: 1,
             prixUnitaire: parseFloat(l.montant.replace(',', '.')),
-            typeLigne: 'LIBRE',
           }),
         )
       })
@@ -142,7 +140,7 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
             {catItems.map((item) => (
               <div key={item.id} className={styles.supplementItem}>
                 <div>
-                  <div className={styles.supplName}>{item.nom}</div>
+                  <div className={styles.supplName}>{item.designation}</div>
                   <div className={styles.supplPrice}>
                     {formatEuros(item.prixUnitaire)} / {item.unite}
                   </div>
@@ -153,7 +151,7 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
                     className={styles.supplBtn}
                     onClick={() => handleQuantite(item.id, -1)}
                     disabled={(quantites[item.id] ?? 0) === 0}
-                    aria-label={`Diminuer ${item.nom}`}
+                    aria-label={`Diminuer ${item.designation}`}
                   >
                     −
                   </button>
@@ -166,7 +164,7 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
                     type="button"
                     className={styles.supplBtn}
                     onClick={() => handleQuantite(item.id, 1)}
-                    aria-label={`Augmenter ${item.nom}`}
+                    aria-label={`Augmenter ${item.designation}`}
                   >
                     +
                   </button>
