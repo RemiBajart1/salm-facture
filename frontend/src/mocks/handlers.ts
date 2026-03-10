@@ -17,21 +17,21 @@ import type {
 
 const mockLocataires: Locataire[] = [
   {
-    id: 1,
+    id: 'loc-uuid-1',
     nom: 'Famille Dupont',
     email: 'jp.dupont@email.fr',
     telephone: '06 12 34 56 78',
     adresse: '12 rue des Lilas, 67000 Strasbourg',
   },
   {
-    id: 2,
+    id: 'loc-uuid-2',
     nom: 'Association Les Randonneurs',
     email: 'contact@randonneurs67.fr',
     telephone: '03 88 45 67 89',
     adresse: '5 allée des Vosges, 67200 Strasbourg',
   },
   {
-    id: 3,
+    id: 'loc-uuid-3',
     nom: 'Famille Martin',
     email: 'c.martin@gmail.com',
     telephone: '06 98 76 54 32',
@@ -39,180 +39,186 @@ const mockLocataires: Locataire[] = [
 ]
 
 const mockSejourCurrent: Sejour = {
-  id: 1,
+  id: 'sejour-uuid-1',
   statut: 'EN_COURS',
-  locataire: mockLocataires[0],
+  nomLocataire: 'Famille Dupont',
+  emailLocataire: 'jp.dupont@email.fr',
+  telephoneLocataire: '06 12 34 56 78',
   dateArrivee: '2025-03-22',
   dateDepart: '2025-03-29',
   nbNuits: 7,
   heureArriveePrevue: '15:00',
   heureDepartPrevu: '10:00',
   heureArriveeReelle: '15:30',
-  heureDepartReelle: null,
+  heureDepartReel: null,
   minPersonnesTotal: 40,
-  tarifForfaitCategorieId: 1,
   categories: [
     {
-      id: 1,
-      tarifPersonneId: 1,
-      nomSnapshot: "Membre de l'union",
-      prixNuitSnapshot: 14.0,
-      effectifPrevu: 25,
-      effectifReel: null,
+      id: 'cat-uuid-1',
+      nom: "Membre de l'union",
+      prixNuit: 14.0,
+      nbPrevues: 25,
+      nbReelles: null,
     },
     {
-      id: 2,
-      tarifPersonneId: 2,
-      nomSnapshot: 'Groupe de jeunes',
-      prixNuitSnapshot: 12.0,
-      effectifPrevu: 15,
-      effectifReel: null,
+      id: 'cat-uuid-2',
+      nom: 'Groupe de jeunes',
+      prixNuit: 12.0,
+      nbPrevues: 15,
+      nbReelles: null,
     },
   ],
-  options: 'Linge de maison inclus, animaux autorisés',
+  optionsPresaisies: 'Linge de maison inclus, animaux autorisés',
   modePaiement: 'CHEQUE',
 }
 
 const mockSejours: Sejour[] = [
   mockSejourCurrent,
   {
-    id: 2,
+    id: 'sejour-uuid-2',
     statut: 'PLANIFIE',
-    locataire: mockLocataires[1],
+    nomLocataire: 'Association Les Randonneurs',
+    emailLocataire: 'contact@randonneurs67.fr',
+    telephoneLocataire: '03 88 45 67 89',
     dateArrivee: '2025-04-05',
     dateDepart: '2025-04-07',
     nbNuits: 2,
     heureArriveePrevue: '16:00',
     heureDepartPrevu: '10:00',
     minPersonnesTotal: 40,
-    tarifForfaitCategorieId: 3,
     categories: [
       {
-        id: 3,
-        tarifPersonneId: 3,
-        nomSnapshot: 'Extérieur',
-        prixNuitSnapshot: 18.0,
-        effectifPrevu: 42,
-        effectifReel: null,
+        id: 'cat-uuid-3',
+        nom: 'Extérieur',
+        prixNuit: 18.0,
+        nbPrevues: 42,
+        nbReelles: null,
       },
     ],
     modePaiement: 'VIREMENT',
   },
   {
-    id: 3,
+    id: 'sejour-uuid-3',
     statut: 'TERMINE',
-    locataire: mockLocataires[2],
+    nomLocataire: 'Famille Martin',
+    emailLocataire: 'c.martin@gmail.com',
+    telephoneLocataire: '06 98 76 54 32',
     dateArrivee: '2025-02-14',
     dateDepart: '2025-02-16',
     nbNuits: 2,
     heureArriveePrevue: '14:00',
     heureDepartPrevu: '11:00',
     heureArriveeReelle: '14:15',
-    heureDepartReelle: '11:00',
+    heureDepartReel: '11:00',
     minPersonnesTotal: 40,
-    tarifForfaitCategorieId: 4,
     categories: [
       {
-        id: 4,
-        tarifPersonneId: 1,
-        nomSnapshot: "Membre de l'union",
-        prixNuitSnapshot: 14.0,
-        effectifPrevu: 30,
-        effectifReel: 28,
+        id: 'cat-uuid-4',
+        nom: "Membre de l'union",
+        prixNuit: 14.0,
+        nbPrevues: 30,
+        nbReelles: 28,
       },
     ],
     modePaiement: 'CHEQUE',
   },
 ]
 
-const mockLignes: LigneSejour[] = [
+// Données internes avec sejourId pour le filtrage (non exposé dans LigneSejour)
+type LigneAvecSejour = LigneSejour & { _sejourId: string }
+
+const mockLignes: LigneAvecSejour[] = [
   {
-    id: 1,
-    sejourId: 1,
+    id: 'ligne-uuid-1',
+    _sejourId: 'sejour-uuid-1',
     typeLigne: 'HEBERGEMENT',
     statut: 'CONFIRME',
-    libelle: "Forfait hébergement – 40 personnes · 7 nuits",
+    designation: "Forfait hébergement – 40 personnes · 7 nuits",
     quantite: 1,
     prixUnitaire: 3727.36,
-    prixTotal: 3727.36,
+    montant: 3727.36,
   },
   {
-    id: 2,
-    sejourId: 1,
+    id: 'ligne-uuid-2',
+    _sejourId: 'sejour-uuid-1',
     typeLigne: 'ENERGIE',
     statut: 'CONFIRME',
-    libelle: 'Forfait énergies (2 nuits × 80 €)',
+    designation: 'Forfait énergies (2 nuits × 80 €)',
     quantite: 2,
     prixUnitaire: 80.0,
-    prixTotal: 160.0,
+    montant: 160.0,
   },
   {
-    id: 3,
-    sejourId: 1,
+    id: 'ligne-uuid-3',
+    _sejourId: 'sejour-uuid-1',
     typeLigne: 'TAXE_SEJOUR',
     statut: 'CONFIRME',
-    libelle: 'Taxe de séjour (22 adultes × 7 nuits × 0,88 €)',
+    designation: 'Taxe de séjour (22 adultes × 7 nuits × 0,88 €)',
     quantite: 154,
     prixUnitaire: 0.88,
-    prixTotal: 135.52,
+    montant: 135.52,
   },
   {
-    id: 4,
-    sejourId: 1,
+    id: 'ligne-uuid-4',
+    _sejourId: 'sejour-uuid-1',
     typeLigne: 'SUPPLEMENT',
     statut: 'CONFIRME',
-    libelle: 'Assiette cassée',
+    designation: 'Assiette cassée',
     quantite: 1,
     prixUnitaire: 8.0,
-    prixTotal: 8.0,
-    configItemId: 1,
+    montant: 8.0,
+    configItemId: 'item-uuid-1',
   },
   {
-    id: 5,
-    sejourId: 1,
+    id: 'ligne-uuid-5',
+    _sejourId: 'sejour-uuid-1',
     typeLigne: 'SUPPLEMENT',
     statut: 'CONFIRME',
-    libelle: 'Verre cassé',
+    designation: 'Verre cassé',
     quantite: 2,
     prixUnitaire: 4.0,
-    prixTotal: 8.0,
-    configItemId: 2,
+    montant: 8.0,
+    configItemId: 'item-uuid-2',
   },
   {
-    id: 6,
-    sejourId: 1,
+    id: 'ligne-uuid-6',
+    _sejourId: 'sejour-uuid-1',
     typeLigne: 'SUPPLEMENT',
     statut: 'CONFIRME',
-    libelle: 'Location barbecue',
+    designation: 'Location barbecue',
     quantite: 1,
     prixUnitaire: 25.0,
-    prixTotal: 25.0,
-    configItemId: 3,
+    montant: 25.0,
+    configItemId: 'item-uuid-3',
   },
   {
-    id: 7,
-    sejourId: 1,
+    id: 'ligne-uuid-7',
+    _sejourId: 'sejour-uuid-1',
     typeLigne: 'LIBRE',
     statut: 'A_CONFIRMER',
-    libelle: 'Drap taché (1)',
+    designation: 'Drap taché (1)',
     quantite: 1,
     prixUnitaire: 15.0,
-    prixTotal: 15.0,
+    montant: 15.0,
   },
 ]
 
 const mockFacture: Facture = {
-  id: 1,
-  sejourId: 1,
+  id: 'facture-uuid-1',
+  sejourId: 'sejour-uuid-1',
   numero: 'FAC-2025-001',
   statut: 'BROUILLON',
+  montantHebergement: 3727.36,
+  montantEnergie: 160.0,
+  montantTaxe: 135.52,
+  montantSupplements: 56.0,
   montantTotal: 4078.88,
-  lignes: mockLignes,
+  emailEnvoye: false,
 }
 
 const mockTarifs: TarifPersonne[] = [
   {
-    id: 1,
+    id: 'tarif-uuid-1',
     nom: "Membre de l'union",
     prixNuit: 14.0,
     description: 'Tarif standard UCJG',
@@ -220,7 +226,7 @@ const mockTarifs: TarifPersonne[] = [
     ordre: 1,
   },
   {
-    id: 2,
+    id: 'tarif-uuid-2',
     nom: 'Groupe de jeunes',
     prixNuit: 12.0,
     description: 'Groupes <25 ans',
@@ -228,7 +234,7 @@ const mockTarifs: TarifPersonne[] = [
     ordre: 2,
   },
   {
-    id: 3,
+    id: 'tarif-uuid-3',
     nom: 'Extérieur',
     prixNuit: 18.0,
     description: "Personnes extérieures à l'union",
@@ -236,7 +242,7 @@ const mockTarifs: TarifPersonne[] = [
     ordre: 3,
   },
   {
-    id: 4,
+    id: 'tarif-uuid-4',
     nom: 'Bénévole encadrant',
     prixNuit: 8.0,
     description: 'Encadrants bénévoles',
@@ -247,43 +253,43 @@ const mockTarifs: TarifPersonne[] = [
 
 const mockItems: ConfigItem[] = [
   {
-    id: 1,
-    nom: 'Assiette cassée',
+    id: 'item-uuid-1',
+    designation: 'Assiette cassée',
     prixUnitaire: 8.0,
-    unite: 'unité',
-    categorieItem: 'CASSE',
+    unite: 'UNITE',
+    categorie: 'CASSE',
     actif: true,
   },
   {
-    id: 2,
-    nom: 'Verre cassé',
+    id: 'item-uuid-2',
+    designation: 'Verre cassé',
     prixUnitaire: 4.0,
-    unite: 'unité',
-    categorieItem: 'CASSE',
+    unite: 'UNITE',
+    categorie: 'CASSE',
     actif: true,
   },
   {
-    id: 3,
-    nom: 'Location barbecue',
+    id: 'item-uuid-3',
+    designation: 'Location barbecue',
     prixUnitaire: 25.0,
-    unite: 'séjour',
-    categorieItem: 'LOCATION',
+    unite: 'SEJOUR',
+    categorie: 'LOCATION',
     actif: true,
   },
   {
-    id: 4,
-    nom: 'Nettoyage supplémentaire',
+    id: 'item-uuid-4',
+    designation: 'Nettoyage supplémentaire',
     prixUnitaire: 60.0,
-    unite: 'intervention',
-    categorieItem: 'SERVICE',
+    unite: 'INTERVENTION',
+    categorie: 'SERVICE',
     actif: true,
   },
   {
-    id: 5,
-    nom: 'Kit linge de lit',
+    id: 'item-uuid-5',
+    designation: 'Kit linge de lit',
     prixUnitaire: 5.0,
-    unite: 'kit',
-    categorieItem: 'LINGE',
+    unite: 'UNITE',
+    categorie: 'LINGE',
     actif: true,
   },
 ]
@@ -298,6 +304,14 @@ const mockConfig: ConfigSiteEntry[] = [
   { cle: 'delai_paiement_jours', valeur: '14', description: 'Délai de paiement en jours après émission facture' },
   { cle: 'adresse_maison', valeur: '53 rue du Haut-Fourneau, 67130 La Broque', description: 'Adresse de la maison de vacances' },
 ]
+
+/* ── Helpers ── */
+
+let ligneCounter = 8
+const nextLigneId = () => `ligne-uuid-${ligneCounter++}`
+
+let sejourCounter = 4
+const nextSejourId = () => `sejour-uuid-${sejourCounter++}`
 
 /* ── Handlers ── */
 
@@ -320,14 +334,14 @@ export const handlers = [
       content: filtered.slice(page * size, (page + 1) * size),
       totalElements: filtered.length,
       totalPages: Math.ceil(filtered.length / size),
-      number: page,
+      page,
       size,
     })
   }),
 
   /* Séjour par ID */
   http.get('/api/v1/sejours/:id', ({ params }) => {
-    const sejour = mockSejours.find((s) => s.id === Number(params.id))
+    const sejour = mockSejours.find((s) => s.id === params.id)
     if (!sejour) return HttpResponse.json({ message: 'Séjour introuvable' }, { status: 404 })
     return HttpResponse.json(sejour)
   }),
@@ -336,22 +350,18 @@ export const handlers = [
   http.post('/api/v1/sejours', async ({ request }) => {
     const body = await request.json() as Record<string, unknown>
     const newSejour: Sejour = {
-      id: mockSejours.length + 1,
+      id: nextSejourId(),
       statut: 'PLANIFIE',
-      locataire: {
-        id: mockLocataires.length + 1,
-        nom: String(body.locataireNom ?? ''),
-        email: String(body.locataireEmail ?? ''),
-        telephone: body.locataireTelephone as string | undefined,
-        adresse: body.locataireAdresse as string | undefined,
-      },
+      nomLocataire: String(body.nomLocataire ?? ''),
+      emailLocataire: String(body.emailLocataire ?? ''),
+      telephoneLocataire: body.telephoneLocataire as string | undefined,
       dateArrivee: String(body.dateArrivee ?? ''),
       dateDepart: String(body.dateDepart ?? ''),
       nbNuits: 1,
       minPersonnesTotal: Number(body.minPersonnesTotal ?? 40),
-      tarifForfaitCategorieId: body.tarifForfaitCategorieId as number | undefined,
       categories: [],
       modePaiement: (body.modePaiement as 'CHEQUE' | 'VIREMENT') ?? 'CHEQUE',
+      optionsPresaisies: body.optionsPresaisies as string | undefined,
     }
     mockSejours.push(newSejour)
     return HttpResponse.json(newSejour, { status: 201 })
@@ -359,12 +369,12 @@ export const handlers = [
 
   /* Patch personnes */
   http.patch('/api/v1/sejours/:id/personnes', async ({ params, request }) => {
-    const sejour = mockSejours.find((s) => s.id === Number(params.id))
+    const sejour = mockSejours.find((s) => s.id === params.id)
     if (!sejour) return HttpResponse.json({ message: 'Séjour introuvable' }, { status: 404 })
-    const body = await request.json() as { categories: { sejourCategorieId: number; effectifReel: number }[] }
-    body.categories.forEach(({ sejourCategorieId, effectifReel }) => {
-      const cat = sejour.categories.find((c) => c.id === sejourCategorieId)
-      if (cat) cat.effectifReel = effectifReel
+    const body = await request.json() as { categories: { categorieId: string; nbReelles: number }[] }
+    body.categories.forEach(({ categorieId, nbReelles }) => {
+      const cat = sejour.categories.find((c) => c.id === categorieId)
+      if (cat) cat.nbReelles = nbReelles
     })
     return new HttpResponse(null, { status: 204 })
   }),
@@ -377,24 +387,30 @@ export const handlers = [
   /* Ajouter supplément */
   http.post('/api/v1/sejours/:id/supplements', async ({ params, request }) => {
     const body = await request.json() as Record<string, unknown>
-    const newLigne: LigneSejour = {
-      id: mockLignes.length + 1,
-      sejourId: Number(params.id),
-      typeLigne: (body.typeLigne as 'SUPPLEMENT' | 'LIBRE') ?? 'SUPPLEMENT',
-      statut: body.typeLigne === 'LIBRE' ? 'A_CONFIRMER' : 'CONFIRME',
-      libelle: String(body.libelle ?? ''),
+    const isLibre = !body.configItemId
+    const newLigne: LigneAvecSejour = {
+      id: nextLigneId(),
+      _sejourId: String(params.id),
+      typeLigne: isLibre ? 'LIBRE' : 'SUPPLEMENT',
+      statut: isLibre ? 'A_CONFIRMER' : 'CONFIRME',
+      designation: String(body.designation ?? ''),
       quantite: Number(body.quantite ?? 1),
       prixUnitaire: Number(body.prixUnitaire ?? 0),
-      prixTotal: Number(body.quantite ?? 1) * Number(body.prixUnitaire ?? 0),
-      configItemId: body.configItemId as number | undefined,
+      montant: Number(body.quantite ?? 1) * Number(body.prixUnitaire ?? 0),
+      configItemId: body.configItemId as string | undefined,
     }
     mockLignes.push(newLigne)
-    return HttpResponse.json(newLigne, { status: 201 })
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { _sejourId, ...ligneResponse } = newLigne
+    return HttpResponse.json(ligneResponse, { status: 201 })
   }),
 
   /* Lignes du séjour */
   http.get('/api/v1/sejours/:id/lignes', ({ params }) => {
-    const lignes = mockLignes.filter((l) => l.sejourId === Number(params.id))
+    const lignes = mockLignes
+      .filter((l) => l._sejourId === params.id)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .map(({ _sejourId, ...l }) => l)
     return HttpResponse.json(lignes)
   }),
 
@@ -414,12 +430,11 @@ export const handlers = [
   }),
 
   /* Ajouter paiement */
-  http.post('/api/v1/sejours/:id/paiements', async ({ params, request }) => {
+  http.post('/api/v1/sejours/:id/paiements', async ({ request }) => {
     const body = await request.json() as Record<string, unknown>
     return HttpResponse.json(
       {
-        id: 1,
-        sejourId: Number(params.id),
+        id: 'paiement-uuid-1',
         montant: body.montant,
         mode: body.mode,
         dateEncaissement: new Date().toISOString().split('T')[0],
@@ -451,13 +466,13 @@ export const handlers = [
 
   http.post('/api/v1/admin/tarifs', async ({ request }) => {
     const body = await request.json() as Omit<TarifPersonne, 'id'>
-    const newTarif: TarifPersonne = { id: mockTarifs.length + 1, ...body }
+    const newTarif: TarifPersonne = { id: `tarif-uuid-${mockTarifs.length + 1}`, ...body }
     mockTarifs.push(newTarif)
     return HttpResponse.json(newTarif, { status: 201 })
   }),
 
   http.put('/api/v1/admin/tarifs/:id', async ({ params, request }) => {
-    const idx = mockTarifs.findIndex((t) => t.id === Number(params.id))
+    const idx = mockTarifs.findIndex((t) => t.id === params.id)
     if (idx === -1) return HttpResponse.json({ message: 'Tarif introuvable' }, { status: 404 })
     const body = await request.json() as Partial<TarifPersonne>
     mockTarifs[idx] = { ...mockTarifs[idx], ...body }
@@ -469,13 +484,13 @@ export const handlers = [
 
   http.post('/api/v1/admin/items', async ({ request }) => {
     const body = await request.json() as Omit<ConfigItem, 'id'>
-    const newItem: ConfigItem = { id: mockItems.length + 1, ...body }
+    const newItem: ConfigItem = { id: `item-uuid-${mockItems.length + 1}`, ...body }
     mockItems.push(newItem)
     return HttpResponse.json(newItem, { status: 201 })
   }),
 
   http.put('/api/v1/admin/items/:id', async ({ params, request }) => {
-    const idx = mockItems.findIndex((i) => i.id === Number(params.id))
+    const idx = mockItems.findIndex((i) => i.id === params.id)
     if (idx === -1) return HttpResponse.json({ message: 'Item introuvable' }, { status: 404 })
     const body = await request.json() as Partial<ConfigItem>
     mockItems[idx] = { ...mockItems[idx], ...body }
@@ -483,14 +498,19 @@ export const handlers = [
   }),
 
   http.delete('/api/v1/admin/items/:id', ({ params }) => {
-    const idx = mockItems.findIndex((i) => i.id === Number(params.id))
+    const idx = mockItems.findIndex((i) => i.id === params.id)
     if (idx !== -1) mockItems[idx].actif = false
     return new HttpResponse(null, { status: 204 })
   }),
 
   /* Lignes libres */
   http.get('/api/v1/admin/lignes-libres', () => {
-    return HttpResponse.json(mockLignes.filter((l) => l.typeLigne === 'LIBRE'))
+    return HttpResponse.json(
+      mockLignes
+        .filter((l) => l.typeLigne === 'LIBRE')
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        .map(({ _sejourId, ...l }) => l),
+    )
   }),
 
   http.post('/api/v1/admin/lignes-libres/:id/promouvoir', () => {
