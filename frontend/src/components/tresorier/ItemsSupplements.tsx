@@ -15,7 +15,7 @@ export function ItemsSupplements() {
 
   const [newNom, setNewNom] = useState('')
   const [newPrix, setNewPrix] = useState('')
-  const [newUnite, setNewUnite] = useState('unité')
+  const [newUnite, setNewUnite] = useState('UNITE')
   const [newCategorie, setNewCategorie] = useState('CASSE')
   const [saving, setSaving] = useState(false)
 
@@ -36,10 +36,10 @@ export function ItemsSupplements() {
     setActionError(null)
     try {
       const created = await adminApi.createItem({
-        nom: newNom,
+        designation: newNom,
         prixUnitaire: parseFloat(newPrix.replace(',', '.')),
         unite: newUnite,
-        categorieItem: newCategorie,
+        categorie: newCategorie,
         actif: true,
       })
       setItems((prev) => [...prev, created])
@@ -53,7 +53,7 @@ export function ItemsSupplements() {
     }
   }
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     setActionError(null)
     try {
       await adminApi.deleteItem(id)
@@ -95,9 +95,9 @@ export function ItemsSupplements() {
           <tbody>
             {items.map((item) => (
               <tr key={item.id}>
-                <td><strong>{item.nom}</strong></td>
+                <td><strong>{item.designation}</strong></td>
                 <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  {categoryLabels[item.categorieItem] ?? item.categorieItem}
+                  {categoryLabels[item.categorie] ?? item.categorie}
                 </td>
                 <td><span className={styles.priceCell}>{formatEuros(item.prixUnitaire)}</span></td>
                 <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{item.unite}</td>
@@ -146,12 +146,15 @@ export function ItemsSupplements() {
         </div>
         <div>
           <div className={styles.tnfLabel}>Unité</div>
-          <input
+          <select
             className={styles.tnfInput}
-            type="text"
             value={newUnite}
             onChange={(e) => setNewUnite(e.target.value)}
-          />
+          >
+            <option value="UNITE">Unité</option>
+            <option value="SEJOUR">Séjour</option>
+            <option value="INTERVENTION">Intervention</option>
+          </select>
         </div>
         <div>
           <div className={styles.tnfLabel}>Catégorie</div>
