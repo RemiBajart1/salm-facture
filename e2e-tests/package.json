@@ -1,0 +1,14 @@
+{
+  "name": "locagest-e2e-tests",
+  "version": "0.1.0",
+  "description": "End-to-end tests for LocaGest using Playwright",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}
