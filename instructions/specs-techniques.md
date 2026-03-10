@@ -184,18 +184,25 @@ Utilise des records dès que possible pour les Dtos et modèles.
 - Structure de projet claire (components/, services/, utils/, ...)
 - Utilisation d'Amplify pour l'authentification et les appels API
 - Design "mobile-first", responsive, avec les maquettes HTML comme référence
-- Gestion des erreurs utilisateur avec des messages clairs et des feedbacks visuels
+- Gestion des erreurs utilisateur avec des messages clairs et des feedbacks visuels (ex : champ non rempli, erreur api...)
+- formulaire : indiquer au remplissage les champs obligatoires (soit par un astérisque, soit par un message "Ce champ est obligatoire" qui apparaît au moment de la validation du formulaire + cadre / fond rouge autour du champ concerné si non rempli ou format incorrect)
 - Tests unitaires avec Jest + React Testing Library pour les composants critiques (ex: formulaire de création de séjour, affichage de facture)
 - Tests end-to-end avec Cypress pour les scénarios principaux (ex: création séjour → génération facture → encaissement paiement)
 - Respecte les règles d'accessibilité (ex: labels pour les champs de formulaire, contrastes de couleurs, navigation clavier)
+- Vérifie systématiquement lors de l'implémentation que les variables récupérées et envoyées par le front correspondent (nom + format) à celles attendues par le backend (ex: `tarifForfaitCategorieId` doit être un entier correspondant à une catégorie existante, `dateDebut` doit être au format ISO 8601, etc.)
 
-Les erreurs doivent apparaitre clairement si l'utilisateur peut y faire queqleuchose. Si c'est une erreur technique (ex: échec de l'appel API), un message générique doit être affiché ("Une erreur est survenue, veuillez réessayer plus tard") et le détail de l'erreur doit être loggé côté client pour le debugging (ex: `console.error(error)`).
+Les erreurs doivent apparaitre clairement si l'utilisateur peut y faire quelquechose. Si c'est une erreur technique (ex: échec de l'appel API), un message générique doit être affiché ("Une erreur est survenue, veuillez réessayer plus tard") et le détail de l'erreur doit être loggé côté client pour le debugging (ex: `console.error(error)`).
 
 ### Couverture des tests : 
 - Au moins 90% de couverture en TU
 - Les tests E2E doivent couvrir au minimum les cas d'usage "heureux" (ex: création séjour → génération facture → encaissement paiement)
 - Si possible, couvrir aussi les cas d'erreur côté client (ex: saisie incorrecte, échec de l'appel API) avec des tests unitaires et/ou E2E
-                                                                                                                                                 
+          
+
+### Tests end to end
+Soit cypress, soit playwright
+Mets les scripts de test dans /e2e-tests/ et documente leur execution en commentaires dans le script du test
+
 
 # Design decisions
 ### Pourquoi SQL plutôt que nosql/DynamoDB ?
