@@ -49,17 +49,22 @@ Les catégories de tarifs (`sejour_categorie`) s'appliquent normalement. Le **fo
 - **Configurable par le responsable location** au moment de la création du séjour (ex : 30 pour un groupe membres de l'union)
 - Stocké dans `sejour.min_personnes_total` (DTO : `minPersonnesTotal`, `null` = utilise `config_site.min_personnes_defaut`)
 
+**Catégorie de référence pour le forfait :**
+Le responsable location choisit, à la création du séjour, une catégorie parmi celles sélectionnées.
+Le `prix_nuit_snapshot` de cette catégorie est utilisé comme prix unitaire du forfait.
+Stocké dans `sejour.tarif_forfait_categorie_id` (DTO : `tarifForfaitCategorieId`).
+
 **Calcul par nuit :**
 ```
 montant_reel_nuit    = Σ (nb_reelles_cat × prix_nuit_snapshot_cat)
 total_reel_nuit      = Σ nb_reelles_cat
+prix_reference       = prixNuitSnapshot de la catégorie référencée par tarifForfaitCategorieId
 
 Si total_reel_nuit >= sejour.min_personnes_total :
   montant_nuit = montant_reel_nuit
 
 Si total_reel_nuit < sejour.min_personnes_total :
-  prix_moyen = montant_reel_nuit / total_reel_nuit   (ou moyenne simple si 0 présents)
-  montant_nuit = sejour.min_personnes_total × prix_moyen
+  montant_nuit = sejour.min_personnes_total × prix_reference
 ```
 
 **Total facture :**
@@ -78,7 +83,7 @@ montant_total = Σ montant_nuit  (sur toutes les nuits)
 |  1 nuit, tarif standard        | 27 présents (18€ )                        | 27 < 40 → forfait | 40 × 18€          | 720 € |
 | 2 nuits                       | 48 puis 55 présents                           | >40 chaque nuit | (48+55) × 18€     | 1 854 € |
 | 3 nuits                       | 35 / 42 / 38 présents                         | nuit 2 > 40, autres forfait | (40+42+40) × prix |
-| 1 nuit, tarif négocié membres | 15 non-adhérents (18€) + 8 membres (15€) = 23 | 23 < 40 → forfait | 40 × 15€*         | 600 €  |
+| 1 nuit, tarif négocié membres | 15 non-adhérents (18€) + 8 membres (15€) = 23 | 23 < 40 → forfait | 40 × 15€ (réf = membres) | 600 €  |
 
 
 

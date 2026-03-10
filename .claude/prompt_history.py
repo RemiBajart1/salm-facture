@@ -2,6 +2,12 @@
 """
 Claude Code Hook — Historique des prompts & résumés de réponses
 Événements gérés : UserPromptSubmit, Stop
+
+Format des données reçues sur stdin :
+  UserPromptSubmit : {"hook_event_name": "UserPromptSubmit", "session_id": "...",
+                      "transcript_path": "...", "prompt": "...", "cwd": "..."}
+  Stop             : {"hook_event_name": "Stop", "session_id": "...",
+                      "transcript_path": "...", "stop_hook_active": false}
 """
 
 import json
@@ -35,13 +41,75 @@ def summarize_response(text: str, max_length: int = 300) -> str:
     text = text.strip()
     if len(text) <= max_length:
         return text
-    # Couper proprement à la dernière phrase/ligne complète
     truncated = text[:max_length]
     for sep in (". ", "\n", "! ", "? "):
         idx = truncated.rfind(sep)
         if idx > max_length // 2:
             return truncated[: idx + 1] + " […]"
     return truncated + " […]"
+
+
+def read_tokens_from_transcript(transcript_path: str, session_id: str) -> dict:
+    """
+    Lit le transcript JSONL et agrège les tokens d'usage de la session courante.
+    Retourne {"input_tokens": n, "output_tokens": n, "cache_read_tokens": n, "cache_write_tokens": n}
+    """
+    tokens = {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 0,
+    }
+    if not transcript_path or not os.path.exists(transcript_path):
+        return tokens
+
+    try:
+        with open(transcript_path, "r", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    # Seules les entrées assistant contiennent l'usage
+                    if entry.get("type") != "assistant":
+                        continue
+                    msg = entry.get("message", {})
+                    if not isinstance(msg, dict):
+                        continue
+                    usage = msg.get("usage", {})
+                    if not usage:
+                        continue
+                    tokens["input_tokens"] += usage.get("input_tokens", 0)
+                    tokens["output_tokens"] += usage.get("output_tokens", 0)
+                    tokens["cache_read_tokens"] += usage.get("cache_read_input_tokens", 0)
+                    tokens["cache_write_tokens"] += (
+                        usage.get("cache_creation_input_tokens", 0)
+                    )
+                except (json.JSONDecodeError, AttributeError):
+                    continue
+    except IOError:
+        pass
+
+    return tokens
+
+
+def detect_event(data: dict) -> str:
+    """
+    Détecte le type d'événement depuis les données du hook.
+    Claude Code envoie 'hook_event_name' ou 'event'.
+    Fallback : détection structurelle.
+    """
+    # Champ standard Claude Code
+    event = data.get("hook_event_name") or data.get("event", "")
+    if event:
+        return event
+    # Détection structurelle
+    if "prompt" in data:
+        return "UserPromptSubmit"
+    if "stop_hook_active" in data:
+        return "Stop"
+    return ""
 
 
 def handle_user_prompt_submit(data: dict) -> dict:
@@ -56,41 +124,65 @@ def handle_user_prompt_submit(data: dict) -> dict:
         "timestamp": timestamp,
         "session_id": session_id,
         "prompt": prompt,
-        "response_summary": None,  # sera rempli par le hook Stop
+        "response_summary": None,   # rempli par Stop
+        "tokens": None,             # rempli par Stop
     }
     history.append(entry)
     save_history(history)
 
-    # Laisser passer le prompt tel quel
     return {"continue": True}
 
 
 def handle_stop(data: dict) -> dict:
-    """Capture la réponse finale et met à jour le dernier prompt sans résumé."""
-    # Chercher le texte de la réponse dans les différents champs possibles
-    response_text = (
-        data.get("response", "")
-        or data.get("message", "")
-        or data.get("assistant_response", "")
-        or ""
-    )
+    """Capture la réponse finale et les tokens, met à jour le dernier prompt."""
+    session_id = data.get("session_id", "unknown")
+    transcript_path = data.get("transcript_path", "")
 
-    # Parcourir les blocs de contenu si disponibles
-    if not response_text and "content" in data:
-        parts = []
-        for block in data.get("content", []):
-            if isinstance(block, dict) and block.get("type") == "text":
-                parts.append(block.get("text", ""))
-        response_text = "\n".join(parts)
+    # Récupérer le texte de la réponse depuis le transcript
+    response_text = ""
+    if transcript_path and os.path.exists(transcript_path):
+        try:
+            with open(transcript_path, "r", encoding="utf-8", errors="replace") as f:
+                lines = f.readlines()
+            # Remonter depuis la fin pour trouver le dernier message assistant
+            for line in reversed(lines):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    if entry.get("type") != "assistant":
+                        continue
+                    msg = entry.get("message", {})
+                    if not isinstance(msg, dict):
+                        continue
+                    content = msg.get("content", [])
+                    if isinstance(content, list):
+                        parts = [
+                            b.get("text", "")
+                            for b in content
+                            if isinstance(b, dict) and b.get("type") == "text"
+                        ]
+                        response_text = "\n".join(parts)
+                    elif isinstance(content, str):
+                        response_text = content
+                    if response_text:
+                        break
+                except (json.JSONDecodeError, AttributeError):
+                    continue
+        except IOError:
+            pass
+
+    # Tokens agrégés sur toute la session
+    tokens = read_tokens_from_transcript(transcript_path, session_id)
 
     summary = summarize_response(response_text)
-    session_id = data.get("session_id", "unknown")
 
     history = load_history()
-    # Mettre à jour la dernière entrée de cette session sans résumé
     for entry in reversed(history):
         if entry.get("session_id") == session_id and entry.get("response_summary") is None:
             entry["response_summary"] = summary
+            entry["tokens"] = tokens
             break
 
     save_history(history)
@@ -104,7 +196,7 @@ def main():
     except json.JSONDecodeError:
         data = {}
 
-    event = data.get("event", os.environ.get("CLAUDE_HOOK_EVENT", ""))
+    event = detect_event(data)
 
     if event == "UserPromptSubmit":
         result = handle_user_prompt_submit(data)
