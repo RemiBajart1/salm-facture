@@ -30,6 +30,7 @@ Le resp. location crée le séjour avec :
 - Les catégories de tarifs applicables et effectifs prévisionnels par catégorie
 - Le forfait minimum de personnes (`minPersonnesTotal`, défaut = valeur de `config_site.min_personnes_defaut`)
 - La catégorie de référence pour le forfait (`tarifForfaitCategorieId`)
+- **Case "Groupe déjà membre pour l'année civile"** : si cochée, la quantité de la carte de membre (item obligatoire) est pré-initialisée à 0 pour ce séjour. Voir [Suppléments obligatoires](supplements_catalogue.md#suppléments-obligatoires).
 
 ---
 

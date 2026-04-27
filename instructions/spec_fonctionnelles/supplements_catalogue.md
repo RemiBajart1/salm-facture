@@ -25,11 +25,36 @@ Un supplément "séjour" a donc forcément une unité de 1 (indiqué comme "séj
 
 Deux types de lignes coexistent :
 
-
 | Type | Origine | Confirmation |
 |---|---|---|
 | `SUPPLEMENT` | Item du catalogue, choisi par le gardien | Automatiquement confirmé |
 | `LIBRE` | Saisie libre du gardien (nom + montant libres) | Visible resp./trésorier, à promouvoir si récurrent |
+
+---
+
+## Suppléments obligatoires
+
+Un `ConfigItem` peut être marqué `obligatoire: true` par le trésorier. Un item obligatoire :
+
+- est **automatiquement ajouté** à chaque séjour à sa création, avec la quantité par défaut de l'item (généralement 1)
+- **ne peut pas être supprimé** par le gardien — seulement sa quantité peut être modifiée
+- le responsable location peut **prédéfinir la quantité à 0** s'il sait que la condition est déjà remplie (ex. : groupe déjà membre de l'union pour l'année civile)
+
+### Comportement sur la facture (quantité = 0)
+
+Quand la quantité d'un item obligatoire est 0, la ligne apparaît quand même sur la facture avec le libellé :
+```
+"<nom de l'item> — Déjà membre pour l'année civile"
+```
+Montant : 0 €. Cela permet de tracer explicitement la décision sur le document légal.
+
+### Item obligatoire par défaut : Carte de membre
+
+| Libellé | Catégorie | Prix unitaire | Unité | Obligatoire | Qté par défaut |
+|---|---|---|---|---|---|
+| Carte de membre | Adhésion | 15 € | Unité | ✅ oui | 1 |
+
+Le prix est configurable par le trésorier via le catalogue comme pour tout autre item.
 
 Exemples :
 - Location de draps (ex : 1 kit à 5 €)
@@ -67,18 +92,19 @@ Effet atomique :
 ## Données par défaut
 Les données par défaut (initialisation de la base, mockups) sont les suivantes :
 
-| Libellé                                           | Catégorie | Prix unitaire | Unité |
-|---------------------------------------------------|---|---------------|---|
-| Location/changement de draps                      | Location | 5 €           | Unité |
-| Location verre à vin                              | Location | 0,50 €        | Unité |
-| Location de barbecue                              | Location | 20 €          | Séjour |
-| Assiette cassée                                   | Casse/dégradation | 2 €           | Unité |
-| Verre cassé                                       | Casse/dégradation | 1 €           | Unité |
-| Verre à vin/bière cassé                           | Casse/dégradation | 1,50 €        | Unité |
-| Plat cassé                                        | Casse/dégradation | 5 €           | Unité |
-| Nettoyage supplémentaire                          | Intervention | 100 €         | Unité |
-| Forfait nettoyage complet                         | Intervention | 500 €         | Séjour |
-| Déclenchement alarme incendie manuel non justifié | Intervention | 150 €         | Unité |
+| Libellé                                           | Catégorie | Prix unitaire | Unité | Obligatoire |
+|---------------------------------------------------|---|---------------|---|---|
+| **Carte de membre**                               | Adhésion | 15 €          | Unité | ✅ oui |
+| Location/changement de draps                      | Location | 5 €           | Unité | — |
+| Location verre à vin                              | Location | 0,50 €        | Unité | — |
+| Location de barbecue                              | Location | 20 €          | Séjour | — |
+| Assiette cassée                                   | Casse/dégradation | 2 €           | Unité | — |
+| Verre cassé                                       | Casse/dégradation | 1 €           | Unité | — |
+| Verre à vin/bière cassé                           | Casse/dégradation | 1,50 €        | Unité | — |
+| Plat cassé                                        | Casse/dégradation | 5 €           | Unité | — |
+| Nettoyage supplémentaire                          | Intervention | 100 €         | Unité | — |
+| Forfait nettoyage complet                         | Intervention | 500 €         | Séjour | — |
+| Déclenchement alarme incendie manuel non justifié | Intervention | 150 €         | Unité | — |
 
 ---
 

@@ -101,6 +101,12 @@ Par défaut : `nb_adultes × nb_nuits × 0,88 €`
 ### 4.4 Suppléments
 
 Les suppléments (`SUPPLEMENT` du catalogue et saisies `LIBRE`) apparaissent sur la facture en **snapshot** (nom et prix figés au moment de la génération).
+
+**Suppléments obligatoires (ex. : carte de membre) :**
+- Toujours présents sur la facture, même si la quantité est 0.
+- Si quantité = 0 : libellé affiché `"<nom> — Déjà membre pour l'année civile"`, montant 0 €.
+- Si quantité > 0 : libellé et montant normaux.
+
 Voir [Suppléments catalogue](supplements_catalogue.md) pour le détail complet.
 
 ### 4.5 Immuabilité des factures
