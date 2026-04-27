@@ -12,13 +12,6 @@ interface SaisieSupplementsProps {
   onNavigate: (step: GardienStep) => void
 }
 
-interface SupplementSaisi {
-  configItemId: string
-  designation: string
-  prixUnitaire: number
-  unite: string
-  quantite: number
-}
 
 interface LigneLibre {
   description: string

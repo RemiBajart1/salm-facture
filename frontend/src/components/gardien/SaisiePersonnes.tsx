@@ -116,7 +116,7 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
                   onChange={(v) => setEffectifs((prev) => ({ ...prev, [cat.id]: v }))}
                   min={0}
                   max={200}
-                  aria-label={`Nombre de ${cat.nomSnapshot}`}
+                  aria-label={`Nombre de ${cat.nom}`}
                 />
               </div>
             </div>

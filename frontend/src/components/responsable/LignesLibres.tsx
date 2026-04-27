@@ -40,7 +40,7 @@ export function LignesLibres() {
     try {
       await adminApi.promouvoirLigne(ligne.id, {
         categorieItem: 'CASSE',
-        unite: 'unité',
+        unite: 'UNITE',
         nomCatalogue: ligne.designation,
       })
       setLignes((prev) => prev.filter((l) => l.id !== ligne.id))

@@ -15,7 +15,7 @@ export function ItemsSupplements() {
 
   const [newNom, setNewNom] = useState('')
   const [newPrix, setNewPrix] = useState('')
-  const [newUnite, setNewUnite] = useState('UNITE')
+  const [newUnite, setNewUnite] = useState<'UNITE' | 'SEJOUR' | 'INTERVENTION'>('UNITE')
   const [newCategorie, setNewCategorie] = useState('CASSE')
   const [saving, setSaving] = useState(false)
 
@@ -149,7 +149,7 @@ export function ItemsSupplements() {
           <select
             className={styles.tnfInput}
             value={newUnite}
-            onChange={(e) => setNewUnite(e.target.value)}
+            onChange={(e) => setNewUnite(e.target.value as 'UNITE' | 'SEJOUR' | 'INTERVENTION')}
           >
             <option value="UNITE">Unité</option>
             <option value="SEJOUR">Séjour</option>
