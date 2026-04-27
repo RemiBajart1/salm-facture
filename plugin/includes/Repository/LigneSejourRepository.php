@@ -70,6 +70,19 @@ class LigneSejourRepository {
         ) );
     }
 
+    /** Retourne la première ligne d'un séjour correspondant à un config_item donné. */
+    public function find_by_sejour_and_config_item( int $sejour_id, int $config_item_id ): ?array {
+        global $wpdb;
+        return $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table} WHERE sejour_id = %d AND config_item_id = %d LIMIT 1",
+                $sejour_id,
+                $config_item_id
+            ),
+            ARRAY_A
+        ) ?: null;
+    }
+
     /** Promeut une ligne LIBRE en SUPPLEMENT avec un config_item_id. */
     public function promouvoir( int $ligne_id, int $config_item_id ): void {
         global $wpdb;

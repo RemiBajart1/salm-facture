@@ -123,12 +123,13 @@ export interface TarifPersonne {
 }
 
 export interface ConfigItem {
-  id: string        // UUID
+  id: string        // entier MySQL sérialisé en string (Number() pour envoyer au backend)
   designation: string
   categorie: string
   prixUnitaire: number
   unite: 'UNITE' | 'SEJOUR' | 'INTERVENTION'
   actif: boolean
+  obligatoire?: boolean
 }
 
 export interface ConfigSiteEntry {
