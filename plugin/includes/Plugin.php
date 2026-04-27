@@ -13,6 +13,7 @@ use Locagest\Db\Migration100;
 use Locagest\Db\Migration200;
 use Locagest\Db\Migration201;
 use Locagest\Db\Migration202;
+use Locagest\Db\Migration203;
 use Locagest\Repository\ConfigItemRepository;
 use Locagest\Repository\ConfigSiteRepository;
 use Locagest\Repository\FactureRepository;
@@ -35,7 +36,7 @@ use Locagest\Service\SupplementService;
 class Plugin {
 
     private const DB_VERSION_OPTION = 'locagest_db_version';
-    private const DB_VERSION        = '1.2.0';
+    private const DB_VERSION        = '1.3.0';
 
     private SejourService    $sejour_svc;
     private FactureService   $facture_svc;
@@ -73,6 +74,7 @@ class Plugin {
         Migration200::run();
         Migration201::run();
         Migration202::run();
+        Migration203::run();
         update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
     }
 
@@ -87,6 +89,7 @@ class Plugin {
             Migration200::run();
             Migration201::run();
             Migration202::run();
+            Migration203::run();
             update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
         }
     }

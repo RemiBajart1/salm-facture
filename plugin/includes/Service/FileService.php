@@ -38,11 +38,20 @@ class FileService {
         ], home_url( '/wp-json/locagest/v1/files/download' ) );
     }
 
-    /** Sauvegarde la photo d'un chèque. */
-    public function save_cheque( int $paiement_id, string $content, string $mime_type ): string {
+    public static function extension_for_mime( string $mime_type ): string {
+        return match ( $mime_type ) {
+            'image/png'  => 'png',
+            'image/webp' => 'webp',
+            default      => 'jpg',
+        };
+    }
+
+    /** Sauvegarde la photo d'un chèque. $index permet de nommer les photos multiples. */
+    public function save_cheque( int $paiement_id, string $content, string $mime_type, int $index = 0 ): string {
         $this->ensure_dir( $this->cheques_dir );
-        $ext      = $mime_type === 'image/png' ? 'png' : 'jpg';
-        $filename = "cheque-{$paiement_id}.{$ext}";
+        $ext      = self::extension_for_mime( $mime_type );
+        $suffix   = $index > 0 ? "-{$index}" : '';
+        $filename = "cheque-{$paiement_id}{$suffix}.{$ext}";
         $path     = $this->cheques_dir . $filename;
         file_put_contents( $path, $content );
         return 'locagest/cheques/' . $filename;

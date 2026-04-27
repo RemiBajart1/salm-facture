@@ -331,6 +331,22 @@ export const sejourApi = {
     const data = await request<unknown[]>('GET', `/sejours/${id}/paiements`)
     return data.map(mapPaiement)
   },
+
+  uploadPhotoCheque: async (sejourId: string, paiementId: string, files: File[]): Promise<void> => {
+    const form = new FormData()
+    files.forEach((file) => form.append('photo[]', file))
+    const headers: Record<string, string> = {}
+    const token = authToken()
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const response = await fetch(
+      `${apiBase()}/sejours/${sejourId}/paiements/${paiementId}/photo`,
+      { method: 'POST', headers, body: form },
+    )
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText)
+      throw new ApiError(response.status, errorText)
+    }
+  },
 }
 
 // ── API Locataires ────────────────────────────────────────────────────────────

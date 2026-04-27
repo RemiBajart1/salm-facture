@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import styles from './Gardien.module.css'
 import { ErrorBanner } from '../common/ErrorBanner'
 import { LoadingSpinner } from '../common/LoadingSpinner'
@@ -20,7 +20,8 @@ export function Encaissement({ onNavigate }: EncaissementProps) {
   const [mode, setMode] = useState<ModePaiement>('CHEQUE')
   const [numeroCheque, setNumeroCheque] = useState('')
   const [banque, setBanque] = useState('')
-  const [photoFaite, setPhotoFaite] = useState(false)
+  const [photoFiles, setPhotoFiles] = useState<File[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
@@ -50,6 +51,18 @@ export function Encaissement({ onNavigate }: EncaissementProps) {
         numeroCheque: mode === 'CHEQUE' ? numeroCheque : undefined,
         banqueEmettrice: mode === 'CHEQUE' ? banque : undefined,
       })
+      // Upload photos chèque si sélectionnées (non bloquant en cas d'échec)
+      if (mode === 'CHEQUE' && photoFiles.length > 0) {
+        try {
+          const paiements = await sejourApi.getPaiements(sejour.id)
+          const dernier = paiements[paiements.length - 1]
+          if (dernier) {
+            await sejourApi.uploadPhotoCheque(sejour.id, dernier.id, photoFiles)
+          }
+        } catch (photoErr) {
+          console.error('Upload photos chèque échoué (non bloquant):', photoErr)
+        }
+      }
       onNavigate('succes')
     } catch (err) {
       console.error('Erreur encaissement:', err)
@@ -107,22 +120,36 @@ export function Encaissement({ onNavigate }: EncaissementProps) {
         {mode === 'CHEQUE' && (
           <div className={styles.card} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div className={styles.cardTitle}>Photo du chèque</div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: 'none' }}
+              multiple
+            onChange={(e) => {
+                setPhotoFiles(Array.from(e.target.files ?? []))
+              }}
+              aria-label="Sélectionner les photos du chèque"
+            />
             <button
               type="button"
-              className={`${styles.photoArea} ${photoFaite ? styles.photoAreaDone : ''}`}
-              onClick={() => setPhotoFaite(true)}
+              className={`${styles.photoArea} ${photoFiles.length > 0 ? styles.photoAreaDone : ''}`}
+              onClick={() => fileInputRef.current?.click()}
               aria-label="Prendre une photo du chèque"
             >
-              {photoFaite ? (
+              {photoFiles.length > 0 ? (
                 <>
                   <div style={{ fontSize: 32 }}>✅</div>
-                  <div style={{ fontSize: 13, color: 'var(--forest)' }}>Photo enregistrée</div>
+                  {photoFiles.map((f) => (
+                    <div key={f.name} style={{ fontSize: 13, color: 'var(--forest)' }}>{f.name}</div>
+                  ))}
                 </>
               ) : (
                 <>
                   <div style={{ fontSize: 32 }}>📷</div>
                   <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                    Appuyer pour prendre une photo
+                    Appuyer pour prendre une ou plusieurs photos
                   </div>
                 </>
               )}

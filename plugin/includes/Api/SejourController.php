@@ -11,6 +11,7 @@ use Locagest\Service\SupplementService;
 use Locagest\Repository\LigneSejourRepository;
 use Locagest\Repository\SejourRepository;
 use Locagest\Utils\ExceptionHandler;
+use Locagest\Utils\Exceptions\InvalidInputException;
 
 class SejourController {
 
@@ -110,6 +111,12 @@ class SejourController {
                 'permission_callback' => $any,
             ],
         ] );
+
+        register_rest_route( self::NS, '/sejours/(?P<id>\d+)/paiements/(?P<pid>\d+)/photo', [
+            'methods'             => 'POST',
+            'callback'            => [ $this, 'upload_photo_cheque' ],
+            'permission_callback' => $gardien_resp,
+        ] );
     }
 
     public function get_current(): \WP_REST_Response {
@@ -205,5 +212,49 @@ class SejourController {
         return ExceptionHandler::handle( fn() =>
             $this->paiement_service->list_by_sejour( (int) $request->get_param( 'id' ) )
         );
+    }
+
+    public function upload_photo_cheque( \WP_REST_Request $request ): \WP_REST_Response {
+        return ExceptionHandler::handle( function () use ( $request ) {
+            $pid        = (int) $request->get_param( 'pid' );
+            $raw        = $request->get_file_params()['photo'] ?? null;
+            $max_size   = 5 * 1024 * 1024;
+            $valid_mimes = [ 'image/jpeg', 'image/png', 'image/webp' ];
+
+            if ( ! $raw ) {
+                throw new InvalidInputException( 'Aucun fichier reçu.' );
+            }
+
+            // PHP normalise différemment un seul fichier vs plusieurs (photo[])
+            $list = isset( $raw['name'] ) && is_array( $raw['name'] )
+                ? array_map( fn( $i ) => [
+                    'tmp_name' => $raw['tmp_name'][ $i ],
+                    'error'    => $raw['error'][ $i ],
+                    'size'     => $raw['size'][ $i ],
+                  ], array_keys( $raw['name'] ) )
+                : [ $raw ];
+
+            $finfo      = new \finfo( FILEINFO_MIME_TYPE );
+            $files_data = [];
+            foreach ( $list as $file ) {
+                if ( ( $file['error'] ?? UPLOAD_ERR_NO_FILE ) !== UPLOAD_ERR_OK ) {
+                    throw new InvalidInputException( "Erreur lors de l'envoi d'un fichier." );
+                }
+                if ( ( $file['size'] ?? 0 ) > $max_size ) {
+                    throw new InvalidInputException( 'Fichier trop volumineux (5 Mo maximum).' );
+                }
+                $mime = $finfo->file( $file['tmp_name'] );
+                if ( ! in_array( $mime, $valid_mimes, true ) ) {
+                    throw new InvalidInputException( 'Type de fichier invalide. JPG, PNG ou WebP uniquement.' );
+                }
+                $files_data[] = [
+                    'content' => file_get_contents( $file['tmp_name'] ),
+                    'mime'    => $mime,
+                ];
+            }
+
+            $this->paiement_service->attacher_photos( $pid, $files_data );
+            return new \WP_REST_Response( [ 'message' => 'Photos enregistrées.' ], 200 );
+        } );
     }
 }
