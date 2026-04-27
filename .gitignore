@@ -1,3 +1,11 @@
+# Environnement local
+.env
+
+# PHP / Composer
+plugin/vendor/
+plugin/.phpunit.cache/
+plugin/composer.lock
+
 # Compiled class file
 *.class
 
