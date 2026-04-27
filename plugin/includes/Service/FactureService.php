@@ -63,14 +63,24 @@ class FactureService {
             (int) $sejour['nb_nuits'],
             (float) ( $config['taxe_adulte_nuit'] ?? 0.88 )
         );
+        $ligne_taxe_enfants = $this->calcul_service->calculer_taxe_enfants(
+            (int) ( $sejour['nb_enfants'] ?? 0 ),
+            (int) $sejour['nb_nuits'],
+            (float) ( $config['taxe_enfant_nuit'] ?? 0.00 )
+        );
 
         // Supprimer les lignes calculées existantes et les recréer
         $this->ligne_repo->delete_calculated_lines( $sejour_id );
-        foreach ( [
+        $lignes_calculees = [
             [ 'type' => 'HEBERGEMENT', 'data' => $ligne_heberg ],
             [ 'type' => 'ENERGIE',     'data' => $ligne_energie ],
             [ 'type' => 'TAXE',        'data' => $ligne_taxe    ],
-        ] as $i => $entry ) {
+        ];
+        // N'ajouter la ligne enfants que si > 0 personnes ou tarif > 0
+        if ( $ligne_taxe_enfants['prix_total'] > 0 || (int) ( $sejour['nb_enfants'] ?? 0 ) > 0 ) {
+            $lignes_calculees[] = [ 'type' => 'TAXE', 'data' => $ligne_taxe_enfants ];
+        }
+        foreach ( $lignes_calculees as $i => $entry ) {
             $this->ligne_repo->create( [
                 'sejour_id'     => $sejour_id,
                 'type_ligne'    => $entry['type'],
@@ -92,7 +102,7 @@ class FactureService {
             }
         }
 
-        $montant_total = $ligne_heberg['prix_total'] + $ligne_energie['prix_total'] + $ligne_taxe['prix_total'] + $montant_suppl;
+        $montant_total = $ligne_heberg['prix_total'] + $ligne_energie['prix_total'] + $ligne_taxe['prix_total'] + $ligne_taxe_enfants['prix_total'] + $montant_suppl;
 
         // Snapshots locataire + config
         $locataire = $sejour['locataire_id'] ? $this->locataire_repo->find_by_id( (int) $sejour['locataire_id'] ) : [];

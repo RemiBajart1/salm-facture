@@ -61,6 +61,7 @@ export interface Sejour {
   heureArriveeReelle?: string | null
   heureDepartReel?: string | null
   nbAdultes?: number | null
+  nbEnfants?: number | null
   minPersonnesTotal: number
   modePaiement?: ModePaiement
   dateLimitePaiement?: string | null
@@ -164,6 +165,7 @@ export interface PatchPersonnesRequest {
     nbReelles: number
   }[]
   nbAdultes: number
+  nbEnfants?: number
 }
 
 export interface AddSupplementRequest {

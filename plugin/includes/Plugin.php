@@ -11,6 +11,7 @@ use Locagest\Api\LocataireController;
 use Locagest\Api\SejourController;
 use Locagest\Db\Migration100;
 use Locagest\Db\Migration200;
+use Locagest\Db\Migration201;
 use Locagest\Repository\ConfigItemRepository;
 use Locagest\Repository\ConfigSiteRepository;
 use Locagest\Repository\FactureRepository;
@@ -69,6 +70,7 @@ class Plugin {
         self::create_roles();
         Migration100::run();
         Migration200::run();
+        Migration201::run();
         update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
     }
 
@@ -81,6 +83,7 @@ class Plugin {
         if ( get_option( self::DB_VERSION_OPTION ) !== self::DB_VERSION ) {
             Migration100::run();
             Migration200::run();
+            Migration201::run();
             update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
         }
     }

@@ -109,9 +109,10 @@ class SejourService {
      */
     public function update_personnes( int $sejour_id, array $data ): array {
         $this->find_or_fail( $sejour_id );
-        if ( isset( $data['nb_adultes'] ) ) {
-            $this->sejour_repo->update( $sejour_id, [ 'nb_adultes' => (int) $data['nb_adultes'] ] );
-        }
+        $update = [];
+        if ( isset( $data['nb_adultes'] ) ) $update['nb_adultes'] = (int) $data['nb_adultes'];
+        if ( isset( $data['nb_enfants'] ) ) $update['nb_enfants'] = (int) $data['nb_enfants'];
+        if ( $update ) $this->sejour_repo->update( $sejour_id, $update );
         foreach ( $data['categories'] ?? [] as $cat ) {
             $this->categorie_repo->update_nb_reelles( (int) $cat['id'], (int) $cat['nb_reelles'] );
         }

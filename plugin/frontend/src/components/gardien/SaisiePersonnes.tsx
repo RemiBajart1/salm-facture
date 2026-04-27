@@ -5,7 +5,7 @@ import { ErrorBanner } from '../common/ErrorBanner'
 import { LoadingSpinner } from '../common/LoadingSpinner'
 import { useCurrentSejour } from '../../hooks/useSejour'
 import { sejourApi } from '../../services/api'
-import { calculerHebergement, calculerTaxeSejour, calculerEnergie, formatEuros } from '../../utils/calcul'
+import { calculerHebergement, calculerTaxeSejour, calculerTaxeSejourEnfants, calculerEnergie, formatEuros } from '../../utils/calcul'
 import type { GardienStep } from '../../pages/GardienPage'
 
 interface SaisiePersonnesProps {
@@ -17,6 +17,7 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
   const { sejour, loading, error, refresh } = useCurrentSejour()
   const [effectifs, setEffectifs] = useState<Record<string, number>>({})
   const [nbAdultes, setNbAdultes] = useState(0)
+  const [nbEnfants, setNbEnfants] = useState(0)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
@@ -48,6 +49,11 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
     return calculerTaxeSejour(nbAdultes, sejour.nbNuits)
   }, [nbAdultes, sejour])
 
+  const taxeEnfants = useMemo(() => {
+    if (!sejour) return 0
+    return calculerTaxeSejourEnfants(nbEnfants, sejour.nbNuits)
+  }, [nbEnfants, sejour])
+
   const energie = useMemo(() => {
     if (!sejour) return 0
     return calculerEnergie(sejour.nbNuits)
@@ -65,7 +71,7 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
         categorieId: c.id,
         nbReelles: getEffectif(c.id, c.nbPrevues),
       }))
-      await sejourApi.patchPersonnes(sejour.id, { categories, nbAdultes })
+      await sejourApi.patchPersonnes(sejour.id, { categories, nbAdultes, nbEnfants })
       refresh()
       onNavigate('supplements')
     } catch (err) {
@@ -136,6 +142,16 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
               aria-label="Nombre d'adultes"
             />
           </div>
+          <div className={styles.formGroup}>
+            <div className={styles.formLabel}>Dont enfants (-18 ans) · toutes catégories</div>
+            <NumberInput
+              value={nbEnfants}
+              onChange={setNbEnfants}
+              min={0}
+              max={200}
+              aria-label="Nombre d'enfants"
+            />
+          </div>
         </div>
 
         {/* Calcul automatique */}
@@ -181,10 +197,18 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
 
             <div className={styles.recapLine}>
               <span className={styles.recapLbl}>
-                Taxe séjour ({nbAdultes} × {sejour.nbNuits} × 0,88 €)
+                Taxe séjour adultes ({nbAdultes} × {sejour.nbNuits} × 0,88 €)
               </span>
               <span className={styles.recapVal}>{formatEuros(taxeSejour)}</span>
             </div>
+            {nbEnfants > 0 && (
+              <div className={styles.recapLine}>
+                <span className={styles.recapLbl}>
+                  Taxe séjour enfants ({nbEnfants} × {sejour.nbNuits} nuits)
+                </span>
+                <span className={styles.recapVal}>{formatEuros(taxeEnfants)}</span>
+              </div>
+            )}
             <div className={styles.recapLine}>
               <span className={styles.recapLbl}>
                 Forfait énergies ({Math.min(sejour.nbNuits, 2)} × 80 €)
