@@ -123,7 +123,7 @@ export interface TarifPersonne {
 }
 
 export interface ConfigItem {
-  id: string        // UUID
+  id: string        // entier MySQL sérialisé en string (Number() pour envoyer au backend)
   designation: string
   categorie: string
   prixUnitaire: number

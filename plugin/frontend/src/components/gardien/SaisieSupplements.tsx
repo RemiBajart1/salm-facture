@@ -7,6 +7,7 @@ import type { ConfigItem } from '../../types'
 import type { GardienStep } from '../../pages/GardienPage'
 import { useCurrentSejour } from '../../hooks/useSejour'
 import { formatEuros } from '../../utils/calcul'
+import { buildAdhesionPayloads } from '../../utils/supplements'
 
 interface SaisieSupplementsProps {
   onNavigate: (step: GardienStep) => void
@@ -73,10 +74,11 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
   [regularItems])
 
   const categoryLabels: Record<string, string> = {
-    CASSE: 'Casse & dégradations',
-    LOCATION: 'Locations & options',
-    SERVICE: 'Services',
-    LINGE: 'Linge',
+    CASSE:     'Casse & dégradations',
+    LOCATION:  'Locations & options',
+    SERVICE:   'Services',
+    LINGE:     'Linge',
+    ADHESION:  'Adhésion',
   }
 
   const handleQuantite = (itemId: string, delta: number) => {
@@ -127,17 +129,9 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
         )
 
       // Items obligatoires — toujours soumis (qty=0 si déjà membre)
-      adhesionItems.forEach((item) => {
-        const estDejaM = dejaMembreIds.has(item.id)
-        promises.push(
-          sejourApi.addSupplement(sejour.id, {
-            configItemId: item.id,
-            designation: item.designation,
-            quantite: estDejaM ? 0 : 1,
-            prixUnitaire: item.prixUnitaire,
-          }),
-        )
-      })
+      buildAdhesionPayloads(adhesionItems, dejaMembreIds).forEach((payload) =>
+        promises.push(sejourApi.addSupplement(sejour.id, payload)),
+      )
 
       // Saisies libres
       lignesLibres
