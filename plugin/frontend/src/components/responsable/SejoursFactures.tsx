@@ -255,6 +255,12 @@ export function SejoursFactures() {
                       <div className={modal.factureRow}>
                         <span>Total</span><strong>{formatEuros(detailFacture.montantTotal)}</strong>
                       </div>
+                      {detailFacture.dateEcheance && (
+                        <div className={modal.factureRow}>
+                          <span>Échéance</span>
+                          <span>{formatDateCourt(detailFacture.dateEcheance)}</span>
+                        </div>
+                      )}
                       {detailFacture.pdfUrl && (
                         <div className={modal.factureRow}>
                           <span>PDF</span>

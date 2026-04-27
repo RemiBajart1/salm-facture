@@ -22,11 +22,14 @@ class PdfService {
     }
 
     private function render_html( array $facture, array $sejour, array $locataire, array $lignes, array $paiements ): string {
-        $assoc   = esc( $facture['nom_association_snapshot'] );
-        $adresse = nl2br( esc( $facture['adresse_facturation_snapshot'] ) );
-        $iban    = esc( $facture['iban_snapshot'] );
-        $numero  = esc( $facture['numero'] );
-        $date_em = $facture['date_emission'] ? date( 'd/m/Y', strtotime( $facture['date_emission'] ) ) : date( 'd/m/Y' );
+        $assoc      = esc( $facture['nom_association_snapshot'] );
+        $adresse    = nl2br( esc( $facture['adresse_facturation_snapshot'] ) );
+        $iban       = esc( $facture['iban_snapshot'] );
+        $siret      = esc( $facture['siret_snapshot'] ?? '' );
+        $telephone  = esc( $facture['telephone_snapshot'] ?? '' );
+        $numero     = esc( $facture['numero'] );
+        $date_em    = $facture['date_emission'] ? date( 'd/m/Y', strtotime( $facture['date_emission'] ) ) : date( 'd/m/Y' );
+        $date_ech   = ! empty( $facture['date_echeance'] ) ? date( 'd/m/Y', strtotime( $facture['date_echeance'] ) ) : '';
 
         $loc_nom      = esc( $facture['locataire_nom_snapshot'] );
         $loc_email    = esc( $facture['locataire_email_snapshot'] );
@@ -103,11 +106,13 @@ class PdfService {
     <div class="header-left">
       <div class="assoc-name">$assoc</div>
       <div class="adresse">$adresse</div>
+      {$this->render_coord_line( $siret, $telephone )}
     </div>
     <div class="header-right">
       <div class="facture-meta">
         <div class="numero">Facture $numero</div>
         <div style="font-size:9pt;">Émise le $date_em</div>
+        {$this->render_echeance_line( $date_ech )}
       </div>
     </div>
   </div>
@@ -157,6 +162,7 @@ class PdfService {
 
   <div class="iban-box">
     <strong>Règlement par virement :</strong> IBAN $iban
+    {$this->render_echeance_box( $date_ech )}
   </div>
 
   <div class="footer">$assoc — Document généré automatiquement par LocaGest</div>
@@ -164,6 +170,25 @@ class PdfService {
 </body>
 </html>
 HTML;
+    }
+
+    private function render_coord_line( string $siret, string $telephone ): string {
+        $parts = [];
+        if ( $siret )     $parts[] = "SIRET : $siret";
+        if ( $telephone ) $parts[] = "Tél : $telephone";
+        if ( empty( $parts ) ) return '';
+        $text = implode( ' · ', $parts );
+        return "<div class=\"adresse\" style=\"margin-top:2px;\">$text</div>";
+    }
+
+    private function render_echeance_line( string $date_ech ): string {
+        if ( ! $date_ech ) return '';
+        return "<div style=\"font-size:8pt;margin-top:4px;\">Échéance : $date_ech</div>";
+    }
+
+    private function render_echeance_box( string $date_ech ): string {
+        if ( ! $date_ech ) return '';
+        return "<br><strong>Date d'échéance :</strong> $date_ech";
     }
 }
 
