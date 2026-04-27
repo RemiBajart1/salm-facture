@@ -10,6 +10,7 @@
   - Config trésorier : UI d'édition de `taxe_enfant_nuit` (à côté de `taxe_adulte_nuit`)
   - Gardien : champ `nb_enfants` dans la saisie des effectifs réels
   - Voir specs : `facturation.md §4.3`, `configuration.md`, `sejours.md`
+  - Le total enfants + adultes doit être égal au total effectif saisi, sinon message d'erreur "Le nombre total de personnes (adultes + enfants) doit être égal au nombre total saisi."
 - [ ] **Carte de membre (supplément obligatoire)** : ligne toujours présente sur chaque séjour, non-supprimable par le gardien.
   - DB : ajouter flag `obligatoire` (bool) sur `config_item` + initialisation du `ConfigItem` "Carte de membre" (15 €, unité, obligatoire)
   - Backend PHP : `SejourService::creer()` auto-ajoute les items obligatoires avec qty par défaut ; `FactureService` génère la ligne même à qty=0 avec libellé spécial
