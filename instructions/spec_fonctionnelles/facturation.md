@@ -109,7 +109,21 @@ Les suppléments (`SUPPLEMENT` du catalogue et saisies `LIBRE`) apparaissent sur
 
 Voir [Suppléments catalogue](supplements_catalogue.md) pour le détail complet.
 
-### 4.5 Immuabilité des factures
+### 4.5 Mentions légales et coordonnées
+
+Les champs suivants sont copiés en snapshot depuis `config_site` au moment de la génération et stockés sur la facture :
+
+| Champ facture | Source config | Description |
+|---|---|---|
+| `iban_snapshot` | `config_site.iban` | IBAN pour le virement |
+| `siret_snapshot` | `config_site.siret` | N° SIRET de l'association |
+| `telephone_snapshot` | `config_site.telephone_facturation` | Téléphone facturation |
+| `adresse_snapshot` | `config_site.adresse` | Adresse postale de la maison |
+| `date_echeance` | `date_facture + config_site.delai_reglement_jours` | Date limite de règlement |
+
+`date_echeance` est calculée et stockée au moment de la génération — elle ne change pas si le délai de règlement est modifié ultérieurement.
+
+### 4.7 Immuabilité des factures
 
 Une facture `EMISE` ou `PAYEE` ne peut plus être recalculée (erreur `409 CONFLICT`). Seule une facture `BROUILLON` peut être regénérée.
 
