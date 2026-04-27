@@ -3,7 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FRONTEND_DIR="$SCRIPT_DIR/frontend"
+FRONTEND_DIR="$SCRIPT_DIR/plugin/frontend"
 
 # ── Node 20 via fnm ────────────────────────────────────────────────────────
 if command -v fnm &>/dev/null; then
