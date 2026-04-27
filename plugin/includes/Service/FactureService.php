@@ -97,8 +97,9 @@ class FactureService {
         // Snapshots locataire + config
         $locataire = $sejour['locataire_id'] ? $this->locataire_repo->find_by_id( (int) $sejour['locataire_id'] ) : [];
 
-        $delai_jours  = (int) ( $config['delai_reglement_jours'] ?? 7 );
-        $date_echeance = date( 'Y-m-d', strtotime( "+{$delai_jours} days" ) );
+        $date_emission = current_time( 'Y-m-d' );
+        $delai_jours   = (int) ( $config['delai_reglement_jours'] ?? 7 );
+        $date_echeance = date( 'Y-m-d', strtotime( $date_emission . " +{$delai_jours} days" ) );
 
         $facture_data = [
             'sejour_id'                    => $sejour_id,
@@ -117,7 +118,7 @@ class FactureService {
             'montant_taxe'                 => $ligne_taxe['prix_total'],
             'montant_supplements'          => $montant_suppl,
             'montant_total'                => $montant_total,
-            'date_emission'                => current_time( 'mysql' ),
+            'date_emission'                => $date_emission,
         ];
 
         // Créer ou mettre à jour la facture
