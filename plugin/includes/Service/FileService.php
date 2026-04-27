@@ -29,9 +29,8 @@ class FileService {
 
     /** Retourne l'URL temporaire signée (valable 15 min) vers un fichier en uploads. */
     public function url_temporaire( string $relative_path ): string {
-        $uploads    = wp_upload_dir();
-        $token      = hash_hmac( 'sha256', $relative_path . time(), LOCAGEST_JWT_SECRET );
-        $expires    = time() + 900;
+        $expires = time() + 900;
+        $token   = hash_hmac( 'sha256', $relative_path . $expires, LOCAGEST_JWT_SECRET );
         return add_query_arg( [
             'locagest_file' => rawurlencode( $relative_path ),
             'token'         => $token,
@@ -52,7 +51,7 @@ class FileService {
     /** Vérifie le token d'un téléchargement temporaire. */
     public function verify_download_token( string $relative_path, string $token, int $expires ): bool {
         if ( time() > $expires ) return false;
-        $expected = hash_hmac( 'sha256', $relative_path . ( $expires - 900 ), LOCAGEST_JWT_SECRET );
+        $expected = hash_hmac( 'sha256', $relative_path . $expires, LOCAGEST_JWT_SECRET );
         return hash_equals( $expected, $token );
     }
 

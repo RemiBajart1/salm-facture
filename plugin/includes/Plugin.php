@@ -121,15 +121,20 @@ class Plugin {
                     return new \WP_REST_Response( [ 'message' => 'Lien expiré ou invalide.' ], 403 );
                 }
 
-                $full_path = wp_upload_dir()['basedir'] . '/' . $path;
-                if ( ! file_exists( $full_path ) ) {
-                    return new \WP_REST_Response( [ 'message' => 'Fichier introuvable.' ], 404 );
+                $uploads_base = wp_upload_dir()['basedir'];
+                $full_path    = $uploads_base . '/' . $path;
+                $real_base    = realpath( $uploads_base . '/locagest' );
+                $real_path    = realpath( $full_path );
+
+                // Protection path traversal : le fichier doit rester sous uploads/locagest/
+                if ( ! $real_path || ! $real_base || ! str_starts_with( $real_path, $real_base . DIRECTORY_SEPARATOR ) ) {
+                    return new \WP_REST_Response( [ 'message' => 'Accès refusé.' ], 403 );
                 }
 
                 header( 'Content-Type: application/pdf' );
-                header( 'Content-Disposition: inline; filename="' . basename( $full_path ) . '"' );
-                header( 'Content-Length: ' . filesize( $full_path ) );
-                readfile( $full_path );
+                header( 'Content-Disposition: inline; filename="' . basename( $real_path ) . '"' );
+                header( 'Content-Length: ' . filesize( $real_path ) );
+                readfile( $real_path );
                 exit;
             },
             'permission_callback' => '__return_true',

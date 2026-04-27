@@ -51,24 +51,29 @@ class FactureRepository {
         $annee = (int) current_time( 'Y' );
 
         $wpdb->query( 'START TRANSACTION' );
-        $wpdb->query( $wpdb->prepare(
-            "INSERT INTO {$this->seq_table} (annee, dernier_numero) VALUES (%d, 0)
-             ON DUPLICATE KEY UPDATE dernier_numero = dernier_numero",
-            $annee
-        ) );
-        $wpdb->query( $wpdb->prepare(
-            "SELECT dernier_numero FROM {$this->seq_table} WHERE annee = %d FOR UPDATE",
-            $annee
-        ) );
-        $wpdb->query( $wpdb->prepare(
-            "UPDATE {$this->seq_table} SET dernier_numero = dernier_numero + 1 WHERE annee = %d",
-            $annee
-        ) );
-        $num = (int) $wpdb->get_var( $wpdb->prepare(
-            "SELECT dernier_numero FROM {$this->seq_table} WHERE annee = %d",
-            $annee
-        ) );
-        $wpdb->query( 'COMMIT' );
+        try {
+            $wpdb->query( $wpdb->prepare(
+                "INSERT INTO {$this->seq_table} (annee, dernier_numero) VALUES (%d, 0)
+                 ON DUPLICATE KEY UPDATE dernier_numero = dernier_numero",
+                $annee
+            ) );
+            $wpdb->query( $wpdb->prepare(
+                "SELECT dernier_numero FROM {$this->seq_table} WHERE annee = %d FOR UPDATE",
+                $annee
+            ) );
+            $wpdb->query( $wpdb->prepare(
+                "UPDATE {$this->seq_table} SET dernier_numero = dernier_numero + 1 WHERE annee = %d",
+                $annee
+            ) );
+            $num = (int) $wpdb->get_var( $wpdb->prepare(
+                "SELECT dernier_numero FROM {$this->seq_table} WHERE annee = %d",
+                $annee
+            ) );
+            $wpdb->query( 'COMMIT' );
+        } catch ( \Throwable $e ) {
+            $wpdb->query( 'ROLLBACK' );
+            throw $e;
+        }
 
         return sprintf( 'FAC-%d-%03d', $annee, $num );
     }

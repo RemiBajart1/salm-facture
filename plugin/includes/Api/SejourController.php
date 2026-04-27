@@ -89,7 +89,7 @@ class SejourController {
             [
                 'methods'             => 'POST',
                 'callback'            => [ $this, 'generer_facture' ],
-                'permission_callback' => $any,
+                'permission_callback' => $gardien_resp,
             ],
             [
                 'methods'             => 'GET',

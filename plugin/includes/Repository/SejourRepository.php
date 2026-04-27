@@ -43,13 +43,24 @@ class SejourRepository {
      */
     public function find_paginated( ?string $statut, int $page, int $size ): array {
         global $wpdb;
-        $where  = $statut ? $wpdb->prepare( "WHERE statut = %s", $statut ) : "WHERE 1=1";
         $offset = $page * $size;
-        $total  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$this->table} $where" );
-        $items  = $wpdb->get_results(
-            $wpdb->prepare( "SELECT * FROM {$this->table} $where ORDER BY date_debut DESC LIMIT %d OFFSET %d", $size, $offset ),
-            ARRAY_A
-        ) ?: [];
+
+        if ( $statut ) {
+            $total = (int) $wpdb->get_var( $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$this->table} WHERE statut = %s", $statut
+            ) );
+            $items = $wpdb->get_results( $wpdb->prepare(
+                "SELECT * FROM {$this->table} WHERE statut = %s ORDER BY date_debut DESC LIMIT %d OFFSET %d",
+                $statut, $size, $offset
+            ), ARRAY_A ) ?: [];
+        } else {
+            $total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$this->table}" );
+            $items = $wpdb->get_results( $wpdb->prepare(
+                "SELECT * FROM {$this->table} ORDER BY date_debut DESC LIMIT %d OFFSET %d",
+                $size, $offset
+            ), ARRAY_A ) ?: [];
+        }
+
         return [ 'items' => $items, 'total' => $total, 'page' => $page, 'size' => $size ];
     }
 
