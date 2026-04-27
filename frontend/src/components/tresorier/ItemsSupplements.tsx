@@ -123,7 +123,7 @@ export function ItemsSupplements() {
         </table>
       </div>
 
-      <div className={styles.tarifNewForm} style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr auto' }}>
+      <div className={`${styles.tarifNewForm} ${styles.tarifNewFormItems}`}>
         <div>
           <div className={styles.tnfLabel}>Nom de l'item</div>
           <input

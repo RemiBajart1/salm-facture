@@ -14,8 +14,14 @@
   background: white;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 22px;
+  padding: 14px;
   box-shadow: var(--shadow);
+}
+
+@media (min-width: 640px) {
+  .dcard {
+    padding: 22px;
+  }
 }
 
 .dcardTitle {
@@ -48,16 +54,22 @@
 /* ── Formulaires desktop ── */
 .formGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 14px;
 }
 
-.formGrid.cols3 {
-  grid-template-columns: 1fr 1fr 1fr;
-}
+@media (min-width: 640px) {
+  .formGrid {
+    grid-template-columns: 1fr 1fr;
+  }
 
-.formGrid.cols4 {
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  .formGrid.cols3 {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .formGrid.cols4 {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
 }
 
 .dformGroup {
@@ -99,6 +111,7 @@ textarea.dformInput {
 /* ── Tables ── */
 .tableWrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   margin: 12px 0 0;
   border-radius: 10px;
   box-shadow: 0 1px 6px rgba(42, 92, 63, 0.1);
@@ -196,17 +209,27 @@ textarea.dformInput {
   padding: 0 4px;
 }
 
-/* ── Nouveau tarif inline form ── */
+/* ── Formulaire ajout inline (tarifs / items) ── */
 .tarifNewForm {
   background: rgba(26, 122, 122, 0.06);
   border: 1.5px dashed rgba(26, 122, 122, 0.35);
   border-radius: var(--radius-sm);
   padding: 16px;
   display: grid;
-  grid-template-columns: 2fr 1fr 2fr auto;
+  grid-template-columns: 1fr;
   gap: 10px;
   align-items: end;
   margin-top: 16px;
+}
+
+@media (min-width: 640px) {
+  .tarifNewForm {
+    grid-template-columns: 2fr 1fr 2fr auto;
+  }
+
+  .tarifNewFormItems {
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+  }
 }
 
 .tnfLabel {
@@ -286,8 +309,14 @@ textarea.dformInput {
 /* ── Stats ── */
 .statRow {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .statRow {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .statCard {
@@ -356,14 +385,30 @@ textarea.dformInput {
   border-radius: var(--radius-sm);
   padding: 14px 16px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 640px) {
+  .ligneLibreItem {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+  }
 }
 
 .ligneLibreActions {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .ligneLibreActions {
+    flex-direction: column;
+    gap: 6px;
+  }
 }
 
 .btnValider {
@@ -392,8 +437,14 @@ textarea.dformInput {
 .summaryRow {
   margin-top: 14px;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .summaryRow {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
 }
 
 .summaryChip {

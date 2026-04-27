@@ -6,7 +6,6 @@ import { SaisieSupplements } from '../components/gardien/SaisieSupplements'
 import { Recapitulatif } from '../components/gardien/Recapitulatif'
 import { Encaissement } from '../components/gardien/Encaissement'
 import { SuccesPage } from '../components/gardien/SuccesPage'
-import { useAuth } from '../contexts/AuthContext'
 
 export type GardienStep =
   | 'accueil'
@@ -17,72 +16,37 @@ export type GardienStep =
   | 'succes'
 
 const STEPS_WITH_STEPPER: GardienStep[] = ['personnes', 'supplements', 'recapitulatif']
-const STEP_ORDER: GardienStep[] = ['personnes', 'supplements', 'recapitulatif']
+const STEP_ORDER: GardienStep[]         = ['personnes', 'supplements', 'recapitulatif']
 
 const STEP_TITLES: Record<GardienStep, string> = {
-  accueil: 'Accueil',
-  personnes: 'Personnes',
-  supplements: 'Suppléments',
+  accueil:       'Accueil',
+  personnes:     'Personnes',
+  supplements:   'Suppléments',
   recapitulatif: 'Récapitulatif',
-  encaissement: 'Encaissement',
-  succes: 'Succès',
+  encaissement:  'Encaissement',
+  succes:        'Succès',
 }
 
 const STEP_BACK: Partial<Record<GardienStep, GardienStep>> = {
-  personnes: 'accueil',
-  supplements: 'personnes',
+  personnes:     'accueil',
+  supplements:   'personnes',
   recapitulatif: 'supplements',
-  encaissement: 'recapitulatif',
+  encaissement:  'recapitulatif',
 }
 
-/** Layout mobile du gardien avec header, stepper et navigation */
+/** Layout mobile-first du gardien avec navigation par étapes */
 export function GardienPage() {
   const [step, setStep] = useState<GardienStep>('accueil')
-  const { user, logout } = useAuth()
 
   const showSubHeader = step !== 'accueil' && step !== 'succes'
-  const showStepper = STEPS_WITH_STEPPER.includes(step)
-  const stepIdx = STEP_ORDER.indexOf(step)
-  const backStep = STEP_BACK[step]
-
-  const stepLabel =
-    STEPS_WITH_STEPPER.includes(step)
-      ? `${stepIdx + 1}/${STEP_ORDER.length}`
-      : undefined
+  const showStepper   = STEPS_WITH_STEPPER.includes(step)
+  const stepIdx       = STEP_ORDER.indexOf(step)
+  const backStep      = STEP_BACK[step]
+  const stepLabel     = STEPS_WITH_STEPPER.includes(step) ? `${stepIdx + 1}/${STEP_ORDER.length}` : undefined
 
   return (
     <div className={styles.phone}>
-      {/* Header principal */}
-      {(step === 'accueil' || step === 'succes') && (
-        <div className={styles.appHeader}>
-          <div className={styles.headerBrand}>
-            <div className={styles.headerLogo}>
-              <svg viewBox="0 0 36 36" width="30" height="30">
-                <polygon points="18,2 34,32 2,32" fill="#2a5c3f" />
-                <text x="18" y="26" textAnchor="middle" fontFamily="serif" fontSize="13" fontWeight="bold" fill="white">Y</text>
-              </svg>
-            </div>
-            <div>
-              <div className={styles.headerName}>Salm</div>
-              <div className={styles.headerSub}>UCJG / YMCA</div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div className={styles.headerRole}>Gardien</div>
-            <button
-              type="button"
-              className={styles.logoutBtn}
-              onClick={logout}
-              title={`Déconnexion (${user?.email})`}
-              aria-label="Se déconnecter"
-            >
-              ↗
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Sub-header avec retour */}
+      {/* Navigation entre étapes */}
       {showSubHeader && (
         <div className={styles.subHeader}>
           {backStep && (
@@ -99,7 +63,7 @@ export function GardienPage() {
         </div>
       )}
 
-      {/* Stepper (barres de progression) */}
+      {/* Barre de progression */}
       {showStepper && (
         <div className={styles.stepper}>
           {STEP_ORDER.map((s, idx) => (
@@ -113,12 +77,12 @@ export function GardienPage() {
 
       {/* Contenu */}
       <div className={styles.screenContent}>
-        {step === 'accueil' && <AccueilGardien onNavigate={setStep} />}
-        {step === 'personnes' && <SaisiePersonnes onNavigate={setStep} />}
-        {step === 'supplements' && <SaisieSupplements onNavigate={setStep} />}
-        {step === 'recapitulatif' && <Recapitulatif onNavigate={setStep} />}
-        {step === 'encaissement' && <Encaissement onNavigate={setStep} />}
-        {step === 'succes' && <SuccesPage onNavigate={setStep} />}
+        {step === 'accueil'       && <AccueilGardien     onNavigate={setStep} />}
+        {step === 'personnes'     && <SaisiePersonnes    onNavigate={setStep} />}
+        {step === 'supplements'   && <SaisieSupplements  onNavigate={setStep} />}
+        {step === 'recapitulatif' && <Recapitulatif      onNavigate={setStep} />}
+        {step === 'encaissement'  && <Encaissement       onNavigate={setStep} />}
+        {step === 'succes'        && <SuccesPage         onNavigate={setStep} />}
       </div>
     </div>
   )
