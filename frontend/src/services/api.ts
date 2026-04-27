@@ -203,9 +203,10 @@ function toWPCreateSejour(data: CreateSejourRequest): Record<string, unknown> {
     heure_arrivee_prevue: data.heureArriveePrevue,
     heure_depart_prevu:   data.heureDepartPrevu,
     min_personnes_total:  data.minPersonnesTotal,
-    mode_paiement:        data.modePaiement,
-    options_presaisies:   data.optionsPresaisies,
-    notes:                data.notesInternes,
+    mode_paiement:          data.modePaiement,
+    date_limite_paiement:   data.dateLimitePaiement,
+    options_presaisies:     data.optionsPresaisies,
+    notes:                  data.notesInternes,
     categories:           data.categories.map((c) => ({
       tarif_personne_id: Number(c.tarifId),
       nb_previsionnel:   c.nbPrevues,
