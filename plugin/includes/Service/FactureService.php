@@ -97,6 +97,10 @@ class FactureService {
         // Snapshots locataire + config
         $locataire = $sejour['locataire_id'] ? $this->locataire_repo->find_by_id( (int) $sejour['locataire_id'] ) : [];
 
+        $date_emission = current_time( 'Y-m-d' );
+        $delai_jours   = (int) ( $config['delai_reglement_jours'] ?? 7 );
+        $date_echeance = date( 'Y-m-d', strtotime( $date_emission . " +{$delai_jours} days" ) );
+
         $facture_data = [
             'sejour_id'                    => $sejour_id,
             'statut'                       => 'BROUILLON',  // Passera à EMISE après succès du PDF
@@ -106,12 +110,15 @@ class FactureService {
             'iban_snapshot'                => $config['iban']                ?? '',
             'adresse_facturation_snapshot' => $config['adresse_facturation'] ?? '',
             'nom_association_snapshot'     => $config['nom_association']     ?? 'UCJG Salm',
+            'siret_snapshot'               => $config['siret']               ?? '',
+            'telephone_snapshot'           => $config['telephone_facturation'] ?? '',
+            'date_echeance'                => $date_echeance,
             'montant_hebergement'          => $ligne_heberg['prix_total'],
             'montant_energie'              => $ligne_energie['prix_total'],
             'montant_taxe'                 => $ligne_taxe['prix_total'],
             'montant_supplements'          => $montant_suppl,
             'montant_total'                => $montant_total,
-            'date_emission'                => current_time( 'mysql' ),
+            'date_emission'                => $date_emission,
         ];
 
         // Créer ou mettre à jour la facture

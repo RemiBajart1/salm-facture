@@ -67,5 +67,5 @@ jobs:
 
       - name: Test
         if: steps.check.outputs.exists == 'true'
-        run: npm test -- --watchAll=false
+        run: npm test -- --run
         working-directory: frontend

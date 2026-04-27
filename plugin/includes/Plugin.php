@@ -10,6 +10,7 @@ use Locagest\Api\AuthController;
 use Locagest\Api\LocataireController;
 use Locagest\Api\SejourController;
 use Locagest\Db\Migration100;
+use Locagest\Db\Migration200;
 use Locagest\Repository\ConfigItemRepository;
 use Locagest\Repository\ConfigSiteRepository;
 use Locagest\Repository\FactureRepository;
@@ -32,7 +33,7 @@ use Locagest\Service\SupplementService;
 class Plugin {
 
     private const DB_VERSION_OPTION = 'locagest_db_version';
-    private const DB_VERSION        = '1.0.0';
+    private const DB_VERSION        = '1.1.0';
 
     private SejourService    $sejour_svc;
     private FactureService   $facture_svc;
@@ -67,6 +68,7 @@ class Plugin {
     public static function activate(): void {
         self::create_roles();
         Migration100::run();
+        Migration200::run();
         update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
     }
 
@@ -78,6 +80,7 @@ class Plugin {
     public function maybe_migrate(): void {
         if ( get_option( self::DB_VERSION_OPTION ) !== self::DB_VERSION ) {
             Migration100::run();
+            Migration200::run();
             update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
         }
     }

@@ -88,6 +88,9 @@ export interface Facture {
   numero: string
   statut: StatutFacture
   dateGeneration?: string
+  dateEcheance?: string | null
+  siretSnapshot?: string | null
+  telephoneSnapshot?: string | null
   montantHebergement: number
   montantEnergie: number
   montantTaxe: number
