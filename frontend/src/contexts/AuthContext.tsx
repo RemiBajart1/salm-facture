@@ -1,9 +1,4 @@
-/**
- * Contexte d'authentification — wrapping d'AWS Amplify Cognito.
- * En développement (MSW activé), simule les groupes Cognito avec un login fictif.
- */
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { signIn, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth'
 
 export type UserRole = 'gardien' | 'resp_location' | 'tresorier'
 
@@ -11,6 +6,7 @@ export interface AuthUser {
   username: string
   email: string
   role: UserRole
+  token: string
 }
 
 interface AuthContextValue {
@@ -23,28 +19,18 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-const DEV_USERS: Record<string, { password: string; user: AuthUser }> = {
-  'gardien@test.fr': {
-    password: 'test',
-    user: { username: 'gardien@test.fr', email: 'gardien@test.fr', role: 'gardien' },
-  },
-  'resp@test.fr': {
-    password: 'test',
-    user: { username: 'resp@test.fr', email: 'resp@test.fr', role: 'resp_location' },
-  },
-  'tresorier@test.fr': {
-    password: 'test',
-    user: { username: 'tresorier@test.fr', email: 'tresorier@test.fr', role: 'tresorier' },
-  },
-}
+const JWT_KEY = 'locagest_jwt'
+const USER_KEY = 'locagest_user'
 
-const IS_DEV = import.meta.env.DEV
+const WP_API_BASE = '/wp-json/locagest/v1'
 
-/** Lit le rôle depuis les groupes Cognito dans le JWT */
-function extractRole(groups: string[]): UserRole {
-  if (groups.includes('tresorier')) return 'tresorier'
-  if (groups.includes('resp_location')) return 'resp_location'
-  return 'gardien'
+function roleFromWP(wpRole: string): UserRole {
+  const map: Record<string, UserRole> = {
+    locagest_gardien:       'gardien',
+    locagest_resp_location: 'resp_location',
+    locagest_tresorier:     'tresorier',
+  }
+  return map[wpRole] ?? 'gardien'
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -53,61 +39,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (IS_DEV) {
-      // Recharge la session mock depuis localStorage
-      const stored = localStorage.getItem('locagest_dev_user')
-      if (stored) {
-        try {
-          setUser(JSON.parse(stored) as AuthUser)
-        } catch {
-          localStorage.removeItem('locagest_dev_user')
-        }
+    const storedUser  = localStorage.getItem(USER_KEY)
+    const storedToken = localStorage.getItem(JWT_KEY)
+    const cfg         = window.locagestConfig
+
+    // Token injecté par WP (page admin) → session automatique sans login
+    if (cfg?.token && cfg.roles && cfg.roles.length > 0) {
+      const role      = roleFromWP(cfg.roles[0] ?? '')
+      const autoUser: AuthUser = {
+        username: cfg.username ?? cfg.userEmail ?? 'utilisateur',
+        email:    cfg.userEmail ?? cfg.username ?? '',
+        role,
+        token:    cfg.token,
       }
+      localStorage.setItem(JWT_KEY,  cfg.token)
+      localStorage.setItem(USER_KEY, JSON.stringify(autoUser))
+      setUser(autoUser)
       setLoading(false)
       return
     }
 
-    // Production : vérifie la session Cognito existante
-    getCurrentUser()
-      .then(async (cognitoUser) => {
-        const session = await fetchAuthSession()
-        const groups =
-          (session.tokens?.idToken?.payload['cognito:groups'] as string[]) ?? []
-        setUser({
-          username: cognitoUser.username,
-          email: (session.tokens?.idToken?.payload.email as string) ?? cognitoUser.username,
-          role: extractRole(groups),
-        })
-      })
-      .catch(() => {
-        setUser(null)
-      })
-      .finally(() => setLoading(false))
+    // Session manuelle (login via formulaire)
+    if (storedUser && storedToken) {
+      try {
+        setUser(JSON.parse(storedUser) as AuthUser)
+      } catch {
+        localStorage.removeItem(USER_KEY)
+        localStorage.removeItem(JWT_KEY)
+      }
+    }
+    setLoading(false)
   }, [])
 
   const login = async (username: string, password: string) => {
     setError(null)
     try {
-      if (IS_DEV) {
-        const devUser = DEV_USERS[username]
-        if (!devUser || devUser.password !== password) {
-          throw new Error('Identifiants incorrects')
-        }
-        setUser(devUser.user)
-        localStorage.setItem('locagest_dev_user', JSON.stringify(devUser.user))
-        return
+      const apiBase = window.locagestConfig?.apiBase ?? WP_API_BASE
+      const res = await fetch(`${apiBase}/auth/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { message?: string }
+        throw new Error(body.message ?? 'Identifiants incorrects')
       }
 
-      await signIn({ username, password })
-      const cognitoUser = await getCurrentUser()
-      const session = await fetchAuthSession()
-      const groups =
-        (session.tokens?.idToken?.payload['cognito:groups'] as string[]) ?? []
-      setUser({
-        username: cognitoUser.username,
-        email: (session.tokens?.idToken?.payload.email as string) ?? cognitoUser.username,
-        role: extractRole(groups),
-      })
+      const data = await res.json() as { token: string; roles: string[]; user_id: number }
+      const role = roleFromWP(data.roles[0] ?? '')
+      const authUser: AuthUser = {
+        username,
+        email: username,
+        role,
+        token: data.token,
+      }
+      localStorage.setItem(JWT_KEY, data.token)
+      localStorage.setItem(USER_KEY, JSON.stringify(authUser))
+      setUser(authUser)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur de connexion'
       setError(message)
@@ -116,12 +105,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = async () => {
-    if (IS_DEV) {
-      localStorage.removeItem('locagest_dev_user')
-      setUser(null)
-      return
-    }
-    await signOut()
+    localStorage.removeItem(JWT_KEY)
+    localStorage.removeItem(USER_KEY)
     setUser(null)
   }
 
