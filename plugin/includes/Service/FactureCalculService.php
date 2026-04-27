@@ -76,7 +76,7 @@ class FactureCalculService {
     }
 
     /**
-     * Calcule la ligne taxe de séjour selon §4.3.
+     * Calcule la ligne taxe de séjour adultes selon §4.3.
      * nb_adultes × nb_nuits × taxe_adulte_nuit
      */
     public function calculer_taxe( int $nb_adultes, int $nb_nuits, float $taxe_adulte_nuit ): array {
@@ -85,6 +85,20 @@ class FactureCalculService {
             'libelle'       => sprintf( 'Taxe de séjour – %d adulte(s) × %d nuit(s) × %.2f €', $nb_adultes, $nb_nuits, $taxe_adulte_nuit ),
             'quantite'      => (float) ( $nb_adultes * $nb_nuits ),
             'prix_unitaire' => $taxe_adulte_nuit,
+            'prix_total'    => $total,
+        ];
+    }
+
+    /**
+     * Calcule la ligne taxe de séjour enfants (§4.3 extension).
+     * nb_enfants × nb_nuits × taxe_enfant_nuit (0 par défaut = exonéré)
+     */
+    public function calculer_taxe_enfants( int $nb_enfants, int $nb_nuits, float $taxe_enfant_nuit ): array {
+        $total = round( $nb_enfants * $nb_nuits * $taxe_enfant_nuit, 2 );
+        return [
+            'libelle'       => sprintf( 'Taxe de séjour enfants – %d enfant(s) × %d nuit(s) × %.2f €', $nb_enfants, $nb_nuits, $taxe_enfant_nuit ),
+            'quantite'      => (float) ( $nb_enfants * $nb_nuits ),
+            'prix_unitaire' => $taxe_enfant_nuit,
             'prix_total'    => $total,
         ];
     }

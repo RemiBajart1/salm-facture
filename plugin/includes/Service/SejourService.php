@@ -109,13 +109,31 @@ class SejourService {
      */
     public function update_personnes( int $sejour_id, array $data ): array {
         $this->find_or_fail( $sejour_id );
-        if ( isset( $data['nb_adultes'] ) ) {
-            $this->sejour_repo->update( $sejour_id, [ 'nb_adultes' => (int) $data['nb_adultes'] ] );
-        }
+        $update = [];
+        if ( isset( $data['nb_adultes'] ) ) $update['nb_adultes'] = (int) $data['nb_adultes'];
+        if ( isset( $data['nb_enfants'] ) ) $update['nb_enfants'] = (int) $data['nb_enfants'];
+        if ( $update ) $this->sejour_repo->update( $sejour_id, $update );
         foreach ( $data['categories'] ?? [] as $cat ) {
             $this->categorie_repo->update_nb_reelles( (int) $cat['id'], (int) $cat['nb_reelles'] );
         }
         return $this->get_detail( $sejour_id );
+    }
+
+    /**
+     * Enrichit le résultat paginé avec les catégories de chaque séjour (1 requête IN).
+     * @param array{items: array, total: int, page: int, size: int} $paginated
+     * @return array{items: array, total: int, page: int, size: int}
+     */
+    public function enrich_list_with_categories( array $paginated ): array {
+        $items = $paginated['items'];
+        if ( empty( $items ) ) return $paginated;
+        $ids = array_map( 'intval', array_column( $items, 'id' ) );
+        $cats_by_sejour = $this->categorie_repo->find_by_sejour_ids( $ids );
+        $paginated['items'] = array_map(
+            fn( $sejour ) => array_merge( $sejour, [ 'categories' => $cats_by_sejour[(int) $sejour['id']] ?? [] ] ),
+            $items
+        );
+        return $paginated;
     }
 
     public function get_detail( int $sejour_id ): array {

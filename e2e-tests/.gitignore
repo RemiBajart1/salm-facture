@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Playwright test artifacts
+playwright-report/
+test-results/
+.playwright/
+
+# Lock files (optional, commit if you need exact versions)
+package-lock.json
+yarn.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local

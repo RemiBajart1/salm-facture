@@ -145,6 +145,73 @@ class SupplementServiceTest extends LocagestUnitTestCase {
         $this->assertSame( 'BROUILLON', $result['statut'] );
     }
 
+    // ── Supplément obligatoire (adhésion) ────────────────────────────────────────
+
+    /** Item obligatoire, quantite = 1 → libellé normal, prix_total = prix_unitaire, statut CONFIRME */
+    public function test_obligatoire_cree_ligne_nouveau_membre(): void {
+        $this->sejour_exist();
+        $item = [ 'id' => 5, 'libelle' => 'Carte de membre', 'prix_unitaire' => 15.0, 'unite' => 'SEJOUR', 'actif' => true, 'obligatoire' => true ];
+        $this->item_repo->shouldReceive( 'find_by_id' )->with( 5 )->andReturn( $item );
+        $this->ligne_repo->shouldReceive( 'find_by_sejour_and_config_item' )->with( 1, 5 )->andReturn( null );
+        $this->ligne_repo->shouldReceive( 'create' )
+            ->withArgs( fn( $d ) =>
+                $d['libelle']    === 'Carte de membre' &&
+                $d['quantite']   === 1.0 &&
+                $d['prix_total'] === 15.0 &&
+                $d['statut']     === 'CONFIRME'
+            )->andReturn( 30 );
+        $expected = [ 'id' => 30, 'libelle' => 'Carte de membre', 'prix_total' => 15.0 ];
+        $this->ligne_repo->shouldReceive( 'find_by_id' )->with( 30 )->andReturn( $expected );
+
+        $result = $this->service->ajouter( 1, [ 'type' => 'SUPPLEMENT', 'config_item_id' => 5, 'quantite' => 1 ] );
+
+        $this->assertSame( 15.0, $result['prix_total'] );
+        $this->assertSame( 'Carte de membre', $result['libelle'] );
+    }
+
+    /** Item obligatoire, quantite = 0 (déjà membre) → libellé suffixé, prix_total = 0, quantite = 0 */
+    public function test_obligatoire_deja_membre_prix_zero(): void {
+        $this->sejour_exist();
+        $item = [ 'id' => 5, 'libelle' => 'Carte de membre', 'prix_unitaire' => 15.0, 'unite' => 'SEJOUR', 'actif' => true, 'obligatoire' => true ];
+        $this->item_repo->shouldReceive( 'find_by_id' )->with( 5 )->andReturn( $item );
+        $this->ligne_repo->shouldReceive( 'find_by_sejour_and_config_item' )->with( 1, 5 )->andReturn( null );
+        $this->ligne_repo->shouldReceive( 'create' )
+            ->withArgs( fn( $d ) =>
+                str_contains( $d['libelle'], 'Déjà membre' ) &&
+                $d['quantite']   === 0.0 &&
+                $d['prix_total'] === 0.0 &&
+                $d['statut']     === 'CONFIRME'
+            )->andReturn( 31 );
+        $expected = [ 'id' => 31, 'libelle' => 'Carte de membre – Déjà membre pour l\'année civile', 'prix_total' => 0.0 ];
+        $this->ligne_repo->shouldReceive( 'find_by_id' )->with( 31 )->andReturn( $expected );
+
+        $result = $this->service->ajouter( 1, [ 'type' => 'SUPPLEMENT', 'config_item_id' => 5, 'quantite' => 0 ] );
+
+        $this->assertSame( 0.0, $result['prix_total'] );
+        $this->assertStringContainsString( 'Déjà membre', $result['libelle'] );
+    }
+
+    /** Item obligatoire, ligne existante → update appelé (pas de doublon) */
+    public function test_obligatoire_upsert_met_a_jour_ligne_existante(): void {
+        $this->sejour_exist();
+        $item     = [ 'id' => 5, 'libelle' => 'Carte de membre', 'prix_unitaire' => 15.0, 'unite' => 'SEJOUR', 'actif' => true, 'obligatoire' => true ];
+        $existing = [ 'id' => 42, 'libelle' => 'Carte de membre', 'quantite' => 1.0, 'prix_total' => 15.0 ];
+        $this->item_repo->shouldReceive( 'find_by_id' )->with( 5 )->andReturn( $item );
+        $this->ligne_repo->shouldReceive( 'find_by_sejour_and_config_item' )->with( 1, 5 )->andReturn( $existing );
+        // update doit être appelé, create ne doit PAS l'être
+        $this->ligne_repo->shouldReceive( 'update' )
+            ->withArgs( fn( $id, $d ) => $id === 42 && $d['quantite'] === 0.0 && $d['prix_total'] === 0.0 )
+            ->once();
+        $this->ligne_repo->shouldNotReceive( 'create' );
+        $updated = [ 'id' => 42, 'libelle' => 'Carte de membre – Déjà membre pour l\'année civile', 'prix_total' => 0.0 ];
+        $this->ligne_repo->shouldReceive( 'find_by_id' )->with( 42 )->andReturn( $updated );
+
+        $result = $this->service->ajouter( 1, [ 'type' => 'SUPPLEMENT', 'config_item_id' => 5, 'quantite' => 0 ] );
+
+        $this->assertSame( 0.0, $result['prix_total'] );
+        $this->assertSame( 42, $result['id'] );
+    }
+
     // ── sejour inexistant ─────────────────────────────────────────────────────────
 
     public function test_ajouter_echoue_si_sejour_introuvable(): void {

@@ -129,6 +129,7 @@ class FactureServiceTest extends LocagestUnitTestCase {
         $this->calcul_service->shouldReceive( 'calculer_hebergement' )->andReturn( [ 'libelle' => 'Héb', 'quantite' => 2.0, 'prix_unitaire' => 720.0, 'prix_total' => 1440.0 ] );
         $this->calcul_service->shouldReceive( 'calculer_energie' )->andReturn( [ 'libelle' => 'Énergie', 'quantite' => 2.0, 'prix_unitaire' => 80.0, 'prix_total' => 160.0 ] );
         $this->calcul_service->shouldReceive( 'calculer_taxe' )->andReturn( [ 'libelle' => 'Taxe', 'quantite' => 44.0, 'prix_unitaire' => 1.0, 'prix_total' => 44.0 ] );
+        $this->calcul_service->shouldReceive( 'calculer_taxe_enfants' )->andReturn( [ 'libelle' => 'Taxe enfants', 'quantite' => 0.0, 'prix_unitaire' => 0.0, 'prix_total' => 0.0 ] );
 
         $this->ligne_repo->shouldReceive( 'delete_calculated_lines' )->once();
         $this->ligne_repo->shouldReceive( 'create' )->times( 3 )->andReturn( 1 );
@@ -163,6 +164,7 @@ class FactureServiceTest extends LocagestUnitTestCase {
         $this->calcul_service->shouldReceive( 'calculer_hebergement' )->andReturn( [ 'libelle' => 'H', 'quantite' => 2.0, 'prix_unitaire' => 720.0, 'prix_total' => 1440.0 ] );
         $this->calcul_service->shouldReceive( 'calculer_energie' )->andReturn( [ 'libelle' => 'E', 'quantite' => 2.0, 'prix_unitaire' => 80.0, 'prix_total' => 160.0 ] );
         $this->calcul_service->shouldReceive( 'calculer_taxe' )->andReturn( [ 'libelle' => 'T', 'quantite' => 44.0, 'prix_unitaire' => 1.0, 'prix_total' => 44.0 ] );
+        $this->calcul_service->shouldReceive( 'calculer_taxe_enfants' )->andReturn( [ 'libelle' => 'Taxe enfants', 'quantite' => 0.0, 'prix_unitaire' => 0.0, 'prix_total' => 0.0 ] );
 
         $this->ligne_repo->shouldReceive( 'delete_calculated_lines' );
         $this->ligne_repo->shouldReceive( 'create' )->andReturn( 1 );
