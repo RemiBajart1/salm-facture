@@ -14,6 +14,7 @@ use Locagest\Db\Migration200;
 use Locagest\Db\Migration201;
 use Locagest\Db\Migration202;
 use Locagest\Db\Migration203;
+use Locagest\Db\Migration204;
 use Locagest\Repository\ConfigItemRepository;
 use Locagest\Repository\ConfigSiteRepository;
 use Locagest\Repository\FactureRepository;
@@ -90,6 +91,7 @@ class Plugin {
             Migration201::run();
             Migration202::run();
             Migration203::run();
+            Migration204::run();
             update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
         }
     }

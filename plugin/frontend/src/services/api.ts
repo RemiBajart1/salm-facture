@@ -21,7 +21,9 @@ function apiBase(): string {
 }
 
 function authToken(): string | null {
-  return localStorage.getItem('locagest_jwt')
+  // Préfère le token injecté par WordPress (wp_localize_script) sur le localStorage,
+  // pour éviter d'utiliser un token périmé stocké en local après re-connexion WP.
+  return window.locagestConfig?.token ?? localStorage.getItem('locagest_jwt')
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {

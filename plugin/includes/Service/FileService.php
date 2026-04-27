@@ -53,7 +53,9 @@ class FileService {
         $suffix   = $index > 0 ? "-{$index}" : '';
         $filename = "cheque-{$paiement_id}{$suffix}.{$ext}";
         $path     = $this->cheques_dir . $filename;
-        file_put_contents( $path, $content );
+        if ( file_put_contents( $path, $content ) === false ) {
+            throw new LocagestException( "Impossible de sauvegarder la photo de chèque $filename." );
+        }
         return 'locagest/cheques/' . $filename;
     }
 

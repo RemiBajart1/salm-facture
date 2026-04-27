@@ -183,4 +183,108 @@ class SejourServiceTest extends LocagestUnitTestCase {
             'categories' => [ [ 'id' => 10, 'nb_reelles' => 25 ] ],
         ] );
     }
+
+    public function test_update_personnes_met_a_jour_nb_adultes_et_nb_enfants(): void {
+        $sejour = [ 'id' => 1, 'statut' => 'EN_COURS' ];
+        $this->sejour_repo->shouldReceive( 'find_by_id' )->andReturn( $sejour );
+        $this->sejour_repo->shouldReceive( 'update' )
+            ->withArgs( fn( $id, $d ) => $d['nb_adultes'] === 20 && $d['nb_enfants'] === 5 )
+            ->once();
+        $this->categorie_repo->shouldNotReceive( 'update_nb_reelles' );
+        $this->categorie_repo->shouldReceive( 'find_by_sejour' )->andReturn( [] );
+
+        $this->service->update_personnes( 1, [ 'nb_adultes' => 20, 'nb_enfants' => 5 ] );
+    }
+
+    public function test_update_personnes_leve_not_found_si_sejour_absent(): void {
+        $this->sejour_repo->shouldReceive( 'find_by_id' )->with( 99 )->andReturn( null );
+
+        $this->expectException( NotFoundException::class );
+        $this->service->update_personnes( 99, [ 'nb_adultes' => 10 ] );
+    }
+
+    // ── update_horaires ───────────────────────────────────────────────────────────
+
+    public function test_update_horaires_met_a_jour_les_champs_fournis(): void {
+        $this->sejour_repo->shouldReceive( 'find_by_id' )->andReturn( [ 'id' => 1, 'statut' => 'EN_COURS' ] );
+        $this->sejour_repo->shouldReceive( 'update' )
+            ->withArgs( fn( $id, $d ) => $id === 1 && $d === [ 'heure_arrivee_reelle' => '16:00', 'statut' => 'EN_COURS' ] )
+            ->once();
+        $this->categorie_repo->shouldReceive( 'find_by_sejour' )->andReturn( [] );
+
+        $this->service->update_horaires( 1, [ 'heure_arrivee_reelle' => '16:00', 'statut' => 'EN_COURS' ] );
+    }
+
+    public function test_update_horaires_ne_modifie_rien_si_aucun_champ(): void {
+        $this->sejour_repo->shouldReceive( 'find_by_id' )->andReturn( [ 'id' => 1 ] );
+        $this->sejour_repo->shouldNotReceive( 'update' );
+        $this->categorie_repo->shouldReceive( 'find_by_sejour' )->andReturn( [] );
+
+        $this->service->update_horaires( 1, [] );
+    }
+
+    public function test_update_horaires_leve_not_found_si_sejour_absent(): void {
+        $this->sejour_repo->shouldReceive( 'find_by_id' )->with( 99 )->andReturn( null );
+
+        $this->expectException( NotFoundException::class );
+        $this->service->update_horaires( 99, [ 'heure_arrivee_reelle' => '16:00' ] );
+    }
+
+    // ── get_detail ────────────────────────────────────────────────────────────────
+
+    public function test_get_detail_inclut_les_categories(): void {
+        $categories = [ [ 'id' => 1, 'nom_snapshot' => 'Extérieur', 'nb_reelles' => 25 ] ];
+        $this->sejour_repo->shouldReceive( 'find_by_id' )->with( 1 )->andReturn( [ 'id' => 1, 'statut' => 'PLANIFIE' ] );
+        $this->categorie_repo->shouldReceive( 'find_by_sejour' )->with( 1 )->andReturn( $categories );
+
+        $result = $this->service->get_detail( 1 );
+
+        $this->assertArrayHasKey( 'categories', $result );
+        $this->assertCount( 1, $result['categories'] );
+        $this->assertSame( 'Extérieur', $result['categories'][0]['nom_snapshot'] );
+    }
+
+    public function test_get_detail_leve_not_found_si_sejour_absent(): void {
+        $this->sejour_repo->shouldReceive( 'find_by_id' )->with( 42 )->andReturn( null );
+
+        $this->expectException( NotFoundException::class );
+        $this->service->get_detail( 42 );
+    }
+
+    // ── enrich_list_with_categories ───────────────────────────────────────────────
+
+    public function test_enrich_list_retourne_liste_vide_inchangee(): void {
+        $paginated = [ 'items' => [], 'total' => 0, 'page' => 0, 'size' => 20 ];
+
+        $result = $this->service->enrich_list_with_categories( $paginated );
+
+        $this->assertSame( [], $result['items'] );
+        $this->assertSame( 0, $result['total'] );
+    }
+
+    public function test_enrich_list_attache_les_categories_par_sejour(): void {
+        $items = [
+            [ 'id' => 1, 'statut' => 'PLANIFIE' ],
+            [ 'id' => 2, 'statut' => 'EN_COURS' ],
+        ];
+        $cats_by_sejour = [
+            1 => [ [ 'id' => 10, 'nom_snapshot' => 'Extérieur' ] ],
+            2 => [ [ 'id' => 20, 'nom_snapshot' => 'Membres' ], [ 'id' => 21, 'nom_snapshot' => 'Jeunes' ] ],
+        ];
+        $this->categorie_repo->shouldReceive( 'find_by_sejour_ids' )->with( [ 1, 2 ] )->andReturn( $cats_by_sejour );
+
+        $result = $this->service->enrich_list_with_categories( [ 'items' => $items, 'total' => 2, 'page' => 0, 'size' => 20 ] );
+
+        $this->assertCount( 1, $result['items'][0]['categories'] );
+        $this->assertCount( 2, $result['items'][1]['categories'] );
+    }
+
+    public function test_enrich_list_attache_tableau_vide_si_sejour_sans_categorie(): void {
+        $items = [ [ 'id' => 5, 'statut' => 'PLANIFIE' ] ];
+        $this->categorie_repo->shouldReceive( 'find_by_sejour_ids' )->with( [ 5 ] )->andReturn( [] );
+
+        $result = $this->service->enrich_list_with_categories( [ 'items' => $items, 'total' => 1, 'page' => 0, 'size' => 20 ] );
+
+        $this->assertSame( [], $result['items'][0]['categories'] );
+    }
 }

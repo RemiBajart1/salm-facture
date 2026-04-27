@@ -24,6 +24,13 @@ define( 'LOCAGEST_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'LOCAGEST_PDF_DIR',    WP_CONTENT_DIR . '/uploads/locagest/factures/' );
 define( 'LOCAGEST_CHEQUE_DIR', WP_CONTENT_DIR . '/uploads/locagest/cheques/' );
 
+// Clé secrète JWT — doit être définie dans wp-config.php via :
+//   define( 'LOCAGEST_JWT_SECRET', 'votre-clé-secrète-longue-et-aléatoire' );
+// Fallback : sel WordPress (déconseillé en production).
+if ( ! defined( 'LOCAGEST_JWT_SECRET' ) ) {
+    define( 'LOCAGEST_JWT_SECRET', wp_salt( 'auth' ) );
+}
+
 // Autoloader Composer (disponible après `composer install` dans plugin/)
 if ( file_exists( LOCAGEST_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
     require_once LOCAGEST_PLUGIN_DIR . 'vendor/autoload.php';

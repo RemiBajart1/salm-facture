@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Locagest\Service;
 
+use Locagest\Utils\Exceptions\InvalidInputException;
+
 /**
  * Contient toute la logique de calcul des lignes de facture.
  * Implémente les règles §4.1 (hébergement), §4.2 (énergie), §4.3 (taxe).
@@ -37,6 +39,12 @@ class FactureCalculService {
         }
 
         $forfait_applique = $total_reel < $min_personnes;
+
+        if ( $forfait_applique && $prix_ref <= 0.0 ) {
+            throw new InvalidInputException(
+                "Aucune catégorie ne correspond au forfait_tarif_personne_id=$forfait_tarif_personne_id. Impossible de calculer le forfait hébergement."
+            );
+        }
 
         if ( $forfait_applique ) {
             $montant_nuit = $min_personnes * $prix_ref;
