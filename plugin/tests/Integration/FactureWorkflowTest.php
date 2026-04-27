@@ -42,7 +42,7 @@ class FactureWorkflowTest extends LocagestIntegrationTestCase {
         $this->assertCount( 1, $sejour['categories'] );
 
         // 2. Saisir les effectifs réels (25 personnes < 40 min)
-        $sejour = $sejour_service->update_personnes( $sejour['id'], [
+        $sejour = $sejour_service->update_personnes( (int) $sejour['id'], [
             'nb_adultes' => 22,
             'categories' => [ [ 'id' => $sejour['categories'][0]['id'], 'nb_reelles' => 25 ] ],
         ] );
@@ -98,7 +98,7 @@ class FactureWorkflowTest extends LocagestIntegrationTestCase {
             'categories'                 => [ [ 'tarif_personne_id' => 1, 'nb_previsionnel' => 40 ] ],
             'tarif_forfait_categorie_id' => 1,
         ] );
-        $sejour_service->update_personnes( $sejour['id'], [
+        $sejour_service->update_personnes( (int) $sejour['id'], [
             'nb_adultes' => 35,
             'categories' => [ [ 'id' => $sejour['categories'][0]['id'], 'nb_reelles' => 40 ] ],
         ] );
@@ -143,7 +143,7 @@ class FactureWorkflowTest extends LocagestIntegrationTestCase {
                 'categories'                 => [ [ 'tarif_personne_id' => 1, 'nb_previsionnel' => 40 ] ],
                 'tarif_forfait_categorie_id' => 1,
             ] );
-            $sejour_service->update_personnes( $sejour['id'], [
+            $sejour_service->update_personnes( (int) $sejour['id'], [
                 'nb_adultes' => 10,
                 'categories' => [ [ 'id' => $sejour['categories'][0]['id'], 'nb_reelles' => 40 ] ],
             ] );
@@ -176,7 +176,7 @@ class FactureWorkflowTest extends LocagestIntegrationTestCase {
             'tarif_forfait_categorie_id' => 1,
             'min_personnes_total'        => 40,
         ] );
-        $sejour_service->update_personnes( $sejour['id'], [
+        $sejour_service->update_personnes( (int) $sejour['id'], [
             'nb_adultes' => 48,
             'categories' => [ [ 'id' => $sejour['categories'][0]['id'], 'nb_reelles' => 50 ] ],
         ] );

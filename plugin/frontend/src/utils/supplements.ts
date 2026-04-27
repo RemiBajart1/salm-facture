@@ -1,5 +1,5 @@
 import type { ConfigItem } from '../types'
-import type { AddSupplementRequest } from '../services/api'
+import type { AddSupplementRequest } from '../types'
 
 export function buildAdhesionPayloads(
   adhesionItems: ConfigItem[],
