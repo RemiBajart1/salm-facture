@@ -31,7 +31,7 @@ jobs:
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Run unit tests
-        run: vendor/bin/phpunit --configuration phpunit.xml
+        run: vendor/bin/phpunit --configuration phpunit.xml --no-coverage
 
   plugin-test-integration:
     name: Plugin - Tests d'intégration

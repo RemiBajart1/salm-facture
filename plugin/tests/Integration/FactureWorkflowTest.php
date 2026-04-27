@@ -59,7 +59,7 @@ class FactureWorkflowTest extends LocagestIntegrationTestCase {
             'ordre'         => 1,
         ] );
         $item_id = self::$wpdb->insert_id;
-        $ligne = $suppl_service->ajouter( $sejour['id'], [
+        $ligne = $suppl_service->ajouter( (int) $sejour['id'], [
             'type'           => 'SUPPLEMENT',
             'config_item_id' => $item_id,
             'quantite'       => 3,
@@ -67,7 +67,7 @@ class FactureWorkflowTest extends LocagestIntegrationTestCase {
         $this->assertSame( 15.0, (float) $ligne['prix_total'] );
 
         // 4. Générer la facture (sans envoi email en test)
-        $facture = $facture_service->generer( $sejour['id'], envoyer_email: false );
+        $facture = $facture_service->generer( (int) $sejour['id'], envoyer_email: false );
 
         $this->assertSame( 'EMISE', $facture['statut'] );
         $this->assertStringStartsWith( 'FAC-', $facture['numero'] );
@@ -81,7 +81,7 @@ class FactureWorkflowTest extends LocagestIntegrationTestCase {
 
         // 5. Vérifier l'immuabilité
         $this->expectException( ImmuabiliteFactureException::class );
-        $facture_service->generer( $sejour['id'], envoyer_email: false );
+        $facture_service->generer( (int) $sejour['id'], envoyer_email: false );
     }
 
     // ── transition PAYEE ─────────────────────────────────────────────────────────
@@ -103,27 +103,27 @@ class FactureWorkflowTest extends LocagestIntegrationTestCase {
             'categories' => [ [ 'id' => $sejour['categories'][0]['id'], 'nb_reelles' => 40 ] ],
         ] );
 
-        $facture = $facture_service->generer( $sejour['id'], envoyer_email: false );
+        $facture = $facture_service->generer( (int) $sejour['id'], envoyer_email: false );
         $total   = (float) $facture['montant_total'];
 
         // Paiement partiel : facture reste EMISE
-        $paiement_service->enregistrer( $sejour['id'], [
+        $paiement_service->enregistrer( (int) $sejour['id'], [
             'montant'       => $total / 2,
             'mode'          => 'VIREMENT',
             'date_paiement' => '2025-08-05',
         ] );
 
-        $facture_mid = $facture_service->get_by_sejour( $sejour['id'] );
+        $facture_mid = $facture_service->get_by_sejour( (int) $sejour['id'] );
         $this->assertSame( 'EMISE', $facture_mid['statut'] );
 
         // Solde : facture passe PAYEE
-        $paiement_service->enregistrer( $sejour['id'], [
+        $paiement_service->enregistrer( (int) $sejour['id'], [
             'montant'       => $total / 2,
             'mode'          => 'CHEQUE',
             'date_paiement' => '2025-08-10',
         ] );
 
-        $facture_final = $facture_service->get_by_sejour( $sejour['id'] );
+        $facture_final = $facture_service->get_by_sejour( (int) $sejour['id'] );
         $this->assertSame( 'PAYEE', $facture_final['statut'] );
         $this->assertCount( 2, $facture_final['paiements'] );
     }
@@ -147,7 +147,7 @@ class FactureWorkflowTest extends LocagestIntegrationTestCase {
                 'nb_adultes' => 10,
                 'categories' => [ [ 'id' => $sejour['categories'][0]['id'], 'nb_reelles' => 40 ] ],
             ] );
-            $facture   = $facture_service->generer( $sejour['id'], envoyer_email: false );
+            $facture   = $facture_service->generer( (int) $sejour['id'], envoyer_email: false );
             $numeros[] = $facture['numero'];
         }
 
@@ -181,7 +181,7 @@ class FactureWorkflowTest extends LocagestIntegrationTestCase {
             'categories' => [ [ 'id' => $sejour['categories'][0]['id'], 'nb_reelles' => 50 ] ],
         ] );
 
-        $facture = $facture_service->generer( $sejour['id'], envoyer_email: false );
+        $facture = $facture_service->generer( (int) $sejour['id'], envoyer_email: false );
 
         // Calcul réel : 50×18×2 = 1800€ hébergement
         $this->assertSame( 1800.0, (float) $facture['montant_hebergement'] );
