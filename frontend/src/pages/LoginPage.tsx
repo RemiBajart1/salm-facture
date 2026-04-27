@@ -3,7 +3,7 @@ import styles from './Pages.module.css'
 import { ErrorBanner } from '../components/common/ErrorBanner'
 import { useAuth } from '../contexts/AuthContext'
 
-/** Page de connexion — Amplify Cognito (ou mock dev) */
+/** Page de connexion — JWT WordPress */
 export function LoginPage() {
   const { login, loading } = useAuth()
   const [email, setEmail] = useState('')

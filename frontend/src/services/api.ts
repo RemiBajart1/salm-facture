@@ -1,39 +1,35 @@
-/**
- * Service API — LocaGest
- * Wrapping de fetch pour les appels REST.
- * En développement, tous les appels sont interceptés par MSW.
- * En production, les requêtes incluent le JWT Cognito via Amplify.
- */
+import type {
+  Sejour,
+  SejourCategorie,
+  LigneSejour,
+  Facture,
+  Paiement,
+  TarifPersonne,
+  ConfigItem,
+  ConfigSiteEntry,
+  Locataire,
+  PagedResponse,
+  CreateSejourRequest,
+  PatchPersonnesRequest,
+  AddSupplementRequest,
+  CreatePaiementRequest,
+  PromouvoirLigneRequest,
+} from '../types'
 
-import { fetchAuthSession } from 'aws-amplify/auth'
-
-const API_BASE = '/api/v1'
-
-/** Récupère les headers d'auth (JWT Cognito en prod, vide en dev avec MSW) */
-async function authHeaders(): Promise<Record<string, string>> {
-  try {
-    const session = await fetchAuthSession()
-    const token = session.tokens?.idToken?.toString()
-    if (token) {
-      return { Authorization: `Bearer ${token}` }
-    }
-  } catch {
-    // En développement avec MSW, pas de session Cognito réelle
-  }
-  return {}
+function apiBase(): string {
+  return window.locagestConfig?.apiBase ?? '/wp-json/locagest/v1'
 }
 
-async function request<T>(
-  method: string,
-  path: string,
-  body?: unknown,
-): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(await authHeaders()),
-  }
+function authToken(): string | null {
+  return localStorage.getItem('locagest_jwt')
+}
 
-  const response = await fetch(`${API_BASE}${path}`, {
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const token = authToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const response = await fetch(`${apiBase()}${path}`, {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -44,128 +40,337 @@ async function request<T>(
     throw new ApiError(response.status, errorText)
   }
 
-  // 204 No Content
-  if (response.status === 204) {
-    return undefined as T
-  }
+  if (response.status === 204) return undefined as T
 
   return response.json() as Promise<T>
 }
 
 export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-  ) {
+  constructor(public readonly status: number, message: string) {
     super(message)
     this.name = 'ApiError'
   }
 }
 
-/* ── Séjours ── */
+// ── Mappers WP (snake_case) → TS (camelCase) ─────────────────────────────────
 
-import type {
-  Sejour,
-  LigneSejour,
-  Facture,
-  Paiement,
-  PagedResponse,
-  CreateSejourRequest,
-  PatchPersonnesRequest,
-  AddSupplementRequest,
-  CreatePaiementRequest,
-} from '../types'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapSejourCategorie(c: any): SejourCategorie {
+  return {
+    id:         String(c.id),
+    nom:        c.nom_snapshot ?? c.nom,
+    prixNuit:   Number(c.prix_nuit_snapshot ?? c.prix_nuit ?? 0),
+    nbPrevues:  Number(c.nb_previsionnel ?? c.nb_prevues ?? 0),
+    nbReelles:  c.nb_reelles != null ? Number(c.nb_reelles) : null,
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapSejour(s: any): Sejour {
+  return {
+    id:                    String(s.id),
+    statut:                s.statut,
+    nomLocataire:          s.locataire_nom_snapshot ?? s.nom_locataire ?? '',
+    emailLocataire:        s.locataire_email_snapshot ?? s.email_locataire ?? '',
+    telephoneLocataire:    s.locataire_telephone_snapshot ?? s.telephone_locataire,
+    dateArrivee:           s.date_debut ?? s.date_arrivee,
+    dateDepart:            s.date_fin ?? s.date_depart,
+    nbNuits:               Number(s.nb_nuits ?? 1),
+    heureArriveePrevue:    s.heure_arrivee_prevue,
+    heureDepartPrevu:      s.heure_depart_prevu,
+    heureArriveeReelle:    s.heure_arrivee_reelle ?? null,
+    heureDepartReel:       s.heure_depart_reel ?? null,
+    nbAdultes:             s.nb_adultes != null ? Number(s.nb_adultes) : null,
+    minPersonnesTotal:     Number(s.min_personnes_total ?? 40),
+    modePaiement:          s.mode_paiement,
+    dateLimitePaiement:    s.date_limite_paiement ?? null,
+    optionsPresaisies:     s.options_presaisies ?? null,
+    notesInternes:         s.notes ?? null,
+    categories:            (s.categories ?? []).map(mapSejourCategorie),
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapLigne(l: any): LigneSejour {
+  const wpType = l.type_ligne ?? l.typeLigne
+  const typeLigne = wpType === 'TAXE' ? 'TAXE_SEJOUR' : wpType
+  const wpStatut = l.statut
+  const statut = wpStatut === 'BROUILLON' ? 'A_CONFIRMER' : 'CONFIRME'
+  return {
+    id:           String(l.id),
+    typeLigne,
+    statut,
+    designation:  l.libelle ?? l.designation ?? '',
+    quantite:     Number(l.quantite ?? 1),
+    prixUnitaire: Number(l.prix_unitaire ?? 0),
+    montant:      Number(l.prix_total ?? l.montant ?? 0),
+    configItemId: l.config_item_id != null ? String(l.config_item_id) : null,
+    saisiPar:     l.saisi_par ?? null,
+    createdAt:    l.created_at,
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapFacture(f: any): Facture {
+  return {
+    id:                  String(f.id),
+    sejourId:            String(f.sejour_id ?? f.sejourId),
+    numero:              f.numero ?? '',
+    statut:              f.statut,
+    dateGeneration:      f.date_generation ?? f.dateGeneration,
+    montantHebergement:  Number(f.montant_hebergement ?? f.montantHebergement ?? 0),
+    montantEnergie:      Number(f.montant_energie ?? f.montantEnergie ?? 0),
+    montantTaxe:         Number(f.montant_taxe ?? f.montantTaxe ?? 0),
+    montantSupplements:  Number(f.montant_supplements ?? f.montantSupplements ?? 0),
+    montantTotal:        Number(f.montant_total ?? f.montantTotal ?? 0),
+    emailEnvoye:         Boolean(f.email_envoye ?? f.emailEnvoye ?? false),
+    pdfUrl:              f.pdf_url ?? f.pdfUrl ?? null,
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapPaiement(p: any): Paiement {
+  return {
+    id:              String(p.id),
+    montant:         Number(p.montant),
+    mode:            p.mode,
+    dateEncaissement: p.date_paiement ?? p.dateEncaissement ?? '',
+    numeroCheque:    p.reference ?? p.numeroCheque ?? null,
+    banqueEmettrice: p.banque_emettrice ?? p.banqueEmettrice ?? null,
+    chequePhotoUrl:  p.cheque_photo_url ?? null,
+    enregistrePar:   p.enregistre_par ?? undefined,
+    createdAt:       p.created_at,
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapTarif(t: any): TarifPersonne {
+  return {
+    id:          String(t.id),
+    nom:         t.nom,
+    prixNuit:    Number(t.prix_nuit ?? t.prixNuit ?? 0),
+    description: t.description,
+    actif:       Boolean(t.actif),
+    ordre:       Number(t.ordre ?? 0),
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapConfigItem(i: any): ConfigItem {
+  return {
+    id:           String(i.id),
+    designation:  i.libelle ?? i.designation ?? '',
+    categorie:    i.categorie ?? '',
+    prixUnitaire: Number(i.prix_unitaire ?? i.prixUnitaire ?? 0),
+    unite:        i.unite,
+    actif:        Boolean(i.actif),
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapPagedResponse<W, T>(data: any, mapper: (item: W) => T): PagedResponse<T> {
+  // Supporte le format WP {items, total, page, size} et l'ancien format Java {content, totalElements, ...}
+  if (data.items !== undefined) {
+    return {
+      content:       (data.items as W[]).map(mapper),
+      totalElements: Number(data.total),
+      totalPages:    Math.ceil(Number(data.total) / Number(data.size || 1)),
+      page:          Number(data.page),
+      size:          Number(data.size),
+    }
+  }
+  return {
+    content:       (data.content as W[]).map(mapper),
+    totalElements: Number(data.totalElements),
+    totalPages:    Number(data.totalPages),
+    page:          Number(data.page),
+    size:          Number(data.size),
+  }
+}
+
+// ── Mappers TS → WP (requêtes) ────────────────────────────────────────────────
+
+function toWPCreateSejour(data: CreateSejourRequest): Record<string, unknown> {
+  return {
+    locataire: {
+      nom:       data.nomLocataire,
+      email:     data.emailLocataire,
+      telephone: data.telephoneLocataire,
+      adresse:   data.adresseLocataire,
+    },
+    date_debut:           data.dateArrivee,
+    date_fin:             data.dateDepart,
+    heure_arrivee_prevue: data.heureArriveePrevue,
+    heure_depart_prevu:   data.heureDepartPrevu,
+    min_personnes_total:  data.minPersonnesTotal,
+    mode_paiement:        data.modePaiement,
+    options_presaisies:   data.optionsPresaisies,
+    notes:                data.notesInternes,
+    categories:           data.categories.map((c) => ({
+      tarif_personne_id: Number(c.tarifId),
+      nb_previsionnel:   c.nbPrevues,
+    })),
+  }
+}
+
+function toWPPatchPersonnes(data: PatchPersonnesRequest): Record<string, unknown> {
+  return {
+    nb_adultes: data.nbAdultes,
+    categories: data.categories.map((c) => ({
+      id:         Number(c.categorieId),
+      nb_reelles: c.nbReelles,
+    })),
+  }
+}
+
+function toWPAddSupplement(data: AddSupplementRequest): Record<string, unknown> {
+  if (data.configItemId) {
+    return {
+      type:           'SUPPLEMENT',
+      config_item_id: Number(data.configItemId),
+      quantite:       data.quantite,
+    }
+  }
+  return {
+    type:         'LIBRE',
+    libelle:      data.designation,
+    prix_unitaire: data.prixUnitaire,
+    quantite:     data.quantite,
+  }
+}
+
+function toWPCreatePaiement(data: CreatePaiementRequest): Record<string, unknown> {
+  return {
+    montant:       data.montant,
+    mode:          data.mode,
+    reference:     data.numeroCheque,
+    date_paiement: data.dateEncaissement,
+    banque_emettrice: data.banqueEmettrice,
+  }
+}
+
+function toWPTarif(data: Omit<TarifPersonne, 'id'> | Partial<TarifPersonne>): Record<string, unknown> {
+  return {
+    nom:        (data as TarifPersonne).nom,
+    prix_nuit:  (data as TarifPersonne).prixNuit,
+    description: (data as TarifPersonne).description,
+    actif:      (data as TarifPersonne).actif,
+    ordre:      (data as TarifPersonne).ordre,
+  }
+}
+
+function toWPItem(data: Omit<ConfigItem, 'id'> | Partial<ConfigItem>): Record<string, unknown> {
+  return {
+    libelle:       (data as ConfigItem).designation,
+    categorie:     (data as ConfigItem).categorie,
+    prix_unitaire: (data as ConfigItem).prixUnitaire,
+    unite:         (data as ConfigItem).unite,
+    actif:         (data as ConfigItem).actif,
+  }
+}
+
+// ── API Séjours ───────────────────────────────────────────────────────────────
 
 export const sejourApi = {
-  getCurrent: () => request<Sejour>('GET', '/sejours/current'),
+  getCurrent: async () =>
+    mapSejour(await request<unknown>('GET', '/sejours/current')),
 
-  getById: (id: string) => request<Sejour>('GET', `/sejours/${id}`),
+  getById: async (id: string) =>
+    mapSejour(await request<unknown>('GET', `/sejours/${id}`)),
 
-  list: (statut?: string, page = 0, size = 20) => {
+  list: async (statut?: string, page = 0, size = 20) => {
     const params = new URLSearchParams()
     if (statut) params.set('statut', statut)
     params.set('page', String(page))
     params.set('size', String(size))
-    return request<PagedResponse<Sejour>>('GET', `/sejours?${params}`)
+    const data = await request<unknown>('GET', `/sejours?${params}`)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return mapPagedResponse<any, Sejour>(data, mapSejour)
   },
 
-  create: (data: CreateSejourRequest) =>
-    request<Sejour>('POST', '/sejours', data),
+  create: async (data: CreateSejourRequest) =>
+    mapSejour(await request<unknown>('POST', '/sejours', toWPCreateSejour(data))),
 
   patchPersonnes: (id: string, data: PatchPersonnesRequest) =>
-    request<void>('PATCH', `/sejours/${id}/personnes`, data),
+    request<void>('PATCH', `/sejours/${id}/personnes`, toWPPatchPersonnes(data)),
 
-  patchHoraires: (
-    id: string,
-    data: { heureArriveeReelle?: string; heureDepartReel?: string },
-  ) => request<void>('PATCH', `/sejours/${id}/horaires`, data),
+  patchHoraires: (id: string, data: { heureArriveeReelle?: string; heureDepartReel?: string }) =>
+    request<void>('PATCH', `/sejours/${id}/horaires`, {
+      heure_arrivee_reelle: data.heureArriveeReelle,
+      heure_depart_reel:    data.heureDepartReel,
+    }),
 
-  addSupplement: (id: string, data: AddSupplementRequest) =>
-    request<LigneSejour>('POST', `/sejours/${id}/supplements`, data),
+  addSupplement: async (id: string, data: AddSupplementRequest) =>
+    mapLigne(await request<unknown>('POST', `/sejours/${id}/supplements`, toWPAddSupplement(data))),
 
-  getLignes: (id: string) =>
-    request<LigneSejour[]>('GET', `/sejours/${id}/lignes`),
+  getLignes: async (id: string) => {
+    const data = await request<unknown[]>('GET', `/sejours/${id}/lignes`)
+    return data.map(mapLigne)
+  },
 
-  generateFacture: (id: string) =>
-    request<Facture>('POST', `/sejours/${id}/facture`, { envoyer: false }),
+  generateFacture: async (id: string) =>
+    mapFacture(await request<unknown>('POST', `/sejours/${id}/facture`, { envoyer: false })),
 
-  getFacture: (id: string) =>
-    request<Facture>('GET', `/sejours/${id}/facture`),
+  getFacture: async (id: string) =>
+    mapFacture(await request<unknown>('GET', `/sejours/${id}/facture`)),
 
   renvoyerFacture: (id: string) =>
     request<void>('POST', `/sejours/${id}/facture/renvoyer`),
 
-  addPaiement: (id: string, data: CreatePaiementRequest) =>
-    request<Paiement>('POST', `/sejours/${id}/paiements`, data),
+  addPaiement: async (id: string, data: CreatePaiementRequest) =>
+    mapPaiement(await request<unknown>('POST', `/sejours/${id}/paiements`, toWPCreatePaiement(data))),
 
-  getPaiements: (id: string) =>
-    request<Paiement[]>('GET', `/sejours/${id}/paiements`),
+  getPaiements: async (id: string) => {
+    const data = await request<unknown[]>('GET', `/sejours/${id}/paiements`)
+    return data.map(mapPaiement)
+  },
 }
 
-/* ── Locataires ── */
-
-import type { Locataire } from '../types'
+// ── API Locataires ────────────────────────────────────────────────────────────
 
 export const locataireApi = {
   search: (q: string) =>
     request<Locataire[]>('GET', `/locataires?q=${encodeURIComponent(q)}`),
 }
 
-/* ── Administration ── */
-
-import type {
-  TarifPersonne,
-  ConfigItem,
-  ConfigSiteEntry,
-  PromouvoirLigneRequest,
-} from '../types'
+// ── API Administration ────────────────────────────────────────────────────────
 
 export const adminApi = {
-  getTarifs: () => request<TarifPersonne[]>('GET', '/admin/tarifs'),
+  getTarifs: async () => {
+    const data = await request<unknown[]>('GET', '/admin/tarifs')
+    return data.map(mapTarif)
+  },
 
-  createTarif: (data: Omit<TarifPersonne, 'id'>) =>
-    request<TarifPersonne>('POST', '/admin/tarifs', data),
+  createTarif: async (data: Omit<TarifPersonne, 'id'>) =>
+    mapTarif(await request<unknown>('POST', '/admin/tarifs', toWPTarif(data))),
 
-  updateTarif: (id: string, data: Partial<TarifPersonne>) =>
-    request<TarifPersonne>('PUT', `/admin/tarifs/${id}`, data),
+  updateTarif: async (id: string, data: Partial<TarifPersonne>) =>
+    mapTarif(await request<unknown>('PUT', `/admin/tarifs/${id}`, toWPTarif(data))),
 
-  getItems: () => request<ConfigItem[]>('GET', '/admin/items'),
+  getItems: async () => {
+    const data = await request<unknown[]>('GET', '/admin/items')
+    return data.map(mapConfigItem)
+  },
 
-  createItem: (data: Omit<ConfigItem, 'id'>) =>
-    request<ConfigItem>('POST', '/admin/items', data),
+  createItem: async (data: Omit<ConfigItem, 'id'>) =>
+    mapConfigItem(await request<unknown>('POST', '/admin/items', toWPItem(data))),
 
-  updateItem: (id: string, data: Partial<ConfigItem>) =>
-    request<ConfigItem>('PUT', `/admin/items/${id}`, data),
+  updateItem: async (id: string, data: Partial<ConfigItem>) =>
+    mapConfigItem(await request<unknown>('PUT', `/admin/items/${id}`, toWPItem(data))),
 
-  deleteItem: (id: string) => request<void>('DELETE', `/admin/items/${id}`),
+  deleteItem: (id: string) =>
+    request<void>('DELETE', `/admin/items/${id}`),
 
-  getLignesLibres: () =>
-    request<LigneSejour[]>('GET', '/admin/lignes-libres'),
+  getLignesLibres: async () => {
+    const data = await request<unknown[]>('GET', '/admin/lignes-libres')
+    return data.map(mapLigne)
+  },
 
   promouvoirLigne: (id: string, data: PromouvoirLigneRequest) =>
     request<void>('POST', `/admin/lignes-libres/${id}/promouvoir`, data),
 
-  getConfig: () => request<ConfigSiteEntry[]>('GET', '/admin/config'),
+  getConfig: () =>
+    request<ConfigSiteEntry[]>('GET', '/admin/config'),
 
   patchConfig: (entries: { cle: string; valeur: string }[]) =>
     request<void>('PATCH', '/admin/config', { entries }),

@@ -56,10 +56,11 @@ class Plugin {
     public static function run(): void {
         $instance = new self();
         $instance->build_services();
-        add_action( 'rest_api_init', [ $instance, 'register_routes' ] );
-        add_action( 'init',          [ $instance, 'maybe_migrate' ] );
-        // Route de téléchargement de fichiers temporaire
-        add_action( 'rest_api_init', [ $instance, 'register_file_download_route' ] );
+        add_action( 'rest_api_init',         [ $instance, 'register_routes' ] );
+        add_action( 'init',                  [ $instance, 'maybe_migrate' ] );
+        add_action( 'rest_api_init',         [ $instance, 'register_file_download_route' ] );
+        add_action( 'admin_menu',            [ $instance, 'register_admin_page' ] );
+        add_action( 'admin_enqueue_scripts', [ $instance, 'enqueue_frontend' ] );
     }
 
     public static function activate(): void {
@@ -106,6 +107,82 @@ class Plugin {
         $this->facture_svc    = new FactureService( $facture_repo, $ligne_repo, $paiement_repo, $config_repo, $locataire_repo, $this->calcul_svc, $pdf_service, $file_service, $email_service, $this->sejour_svc );
         $this->paiement_svc   = new PaiementService( $paiement_repo, $facture_repo, $this->sejour_svc, $file_service );
         $this->supplement_svc = new SupplementService( $ligne_repo, $item_repo, $this->sejour_svc );
+    }
+
+    /** Enregistre la page d'administration LocaGest dans le menu WP. */
+    public function register_admin_page(): void {
+        add_menu_page(
+            'LocaGest',
+            'LocaGest',
+            'read',
+            'locagest',
+            [ $this, 'render_admin_page' ],
+            'dashicons-home',
+            30,
+        );
+    }
+
+    /** Affiche le point de montage de l'application React. */
+    public function render_admin_page(): void {
+        echo '<div id="root"></div>';
+    }
+
+    /**
+     * Enqueue les assets React compilés par Vite et injecte la config (apiBase + JWT).
+     * Ne s'exécute que sur la page LocaGest (hook = 'toplevel_page_locagest').
+     */
+    public function enqueue_frontend( string $hook ): void {
+        if ( $hook !== 'toplevel_page_locagest' ) {
+            return;
+        }
+
+        $build_dir = plugin_dir_path( __DIR__ ) . 'frontend/build';
+        $build_url = plugin_dir_url( __DIR__ ) . 'frontend/build';
+
+        // Le manifest Vite se trouve dans build/.vite/manifest.json
+        $manifest_path = $build_dir . '/.vite/manifest.json';
+        if ( ! file_exists( $manifest_path ) ) {
+            // Fallback : manifest à la racine du build (ancienne version Vite)
+            $manifest_path = $build_dir . '/manifest.json';
+        }
+
+        if ( file_exists( $manifest_path ) ) {
+            $manifest = json_decode( (string) file_get_contents( $manifest_path ), true );
+            $entry    = $manifest['src/main.tsx'] ?? $manifest['index.html'] ?? null;
+            if ( $entry ) {
+                wp_enqueue_script(
+                    'locagest-app',
+                    $build_url . '/' . $entry['file'],
+                    [],
+                    null,
+                    true,
+                );
+                foreach ( $entry['css'] ?? [] as $css_file ) {
+                    wp_enqueue_style( 'locagest-app', $build_url . '/' . $css_file, [], null );
+                }
+            }
+        }
+
+        // Génère un JWT pour l'utilisateur WP courant s'il possède un rôle LocaGest
+        $token = null;
+        $roles = [];
+        $wp_user = wp_get_current_user();
+        if ( $wp_user && $wp_user->ID ) {
+            $locagest_roles = Auth::locagest_roles( $wp_user );
+            if ( ! empty( $locagest_roles ) ) {
+                $token_data = Auth::generate_token( $wp_user );
+                $token      = $token_data['token'];
+                $roles      = $token_data['roles'];
+            }
+        }
+
+        wp_localize_script( 'locagest-app', 'locagestConfig', [
+            'apiBase' => rest_url( 'locagest/v1' ),
+            'token'   => $token,
+            'roles'   => $roles,
+            'userEmail' => $wp_user->user_email ?? null,
+            'username'  => $wp_user->user_login ?? null,
+        ] );
     }
 
     public function register_file_download_route(): void {
