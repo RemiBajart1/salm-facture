@@ -4,7 +4,9 @@
 # PHP / Composer
 plugin/vendor/
 plugin/.phpunit.cache/
+plugin/.phpunit.result.cache
 plugin/composer.lock
+plugin/build/
 
 # Compiled class file
 *.class
