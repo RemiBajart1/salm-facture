@@ -1,308 +1,167 @@
 import { test, expect } from '@playwright/test'
 
-const BASE_URL = 'http://localhost:5173'
-
 /**
- * Configuration pour les tests E2E
- * À adapter selon votre interface réelle
+ * E2E — Création de séjour par le Resp Location + saisie par le Gardien
+ *
+ * Scénario complet :
+ * 1. Resp Location se connecte, crée 2 séjours (un avec valeurs personnalisées,
+ *    un avec valeurs par défaut), vérifie qu'ils apparaissent dans la liste.
+ * 2. Resp Location se déconnecte.
+ * 3. Gardien se connecte, saisit les personnes réelles, ajoute un supplément
+ *    existant et une ligne libre, puis valide le paiement par virement.
+ *
+ * Prérequis : backend sur :8080 + frontend sur :5173 (ou MSW actif en mode dev)
+ *
+ * Tarifs disponibles (backend) :
+ *   - "Membre de l'union"  → 14 €/pers/nuit
+ *   - "Groupe de jeunes"   → 12 €/pers/nuit
+ *   - "Extérieur"          → 18 €/pers/nuit
  */
-const SELECTORS = {
-  // Login
-  emailInput: '#login-email',
-  passwordInput: '#login-password',
-  loginButton: 'button[type="submit"]:has-text("Se connecter")',
 
-  // Nouveau séjour
-  nouveauSejourBtn: 'button:has-text("Nouveau"), a:has-text("Nouveau")',
-  locataireInput: 'input[placeholder*="locataire" i], input[placeholder*="nom" i]',
-  dateArriveeInput: 'input[type="date"]',
-  createSejourBtn: 'button:has-text("Créer"), button:has-text("Créer séjour")',
+const BASE = 'http://localhost:5173'
 
-  // Gardien
-  saisirPersonnesBtn: 'button:has-text("Saisir"), button:has-text("personnes")',
-  numberInput: 'input[type="number"]',
-  validButton: 'button:has-text("Valider"), button:has-text("Suivant")',
-
-  // Suppléments
-  supplementBtn: 'button:has-text("Supplément"), button:has-text("Ajouter")',
-  itemSelect: 'select',
-  quantiteInput: 'input[placeholder*="quantité" i]',
-  addBtn: 'button:has-text("Ajouter"), button:has-text("Confirmer")',
-  nomLibreInput: 'input[placeholder*="libellé" i], input[placeholder*="nom" i]',
-  prixLibreInput: 'input[placeholder*="prix" i], input[placeholder*="montant" i]',
-
-  // Paiement
-  encaissementBtn: 'button:has-text("Encaissement"), button:has-text("Paiement")',
-  modeSelect: 'select',
-  montantInput: 'input[placeholder*="montant" i]',
-  dateInput: 'input[type="date"]',
-  confirmerPaiementBtn: 'button:has-text("Valider"), button:has-text("Confirmer")',
-
-  // Logout
-  logoutBtn: 'button:has-text("Déconnexion"), button:has-text("Logout")',
+// Dates flottantes – week-end prochain
+function nextFriday(): string {
+  const d = new Date()
+  d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7 || 7))
+  return d.toISOString().split('T')[0]
+}
+function addDays(iso: string, n: number): string {
+  const d = new Date(iso)
+  d.setDate(d.getDate() + n)
+  return d.toISOString().split('T')[0]
 }
 
-test.describe('E2E: Workflow LocaGest complet', () => {
-  test('Resp crée séjours, gardien complète les données et paiement', async ({ page }) => {
-    test.setTimeout(120000) // 2 minutes
-    // ──────────────────────────────────────────────────────────────
-    // 1. Login Resp Location
-    // ──────────────────────────────────────────────────────────────
-    await page.goto(BASE_URL)
-    await page.fill(SELECTORS.emailInput, 'resp@test.fr')
-    await page.fill(SELECTORS.passwordInput, 'test')
-    await page.click(SELECTORS.loginButton)
-    await page.waitForURL(`${BASE_URL}/**`, { timeout: 10000 })
-    await page.waitForLoadState('networkidle')
+test.describe('Séjour : création par resp et saisie par gardien', () => {
+  test('Resp crée 2 séjours — Gardien saisit les données — paiement par virement', async ({ page }) => {
+    test.setTimeout(120_000)
 
-    console.log('✅ Resp Location logged in')
+    const friday1 = nextFriday()
+    const monday1 = addDays(friday1, 3)
+    const friday2 = addDays(friday1, 7)
+    const monday2 = addDays(friday1, 10)
 
     // ──────────────────────────────────────────────────────────────
-    // 2. Créer le 1er séjour
+    // Étape 1 : Login Resp Location
     // ──────────────────────────────────────────────────────────────
-    console.log('📝 Creating first sejour...')
-    await page.waitForTimeout(1000)
-    await page.click(SELECTORS.nouveauSejourBtn)
-    await page.waitForLoadState('networkidle')
-
-    // Remplir locataire
-    const locInput = page.locator(SELECTORS.locataireInput).first()
-    await locInput.fill('Jean Dupont')
-    await page.waitForTimeout(500)
-
-    // Remplir email et tél si nouveau locataire
-    const emailInputs = page.locator('input[placeholder*="email" i]')
-    if (await emailInputs.first().isVisible()) {
-      await emailInputs.first().fill('jean.dupont@test.fr')
-    }
-    const telInputs = page.locator('input[placeholder*="téléphone" i]')
-    if (await telInputs.first().isVisible()) {
-      await telInputs.first().fill('06 12 34 56 78')
-    }
-
-    // Dates
-    const dates = page.locator('input[type="date"]')
-    const today = new Date()
-    today.setDate(today.getDate() + 1)
-    const tomorrow = today.toISOString().split('T')[0]
-    today.setDate(today.getDate() + 2)
-    const in3Days = today.toISOString().split('T')[0]
-
-    await dates.nth(0).fill(tomorrow)
-    await dates.nth(1).fill(in3Days)
-
-    // Remplir les catégories : d'abord cocher les checkboxes
-    const checkboxes = page.locator('input[type="checkbox"]')
-    const checkboxCount = await checkboxes.count()
-
-    // Cocher les 2 premières catégories (si elles existent)
-    if (checkboxCount >= 1) {
-      await checkboxes.nth(0).check({ force: true })
-      await page.waitForTimeout(300)
-    }
-    if (checkboxCount >= 2) {
-      await checkboxes.nth(1).check({ force: true })
-      await page.waitForTimeout(300)
-    }
-
-    // Attendre que les inputs soient activés
-    await page.waitForTimeout(500)
-
-    // Remplir les nombres des catégories (il y en a 2 si 2 catégories cochées)
-    const categoryInputs = page.locator('input[type="number"]:not([disabled])')
-    const enabledCount = await categoryInputs.count()
-    if (enabledCount >= 1) {
-      await categoryInputs.nth(0).fill('25')
-      await page.waitForTimeout(200)
-    }
-    if (enabledCount >= 2) {
-      await categoryInputs.nth(1).fill('5')
-      await page.waitForTimeout(200)
-    }
-
-    // Le 3e input est minPersonnesTotal
-    if (enabledCount >= 3) {
-      await categoryInputs.nth(2).fill('35')
-    }
-
-    await page.click(SELECTORS.createSejourBtn)
-    await page.waitForTimeout(2000)
-    console.log('✅ First sejour created')
+    await page.goto(BASE)
+    await page.fill('#login-email', 'resp@test.fr')
+    await page.fill('#login-password', 'test')
+    await page.click('button[type="submit"]')
+    await page.waitForURL(`${BASE}/responsable`)
+    await expect(page.locator('text=Responsable Location')).toBeVisible()
 
     // ──────────────────────────────────────────────────────────────
-    // 3. Créer le 2e séjour
+    // Étape 2 : Créer le 1er séjour (valeurs personnalisées)
     // ──────────────────────────────────────────────────────────────
-    console.log('📝 Creating second sejour...')
-    await page.click(SELECTORS.nouveauSejourBtn)
-    await page.waitForLoadState('networkidle')
+    // L'onglet "Nouveau séjour" est actif par défaut
+    await page.fill('#locataire-nom', 'Jean Dupont')
+    await page.fill('#locataire-email', 'jean.dupont@ucjgsalm.org')
+    await page.fill('#locataire-tel', '06 12 34 56 78')
 
-    const locInput2 = page.locator(SELECTORS.locataireInput).first()
-    await locInput2.fill('Marie Martin')
-    await page.waitForTimeout(500)
+    await page.fill('#date-arrivee', friday1)
+    await page.fill('#date-depart', monday1)
 
-    const emailInputs2 = page.locator('input[placeholder*="email" i]')
-    if (await emailInputs2.first().isVisible()) {
-      await emailInputs2.first().fill('marie.martin@test.fr')
-    }
+    // Cocher catégorie "Extérieur" + effectif 25
+    await page.check('input[aria-label="Activer Extérieur"]')
+    await page.fill('input[aria-label="Effectif Extérieur"]', '25')
 
-    const dates2 = page.locator('input[type="date"]')
-    today.setDate(today.getDate() + 7)
-    const in7Days = today.toISOString().split('T')[0]
-    today.setDate(today.getDate() + 2)
-    const in9Days = today.toISOString().split('T')[0]
+    // Cocher catégorie "Membre de l'union" + effectif 5
+    await page.check('input[aria-label="Activer Membre de l\'union"]')
+    await page.fill('input[aria-label="Effectif Membre de l\'union"]', '5')
 
-    await dates2.nth(0).fill(in7Days)
-    await dates2.nth(1).fill(in9Days)
+    // Minimum facturé : 35
+    await page.fill('#min-personnes', '35')
 
-    await page.click(SELECTORS.createSejourBtn)
-    await page.waitForTimeout(2000)
-    console.log('✅ Second sejour created')
+    await page.click('button:has-text("Enregistrer le séjour")')
+    await expect(page.locator('text=Séjour enregistré')).toBeVisible({ timeout: 10_000 })
 
     // ──────────────────────────────────────────────────────────────
-    // 4. Vérifier la liste des séjours
+    // Étape 3 : Créer le 2e séjour (valeurs par défaut)
     // ──────────────────────────────────────────────────────────────
-    console.log('📋 Verifying sejours in list...')
-    await page.waitForTimeout(1000)
-    // Vérifier que les noms apparaissent
-    await expect(page.locator('body')).toContainText('Jean Dupont', { timeout: 5000 })
-    console.log('✅ Both sejours visible')
+    await page.click('button:has-text("Créer un autre séjour")')
+
+    await page.fill('#locataire-nom', 'Marie Martin')
+    await page.fill('#locataire-email', 'marie.martin@ucjgsalm.org')
+
+    await page.fill('#date-arrivee', friday2)
+    await page.fill('#date-depart', monday2)
+
+    // Catégories et minimum par défaut (pas de modification)
+    await page.click('button:has-text("Enregistrer le séjour")')
+    await expect(page.locator('text=Séjour enregistré')).toBeVisible({ timeout: 10_000 })
 
     // ──────────────────────────────────────────────────────────────
-    // 5. Logout Resp, Login Gardien
+    // Étape 4 : Vérifier les séjours dans la liste
     // ──────────────────────────────────────────────────────────────
-    console.log('👋 Logout Resp Location...')
-    const logoutBtn = page.locator(SELECTORS.logoutBtn)
-    if (await logoutBtn.isVisible()) {
-      await logoutBtn.click()
-      await page.waitForURL(BASE_URL, { timeout: 5000 })
+    await page.click('button:has-text("Séjours")')
+    await expect(page.locator('text=Jean Dupont')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('text=Marie Martin')).toBeVisible({ timeout: 5_000 })
+
+    // ──────────────────────────────────────────────────────────────
+    // Étape 5 : Déconnexion
+    // ──────────────────────────────────────────────────────────────
+    await page.click('button:has-text("Déconnexion")')
+    await page.waitForURL(BASE)
+
+    // ──────────────────────────────────────────────────────────────
+    // Étape 6 : Login Gardien
+    // ──────────────────────────────────────────────────────────────
+    await page.fill('#login-email', 'gardien@test.fr')
+    await page.fill('#login-password', 'test')
+    await page.click('button[type="submit"]')
+    await page.waitForURL(`${BASE}/gardien`)
+    await expect(page.locator('text=En cours')).toBeVisible()
+
+    // ──────────────────────────────────────────────────────────────
+    // Étape 7 : Saisir les personnes réelles
+    // ──────────────────────────────────────────────────────────────
+    await page.click('button:has-text("Saisir le séjour")')
+    await expect(page.locator('text=Personnes')).toBeVisible()
+
+    // Les catégories du séjour mock contiennent "Membre de l'union" et "Extérieur"
+    // NumberInput expose un <input> via aria-label="Nombre de {cat.nomSnapshot}"
+    const inputMembre = page.locator('input[aria-label*="Membre"]')
+    const inputExterieur = page.locator('input[aria-label*="Extérieur"]')
+
+    if (await inputMembre.isVisible()) await inputMembre.fill('5')
+    if (await inputExterieur.isVisible()) await inputExterieur.fill('22')
+
+    const inputAdultes = page.locator('input[aria-label*="adultes"]')
+    if (await inputAdultes.isVisible()) await inputAdultes.fill('18')
+
+    await page.click('button:has-text("Suivant — Suppléments")')
+    await expect(page.locator('text=Suppléments')).toBeVisible({ timeout: 5_000 })
+
+    // ──────────────────────────────────────────────────────────────
+    // Étape 8 : Supplément catalogue + ligne libre
+    // ──────────────────────────────────────────────────────────────
+    // Incrémenter "Assiette cassée" deux fois (quantité = 2)
+    const btnAssiette = page.locator('button[aria-label="Augmenter Assiette cassée"]')
+    if (await btnAssiette.isVisible()) {
+      await btnAssiette.click()
+      await btnAssiette.click()
     }
 
-    console.log('🔑 Login Gardien...')
-    await page.fill(SELECTORS.emailInput, 'gardien@test.fr')
-    await page.fill(SELECTORS.passwordInput, 'test')
-    await page.click(SELECTORS.loginButton)
-    await page.waitForLoadState('networkidle')
-    console.log('✅ Gardien logged in')
+    // Ajouter une ligne libre
+    await page.click('button:has-text("Ajouter un autre élément")')
+    await page.fill('#libre-desc-0', 'Nettoyage supplémentaire')
+    await page.fill('#libre-montant-0', '50')
+
+    await page.click('button:has-text("Suivant — Récapitulatif")')
+    await expect(page.locator('text=Récapitulatif')).toBeVisible({ timeout: 5_000 })
 
     // ──────────────────────────────────────────────────────────────
-    // 6. Saisir les personnes réelles
+    // Étape 9 : Encaissement par virement
     // ──────────────────────────────────────────────────────────────
-    console.log('👥 Entering real persons...')
-    await page.waitForTimeout(1000)
+    // Retour à l'accueil gardien pour cliquer sur le bouton "Encaisser"
+    await page.goto(`${BASE}/gardien`)
+    await expect(page.locator('text=En cours')).toBeVisible()
+    await page.click('button:has-text("Encaisser")')
+    await expect(page.locator('text=Encaissement')).toBeVisible({ timeout: 5_000 })
 
-    const saisirBtn = page.locator(SELECTORS.saisirPersonnesBtn)
-    if (await saisirBtn.isVisible()) {
-      await saisirBtn.click()
-      await page.waitForTimeout(500)
-
-      const inputs = page.locator(SELECTORS.numberInput)
-      if (await inputs.nth(0).isVisible()) {
-        await inputs.nth(0).fill('22')
-      }
-      if (await inputs.count() > 1 && await inputs.nth(1).isVisible()) {
-        await inputs.nth(1).fill('4')
-      }
-
-      const validBtn = page.locator(SELECTORS.validButton)
-      if (await validBtn.isVisible()) {
-        await validBtn.click()
-        await page.waitForTimeout(500)
-      }
-    }
-    console.log('✅ Persons entered')
-
-    // ──────────────────────────────────────────────────────────────
-    // 7. Ajouter suppléments
-    // ──────────────────────────────────────────────────────────────
-    console.log('➕ Adding supplements...')
-    const supplBtn = page.locator(SELECTORS.supplementBtn)
-    if (await supplBtn.isVisible()) {
-      await supplBtn.click()
-      await page.waitForTimeout(500)
-
-      // Ajouter item catalogue
-      const select = page.locator(SELECTORS.itemSelect).first()
-      if (await select.isVisible()) {
-        await select.selectOption({ index: 1 })
-      }
-
-      const quantInput = page.locator(SELECTORS.quantiteInput).first()
-      if (await quantInput.isVisible()) {
-        await quantInput.fill('2')
-      }
-
-      const addBtn = page.locator(SELECTORS.addBtn).first()
-      if (await addBtn.isVisible()) {
-        await addBtn.click()
-        await page.waitForTimeout(500)
-      }
-
-      // Ajouter ligne libre
-      const nomFree = page.locator(SELECTORS.nomLibreInput)
-      if (await nomFree.isVisible()) {
-        await nomFree.fill('Frais spéciaux')
-      }
-
-      const prixFree = page.locator(SELECTORS.prixLibreInput)
-      if (await prixFree.isVisible()) {
-        await prixFree.fill('50.00')
-      }
-
-      const addFreeBtn = page.locator(SELECTORS.addBtn).last()
-      if (await addFreeBtn.isVisible()) {
-        await addFreeBtn.click()
-        await page.waitForTimeout(500)
-      }
-    }
-    console.log('✅ Supplements added')
-
-    // ──────────────────────────────────────────────────────────────
-    // 8. Encaissement par virement
-    // ──────────────────────────────────────────────────────────────
-    console.log('💳 Registering payment (virement)...')
-    const encaisBtn = page.locator(SELECTORS.encaissementBtn)
-    if (await encaisBtn.isVisible()) {
-      await encaisBtn.click()
-      await page.waitForTimeout(500)
-
-      // Mode virement
-      const modeSelect = page.locator(SELECTORS.modeSelect).first()
-      if (await modeSelect.isVisible()) {
-        await modeSelect.selectOption('VIREMENT')
-      }
-
-      // Montant
-      const montantInputs = page.locator(SELECTORS.montantInput)
-      if (await montantInputs.isVisible()) {
-        await montantInputs.fill('500.00')
-      }
-
-      // Date
-      const dateInputs = page.locator(SELECTORS.dateInput)
-      const today2 = new Date().toISOString().split('T')[0]
-      if (await dateInputs.isVisible()) {
-        await dateInputs.fill(today2)
-      }
-
-      // Confirmer
-      const confirmBtn = page.locator(SELECTORS.confirmerPaiementBtn)
-      if (await confirmBtn.isVisible()) {
-        await confirmBtn.click()
-        await page.waitForTimeout(2000)
-      }
-    }
-    console.log('✅ Payment registered')
-
-    // ──────────────────────────────────────────────────────────────
-    // 9. Vérification finale
-    // ──────────────────────────────────────────────────────────────
-    console.log('📄 Final verification...')
-    await expect(page.locator('body')).toContainText(/succès|confirmé|merci|paiement/i, {
-      timeout: 5000,
-    }).catch(() => {
-      console.log('⚠️  Success message not found, but test may still be valid')
-    })
-
-    console.log('✅ Test completed successfully!')
+    await page.click('button:has-text("Virement")')
+    await page.click('button:has-text("Confirmer l\'encaissement")')
+    await expect(page.locator('text=Succès')).toBeVisible({ timeout: 10_000 })
   })
 })
