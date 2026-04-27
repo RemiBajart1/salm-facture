@@ -93,17 +93,46 @@ Par défaut : `min(nb_nuits, 2) × 80 €`. Les nuits suivantes sont incluses.
 
 ### 4.3 Taxe de séjour
 
+**Adultes :**
 ```
 nb_adultes × nb_nuits × taxe_adulte_nuit
 ```
 Par défaut : `nb_adultes × nb_nuits × 0,88 €`
 
+**Enfants :**
+```
+nb_enfants × nb_nuits × taxe_enfant_nuit
+```
+Par défaut : `taxe_enfant_nuit = 0,00 €` (les enfants sont exonérés de taxe de séjour en France).
+
+**Règle d'affichage :** une ligne `TAXE_ENFANTS` est **toujours générée** sur la facture dès que `nb_enfants > 0`, même si `taxe_enfant_nuit = 0,00 €`. Le montant affiché est alors explicitement 0 €. Cela permet au trésorier de constater que les enfants ont bien été pris en compte, et de distinguer "aucun enfant" de "enfants exonérés".
+
 ### 4.4 Suppléments
 
 Les suppléments (`SUPPLEMENT` du catalogue et saisies `LIBRE`) apparaissent sur la facture en **snapshot** (nom et prix figés au moment de la génération).
+
+**Suppléments obligatoires (ex. : carte de membre) :**
+- Toujours présents sur la facture, même si la quantité est 0.
+- Si quantité = 0 : libellé affiché `"<nom> — Déjà membre pour l'année civile"`, montant 0 €.
+- Si quantité > 0 : libellé et montant normaux.
+
 Voir [Suppléments catalogue](supplements_catalogue.md) pour le détail complet.
 
-### 4.5 Immuabilité des factures
+### 4.5 Mentions légales et coordonnées
+
+Les champs suivants sont copiés en snapshot depuis `config_site` au moment de la génération et stockés sur la facture :
+
+| Champ facture | Source config | Description |
+|---|---|---|
+| `iban_snapshot` | `config_site.iban` | IBAN pour le virement |
+| `siret_snapshot` | `config_site.siret` | N° SIRET de l'association |
+| `telephone_snapshot` | `config_site.telephone_facturation` | Téléphone facturation |
+| `adresse_snapshot` | `config_site.adresse` | Adresse postale de la maison |
+| `date_echeance` | `date_facture + config_site.delai_reglement_jours` | Date limite de règlement |
+
+`date_echeance` est calculée et stockée au moment de la génération — elle ne change pas si le délai de règlement est modifié ultérieurement.
+
+### 4.7 Immuabilité des factures
 
 Une facture `EMISE` ou `PAYEE` ne peut plus être recalculée (erreur `409 CONFLICT`). Seule une facture `BROUILLON` peut être regénérée.
 

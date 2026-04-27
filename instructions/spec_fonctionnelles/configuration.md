@@ -25,6 +25,10 @@ Catégories par défaut (à la création de la feature) :
 - Forfait minimum par défaut (`config_site.min_personnes_defaut`) — défaut : 40 personnes
 - Tarif énergie (`energie_nb_nuits`, `energie_prix_nuit`) — défaut : `min(nb_nuits, 2) × 80 €`
 - Taxe de séjour (`taxe_adulte_nuit`) — défaut : 0,88 €/adulte/nuit
-- Coordonnées sur la facture (IBAN, adresse postale, etc.)
-- 
+- Coordonnées sur la facture (snapshots au moment de la génération) :
+  - Adresse postale de la maison *(déjà présent)*
+  - IBAN (`iban`) — ex : `FR76 XXXX XXXX XXXX XXXX XXXX XXX`
+  - N° SIRET (`siret`)
+  - Téléphone facturation (`telephone_facturation`)
+- Délai de règlement (`delai_reglement_jours`) — défaut : 7 jours. La date d'échéance sur la facture = `date_facture + delai_reglement_jours`
 

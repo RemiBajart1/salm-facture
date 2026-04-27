@@ -56,7 +56,8 @@ Notifications automatiques par email ou SMS aux gardiens concernés, par exemple
 | `REFUSEE` | Demande refusée par le resp. location |
                                                              
 
-## Changements apportés aux autres features (chapitre à supprimer une fois implémenté
+## Changements apportés aux autres features (chapitre à supprimer une fois implémenté, données à reporter dans les fichiers/sections concernées)
 Le compte-rendu de séjour et checklist associées sont accessibles en écriture uniquement au gardien affecté au séjour en cours ou au prochain séjour à venir. 
 Les autres gardiens ont un accès en lecture seule.
 Préciser cela dans la section "Compte-rendu de séjour" du module "Compte-rendu de séjour" (compte_rendu_sejour.md).
+Lorsqu'un gardien émet une facture, la facture doit mentionner "vous avez été accueilli par [nom du gardien]" pour les séjours à venir, ou "vous avez été accueilli par [nom du gardien]" pour les séjours passés. Préciser cela dans la section "Facturation" du module "Facturation" (facturation.md).
