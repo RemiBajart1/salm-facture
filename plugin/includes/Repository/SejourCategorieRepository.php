@@ -21,6 +21,29 @@ class SejourCategorieRepository {
         ) ?: [];
     }
 
+    /**
+     * Retourne toutes les catégories de plusieurs séjours en une seule requête.
+     * @param int[] $sejour_ids
+     * @return array<int, array[]>  Catégories indexées par sejour_id
+     */
+    public function find_by_sejour_ids( array $sejour_ids ): array {
+        if ( empty( $sejour_ids ) ) return [];
+        global $wpdb;
+        $placeholders = implode( ',', array_fill( 0, count( $sejour_ids ), '%d' ) );
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table} WHERE sejour_id IN ($placeholders) ORDER BY sejour_id ASC, ordre ASC",
+                ...$sejour_ids
+            ),
+            ARRAY_A
+        ) ?: [];
+        $grouped = [];
+        foreach ( $rows as $row ) {
+            $grouped[(int) $row['sejour_id']][] = $row;
+        }
+        return $grouped;
+    }
+
     public function find_by_id( int $id ): ?array {
         global $wpdb;
         return $wpdb->get_row(

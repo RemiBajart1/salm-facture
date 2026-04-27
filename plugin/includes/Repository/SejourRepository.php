@@ -7,16 +7,29 @@ namespace Locagest\Repository;
 class SejourRepository {
 
     private string $table;
+    private string $table_locataire;
 
     public function __construct() {
         global $wpdb;
-        $this->table = $wpdb->prefix . 'locagest_sejour';
+        $this->table           = $wpdb->prefix . 'locagest_sejour';
+        $this->table_locataire = $wpdb->prefix . 'locagest_locataire';
+    }
+
+    /** SELECT de base avec JOIN locataire (snapshots nom / email / téléphone). */
+    private function select_with_locataire(): string {
+        return "SELECT s.*,
+                       l.nom       AS locataire_nom_snapshot,
+                       l.email     AS locataire_email_snapshot,
+                       l.telephone AS locataire_telephone_snapshot,
+                       l.adresse   AS locataire_adresse_snapshot
+                FROM {$this->table} s
+                LEFT JOIN {$this->table_locataire} l ON s.locataire_id = l.id";
     }
 
     public function find_by_id( int $id ): ?array {
         global $wpdb;
         return $wpdb->get_row(
-            $wpdb->prepare( "SELECT * FROM {$this->table} WHERE id = %d", $id ),
+            $wpdb->prepare( "{$this->select_with_locataire()} WHERE s.id = %d", $id ),
             ARRAY_A
         ) ?: null;
     }
@@ -27,9 +40,9 @@ class SejourRepository {
         $today = current_time( 'Y-m-d' );
         return $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table}
-                 WHERE date_debut <= %s AND date_fin >= %s AND statut != 'ANNULE'
-                 ORDER BY date_debut ASC LIMIT 1",
+                "{$this->select_with_locataire()}
+                 WHERE s.date_debut <= %s AND s.date_fin >= %s AND s.statut != 'ANNULE'
+                 ORDER BY s.date_debut ASC LIMIT 1",
                 $today,
                 $today
             ),
@@ -50,13 +63,13 @@ class SejourRepository {
                 "SELECT COUNT(*) FROM {$this->table} WHERE statut = %s", $statut
             ) );
             $items = $wpdb->get_results( $wpdb->prepare(
-                "SELECT * FROM {$this->table} WHERE statut = %s ORDER BY date_debut DESC LIMIT %d OFFSET %d",
+                "{$this->select_with_locataire()} WHERE s.statut = %s ORDER BY s.date_debut DESC LIMIT %d OFFSET %d",
                 $statut, $size, $offset
             ), ARRAY_A ) ?: [];
         } else {
             $total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$this->table}" );
             $items = $wpdb->get_results( $wpdb->prepare(
-                "SELECT * FROM {$this->table} ORDER BY date_debut DESC LIMIT %d OFFSET %d",
+                "{$this->select_with_locataire()} ORDER BY s.date_debut DESC LIMIT %d OFFSET %d",
                 $size, $offset
             ), ARRAY_A ) ?: [];
         }

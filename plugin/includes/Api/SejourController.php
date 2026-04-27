@@ -129,7 +129,8 @@ class SejourController {
             $statut = $request->get_param( 'statut' ) ?: null;
             $page   = max( 0, (int) ( $request->get_param( 'page' ) ?? 0 ) );
             $size   = min( 100, max( 1, (int) ( $request->get_param( 'size' ) ?? 20 ) ) );
-            return $this->sejour_repo->find_paginated( $statut, $page, $size );
+            $result = $this->sejour_repo->find_paginated( $statut, $page, $size );
+            return $this->sejour_service->enrich_list_with_categories( $result );
         } );
     }
 
