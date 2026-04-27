@@ -74,7 +74,7 @@ export function calculerHebergement(
 }
 
 /**
- * Calcule la taxe de séjour.
+ * Calcule la taxe de séjour adultes.
  * §4.3 : nb_adultes × nb_nuits × taxe_adulte_nuit (défaut 0,88 €)
  */
 export function calculerTaxeSejour(
@@ -83,6 +83,18 @@ export function calculerTaxeSejour(
   tauxAdulteNuit = 0.88,
 ): number {
   return nbAdultes * nbNuits * tauxAdulteNuit
+}
+
+/**
+ * Calcule la taxe de séjour enfants.
+ * §4.3 extension : nb_enfants × nb_nuits × taxe_enfant_nuit (défaut 0 €)
+ */
+export function calculerTaxeSejourEnfants(
+  nbEnfants: number,
+  nbNuits: number,
+  tauxEnfantNuit = 0,
+): number {
+  return nbEnfants * nbNuits * tauxEnfantNuit
 }
 
 /**

@@ -81,6 +81,7 @@ function mapSejour(s: any): Sejour {
     heureArriveeReelle:    s.heure_arrivee_reelle ?? null,
     heureDepartReel:       s.heure_depart_reel ?? null,
     nbAdultes:             s.nb_adultes != null ? Number(s.nb_adultes) : null,
+    nbEnfants:             s.nb_enfants != null ? Number(s.nb_enfants) : null,
     minPersonnesTotal:     Number(s.min_personnes_total ?? 40),
     modePaiement:          s.mode_paiement,
     dateLimitePaiement:    s.date_limite_paiement ?? null,
@@ -220,6 +221,7 @@ function toWPCreateSejour(data: CreateSejourRequest): Record<string, unknown> {
 function toWPPatchPersonnes(data: PatchPersonnesRequest): Record<string, unknown> {
   return {
     nb_adultes: data.nbAdultes,
+    nb_enfants: data.nbEnfants,
     categories: data.categories.map((c) => ({
       id:         Number(c.categorieId),
       nb_reelles: c.nbReelles,
