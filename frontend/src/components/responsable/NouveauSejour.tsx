@@ -156,6 +156,7 @@ export function NouveauSejour() {
         heureDepartPrevu: heureDepart || undefined,
         minPersonnesTotal: minPersonnes,
         modePaiement,
+        dateLimitePaiement: dateLimitePaiement || undefined,
         optionsPresaisies: options || undefined,
         categories: catsActives,
       })
