@@ -1,0 +1,31 @@
+{
+    "name": "ucjgsalm/locagest",
+    "description": "Plugin WordPress LocaGest — facturation UCJG Salm",
+    "type": "wordpress-plugin",
+    "require": {
+        "php": ">=8.2",
+        "firebase/php-jwt": "^6.10",
+        "dompdf/dompdf": "^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11",
+        "brain/monkey": "^2.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Locagest\\": "includes/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Locagest\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "audit": {
+            "ignore": ["PKSA-y2cr-5h3j-g3ys"]
+        }
+    }
+}

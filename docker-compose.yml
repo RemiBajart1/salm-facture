@@ -1,0 +1,61 @@
+services:
+
+  # ── Base de données MariaDB ───────────────────────────────────────────────
+  db:
+    image: mariadb:10.11
+    container_name: locagest-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE:      ${MYSQL_DATABASE:-locagest_wp}
+      MYSQL_USER:          ${MYSQL_USER:-locagest}
+      MYSQL_PASSWORD:      ${MYSQL_PASSWORD:-locagest}
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ── WordPress + plugin LocaGest ───────────────────────────────────────────
+  wordpress:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+    container_name: locagest-wp
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST:     db:3306
+      WORDPRESS_DB_NAME:     ${MYSQL_DATABASE:-locagest_wp}
+      WORDPRESS_DB_USER:     ${MYSQL_USER:-locagest}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD:-locagest}
+      WORDPRESS_TABLE_PREFIX: wp_
+      WORDPRESS_DEBUG: "1"
+      # Ce bloc PHP est injecté dans wp-config.php au démarrage du conteneur.
+      # NB : WP_CONTENT_DIR n'est pas encore défini ici — les chemins locagest
+      #      sont définis dans le plugin lui-même (locagest.php).
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'LOCAGEST_JWT_SECRET', getenv( 'LOCAGEST_JWT_SECRET' ) ?: 'dev-secret-key-changeme' );
+        define( 'WP_DEBUG_LOG',     true );
+        define( 'WP_DEBUG_DISPLAY', false );
+        define( 'SCRIPT_DEBUG',     true );
+      # Exposé aussi comme variable d'environnement pour getenv() ci-dessus
+      LOCAGEST_JWT_SECRET: ${LOCAGEST_JWT_SECRET:-dev-secret-key-changeme}
+    volumes:
+      # Fichiers WordPress core (persistés entre les redémarrages)
+      - wp_data:/var/www/html
+      # Source du plugin montée en direct — les modifications sont visibles immédiatement
+      - ./plugin:/var/www/html/wp-content/plugins/locagest
+
+volumes:
+  db_data:   # Données MariaDB
+  wp_data:   # Fichiers WordPress (core + uploads)
