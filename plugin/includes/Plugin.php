@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Locagest;
 
 use Locagest\Api\AdminController;
+use Locagest\Api\Auth;
 use Locagest\Api\AuthController;
 use Locagest\Api\LocataireController;
 use Locagest\Api\SejourController;
