@@ -67,7 +67,7 @@ export function AccueilGardien({ onNavigate }: AccueilGardienProps) {
             <div className={styles.horaireChip}>
               <div className={styles.horaireType}>Départ réel</div>
               <div className={`${styles.horaireTime} ${styles.horaireReal}`}>
-                {sejour.heureDepartReelle ?? '—'}
+                {sejour.heureDepartReel ?? '—'}
               </div>
             </div>
           </div>

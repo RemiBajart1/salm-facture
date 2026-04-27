@@ -309,7 +309,7 @@ export const sejourApi = {
   },
 
   generateFacture: async (id: string) =>
-    mapFacture(await request<unknown>('POST', `/sejours/${id}/facture`, { envoyer: false })),
+    mapFacture(await request<unknown>('POST', `/sejours/${id}/facture`, { envoyer_email: false })),
 
   getFacture: async (id: string) =>
     mapFacture(await request<unknown>('GET', `/sejours/${id}/facture`)),
@@ -328,9 +328,23 @@ export const sejourApi = {
 
 // ── API Locataires ────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapLocataire(l: any): Locataire {
+  return {
+    id:        String(l.id),
+    nom:       l.nom,
+    email:     l.email,
+    telephone: l.telephone,
+    adresse:   l.adresse,
+    createdAt: l.created_at,
+  }
+}
+
 export const locataireApi = {
-  search: (q: string) =>
-    request<Locataire[]>('GET', `/locataires?q=${encodeURIComponent(q)}`),
+  search: async (q: string) => {
+    const data = await request<unknown[]>('GET', `/locataires?q=${encodeURIComponent(q)}`)
+    return data.map(mapLocataire)
+  },
 }
 
 // ── API Administration ────────────────────────────────────────────────────────

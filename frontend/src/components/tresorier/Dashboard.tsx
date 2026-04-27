@@ -32,7 +32,7 @@ export function Dashboard() {
 
   // Estimations
   const nbPersonnesFact = sejours.reduce(
-    (sum, s) => sum + s.categories.reduce((cs, c) => cs + (c.effectifReel ?? c.effectifPrevu), 0),
+    (sum, s) => sum + s.categories.reduce((cs, c) => cs + (c.nbReelles ?? c.nbPrevues), 0),
     0,
   )
 
@@ -77,9 +77,9 @@ export function Dashboard() {
               {sejours.slice(0, 10).map((sejour) => (
                 <tr key={sejour.id}>
                   <td>
-                    <strong>{sejour.locataire.nom}</strong>
+                    <strong>{sejour.nomLocataire}</strong>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      {sejour.locataire.email}
+                      {sejour.emailLocataire}
                     </div>
                   </td>
                   <td>
@@ -91,9 +91,9 @@ export function Dashboard() {
                   <td>
                     {sejour.categories.map((c) => (
                       <div key={c.id} style={{ fontSize: 12 }}>
-                        {c.nomSnapshot} :{' '}
-                        {c.effectifReel ?? c.effectifPrevu} ×{' '}
-                        {formatEuros(c.prixNuitSnapshot)}/nuit
+                        {c.nom} :{' '}
+                        {c.nbReelles ?? c.nbPrevues} ×{' '}
+                        {formatEuros(c.prixNuit)}/nuit
                       </div>
                     ))}
                   </td>

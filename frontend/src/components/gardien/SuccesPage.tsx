@@ -15,9 +15,9 @@ export function SuccesPage({ onNavigate }: SuccesPageProps) {
       <div className={styles.successCircle}>✓</div>
       <div className={styles.successTitle}>Facture envoyée !</div>
       <div className={styles.successSub}>
-        {sejour?.locataire.email && (
+        {sejour?.emailLocataire && (
           <>
-            Envoyée à <strong>{sejour.locataire.email}</strong>
+            Envoyée à <strong>{sejour.emailLocataire}</strong>
             <br />
             et au responsable location.
           </>
