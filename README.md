@@ -2,7 +2,7 @@
 
 > Maison de vacances YMCA · 53 rue du Haut-Fourneau, 67130 La Broque
 
-Application serverless de gestion des séjours et de facturation pour la maison de vacances UCJG Salm.
+Plugin WordPress de gestion des séjours et de facturation pour la maison de vacances UCJG Salm.
 
 ---
 
@@ -10,56 +10,104 @@ Application serverless de gestion des séjours et de facturation pour la maison 
 
 | Fichier | Contenu |
 |---|---|
-| [`instructions/specs-fonctionnelles.md`](instructions/specs-fonctionnelles.md) | Rôles métier, règles de gestion (hébergement, énergies, taxes, suppléments), design decisions |
-| [`instructions/specs-techniques.md`](instructions/specs-techniques.md) | Stack technique, modèle de données Aurora, structure du projet backend |
-| [`instructions/api.md`](instructions/api.md) | Routes API complètes, variables d'environnement Lambda |
-| [`instructions/todo.md`](instructions/todo.md) | TODO : blockers avant déploiement, améliorations importantes, nice-to-have |
+| [`instructions/specs-fonctionnelles.md`](instructions/specs-fonctionnelles.md) | Rôles métier, règles de gestion (hébergement, énergies, taxes, suppléments) |
+| [`instructions/specs-techniques-wordpress.md`](instructions/specs-techniques-wordpress.md) | Stack technique, modèle de données MySQL, structure du plugin |
+| [`instructions/api.md`](instructions/api.md) | Routes REST API complètes (`/wp-json/locagest/v1/`) |
+| [`instructions/todo.md`](instructions/todo.md) | TODO : blockers, améliorations importantes, nice-to-have |
+
+---
+
+## Stack technique
+
+| Composant | Technologie |
+|---|---|
+| Plateforme | **WordPress 6.x** (hébergement mutualisé) |
+| Backend | **PHP 8.2** — plugin `plugin/` |
+| Base de données | **MySQL 8 / MariaDB** (tables préfixées `{wp_}locagest_*`) |
+| PDF | **DOMPDF 2.x** |
+| Auth | Rôles WordPress + **JWT** (`firebase/php-jwt`) |
+| API | **WordPress REST API** — `/wp-json/locagest/v1/` |
+| Frontend | **React 18 + TypeScript + Vite 5** — sources dans `plugin/frontend/` |
+| Tests frontend | **Vitest + React Testing Library** |
+
+---
 
 ## Structure du projet
 
 ```
 salm-facture/
-├── backend/          Java 21 + Micronaut 4.4 + Gradle (Lambda)
-│   ├── template.yaml SAM — Lambda + API Gateway + S3
-│   └── samconfig.toml
-├── frontend/         React + Amplify
-├── instructions/     Specs et documentation technique
-├── maquettes/        Maquettes HTML interactives
-└── specs/            Spécifications additionnelles
-```
-
-## Développement local
-
-Deux modes disponibles : **frontend seul (mocké)** ou **frontend + backend connecté**.
-
-**Raccourcis :**
-
-```bash
-./dev-frontend.sh   # frontend seul (Node auto, mocks MSW)
-./dev-full.sh       # backend Micronaut + frontend connecté
+├── plugin/                     Plugin WordPress (à déposer dans wp-content/plugins/)
+│   ├── locagest.php             Point d'entrée — register_activation_hook, run()
+│   ├── includes/
+│   │   ├── Plugin.php           Câblage DI, migrations, routes
+│   │   ├── Api/                 Controllers REST (SejourController, AdminController…)
+│   │   ├── Service/             Logique métier (FactureService, SejourService…)
+│   │   ├── Repository/          Accès MySQL via $wpdb
+│   │   ├── Db/                  Migrations idempotentes (Migration100, 201…)
+│   │   └── Utils/               Exceptions, helpers
+│   ├── frontend/
+│   │   ├── src/                 Sources React/TypeScript
+│   │   ├── build/               Artefacts Vite compilés (servis par WordPress)
+│   │   ├── package.json
+│   │   └── vite.config.ts       outDir → ./build
+│   └── vendor/                  Dépendances Composer (DOMPDF, JWT…)
+├── instructions/                Specs fonctionnelles + techniques + API + TODO
+├── maquettes/                   Maquettes HTML interactives
+├── e2e-tests/                   Tests Playwright (auth + workflows)
+└── dev-frontend.sh              Raccourci : lance le frontend en mode mocké
 ```
 
 ---
 
-### Mode 1 — Frontend seul (sans backend)
+## Installation
 
-Le frontend tourne entièrement sans backend grâce à **MSW** (Mock Service Worker) qui intercepte tous les appels API avec des données fictives réalistes. C'est le mode par défaut.
+### Prérequis
+- WordPress 6.x avec PHP 8.2+
+- MySQL 8 ou MariaDB 10.6+
+- Composer (pour les dépendances PHP)
+- Node 20+ (pour le développement frontend uniquement)
+
+### Déploiement du plugin
+```bash
+# 1. Copier le répertoire plugin/ dans wp-content/plugins/locagest/
+cp -r plugin/ /path/to/wordpress/wp-content/plugins/locagest/
+
+# 2. Installer les dépendances PHP
+cd /path/to/wordpress/wp-content/plugins/locagest/
+composer install --no-dev
+
+# 3. Activer le plugin dans WordPress Admin → Extensions
+```
+
+L'activation crée automatiquement :
+- Les tables `{wp_}locagest_*` (migrations idempotentes via `dbDelta()`)
+- Les 4 rôles WordPress : `locagest_gardien`, `locagest_resp_location`, `locagest_tresorier`, `locagest_administrateur`
+- Les données de configuration par défaut (tarifs énergie, taxe de séjour, etc.)
+
+Les migrations s'appliquent aussi automatiquement à chaque mise à jour du plugin (comparaison `locagest_db_version` en base).
+
+---
+
+## Développement frontend
+
+Le frontend React tourne indépendamment grâce à **MSW** (Mock Service Worker) qui intercepte tous les appels API avec des données fictives.
 
 **Prérequis :** Node 20 (le projet utilise [fnm](https://github.com/Schniz/fnm))
 
 ```bash
 # Installer fnm (si pas déjà fait)
 curl -fsSL https://fnm.vercel.app/install | bash
-
-# Installer Node 20 et l'activer
 fnm install 20
-fnm use 20                   # .node-version et .nvmrc sont déjà présents dans frontend/
 
-# Lancer le frontend
-cd frontend
-cp .env.example .env.local
+# Raccourci — lance le frontend en mode mocké
+./dev-frontend.sh           # http://localhost:5173
+
+# Ou manuellement
+cd plugin/frontend
+fnm use 20
 npm install
-npm run dev                  # http://localhost:5173
+cp .env.example .env.local
+npm run dev
 ```
 
 **Comptes de test (mode dev) :**
@@ -71,91 +119,36 @@ npm run dev                  # http://localhost:5173
 | `tresorier@test.fr` | `test` | Trésorier (desktop) |
 
 **Tests :**
-
 ```bash
-npm test                     # tests unitaires (watch mode)
-npm test -- --run            # run unique (CI)
-npm run coverage             # rapport de couverture (seuil : 90%)
+cd plugin/frontend
+npm test              # watch mode
+npm test -- --run     # run unique (CI)
+npm run coverage      # rapport de couverture
+```
+
+**Build de production :**
+```bash
+cd plugin/frontend
+npm run build         # → plugin/frontend/build/ (lu par Plugin.php)
 ```
 
 ---
 
-### Mode 2 — Frontend + backend connecté
+## Rôles et accès
 
-**Prérequis :** Node 20 (voir ci-dessus), Java 25, Docker
-
-**1. Lancer le backend :**
-
-```bash
-# Démarrer PostgreSQL local (première fois)
-docker run -d --name locagest-pg \
-  -e POSTGRES_DB=locagest \
-  -e POSTGRES_USER=locagest_app \
-  -e POSTGRES_PASSWORD=locagest \
-  -p 5432:5432 postgres:16
-
-# Lancer Micronaut en mode HTTP (Netty, port 8080)
-# La sécurité JWT/Cognito est désactivée (application-local.yml)
-cd backend
-./gradlew runLocal
-```
-
-Variables d'environnement facultatives (des valeurs par défaut sont fournies) :
-
-```bash
-export DB_URL=jdbc:postgresql://localhost:5432/locagest
-export DB_USER=locagest_app
-export DB_PASSWORD=locagest
-./gradlew runLocal
-```
-
-Ou via SAM CLI pour tester le comportement Lambda exact :
-
-```bash
-cd backend
-./gradlew shadowJar
-sam local start-api --template template.yaml   # http://localhost:3000/api/v1/...
-```
-
-> SAM local requiert toutes les variables d'environnement (voir [`instructions/api.md`](instructions/api.md)), dont `COGNITO_JWKS_URL`.
-
-**2. Configurer le frontend pour désactiver MSW :**
-
-Dans `frontend/.env.local` :
-
-```dotenv
-VITE_USE_MOCK=false
-# Si le backend tourne sur un port différent de 8080 :
-# BACKEND_URL=http://localhost:3000
-```
-
-**3. Lancer le frontend :**
-
-```bash
-cd frontend
-npm run dev                  # les appels /api/v1/... sont proxifiés vers le backend
-```
-
-> Les comptes de test (`gardien@test.fr` etc.) restent disponibles même en mode connecté — l'auth mock est indépendante de MSW. Pour une auth Cognito réelle, renseigner `VITE_COGNITO_USER_POOL_ID` et `VITE_COGNITO_CLIENT_ID` dans `.env.local`.
+| Rôle WordPress | Accès |
+|---|---|
+| `locagest_gardien` | Saisie séjour en cours (horaires, personnes, suppléments, encaissement) |
+| `locagest_resp_location` | Création séjours, liste complète, renvoi factures |
+| `locagest_tresorier` | Tout + administration (tarifs, catalogue, config) |
+| `locagest_administrateur` | Tout |
 
 ---
 
-### Backend seul (tests)
+## API REST
 
-```bash
-cd backend
-./gradlew runLocal           # HTTP local port 8080 (Netty, JWT désactivé)
-./gradlew test               # tests unitaires + intégration (Testcontainers PostgreSQL)
-./gradlew shadowJar          # build du fat-jar pour Lambda (mainClass = MicronautLambdaRuntime)
-```
+Base : `/wp-json/locagest/v1/`
 
----
+Authentification : header `Authorization: Bearer <jwt>` (JWT généré à la connexion WordPress, injecté via `wp_localize_script`).
 
-## Déploiement
-
-- **Backend** : AWS Lambda (Java 21 SnapStart) + API Gateway + Aurora PostgreSQL Serverless v2
-- **Frontend** : AWS Amplify
-- **CI/CD** : GitHub Actions (`.github/workflows/`)
-- **Région** : `eu-west-3` (Paris)
-
-Voir [`instructions/api.md`](instructions/api.md) pour les variables d'environnement requises.
+Voir [`instructions/api.md`](instructions/api.md) pour la liste complète des endpoints.

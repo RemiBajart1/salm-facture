@@ -146,6 +146,7 @@ export interface CreateSejourRequest {
   heureDepartPrevu?: string
   minPersonnesTotal?: number
   modePaiement?: ModePaiement
+  dateLimitePaiement?: string
   optionsPresaisies?: string
   notesInternes?: string
   categories: {
