@@ -46,6 +46,10 @@ class SupplementService {
             throw new NotFoundException( "Item catalogue #{$data['config_item_id']} introuvable ou inactif." );
         }
 
+        if ( (bool) ( $item['obligatoire'] ?? false ) ) {
+            return $this->ajouter_obligatoire( $sejour_id, $item, $data );
+        }
+
         // Quantité = 1 si unité SEJOUR
         $quantite = $item['unite'] === 'SEJOUR' ? 1.0 : max( 1.0, (float) ( $data['quantite'] ?? 1 ) );
         $total    = round( $quantite * (float) $item['prix_unitaire'], 2 );
@@ -58,6 +62,46 @@ class SupplementService {
             'prix_unitaire'  => $item['prix_unitaire'],
             'prix_total'     => $total,
             'config_item_id' => $item['id'],
+            'statut'         => 'CONFIRME',
+        ] );
+
+        return $this->ligne_repo->find_by_id( $id );
+    }
+
+    /**
+     * Upsert d'un item obligatoire (ex: carte de membre).
+     * Si quantite = 0 : "déjà membre", prix_total = 0.
+     * Remplace toute ligne existante pour ce config_item sur ce séjour.
+     */
+    private function ajouter_obligatoire( int $sejour_id, array $item, array $data ): array {
+        $deja_membre = isset( $data['quantite'] ) && (float) $data['quantite'] === 0.0;
+        $quantite    = $deja_membre ? 0.0 : 1.0;
+        $prix        = (float) $item['prix_unitaire'];
+        $total       = $deja_membre ? 0.0 : round( $prix, 2 );
+        $libelle     = $deja_membre
+            ? $item['libelle'] . ' – Déjà membre pour l\'année civile'
+            : $item['libelle'];
+
+        $existing = $this->ligne_repo->find_by_sejour_and_config_item( $sejour_id, (int) $item['id'] );
+        if ( $existing ) {
+            $this->ligne_repo->update( (int) $existing['id'], [
+                'libelle'       => $libelle,
+                'quantite'      => $quantite,
+                'prix_unitaire' => $prix,
+                'prix_total'    => $total,
+                'statut'        => 'CONFIRME',
+            ] );
+            return $this->ligne_repo->find_by_id( (int) $existing['id'] );
+        }
+
+        $id = $this->ligne_repo->create( [
+            'sejour_id'      => $sejour_id,
+            'type_ligne'     => 'SUPPLEMENT',
+            'libelle'        => $libelle,
+            'quantite'       => $quantite,
+            'prix_unitaire'  => $prix,
+            'prix_total'     => $total,
+            'config_item_id' => (int) $item['id'],
             'statut'         => 'CONFIRME',
         ] );
 

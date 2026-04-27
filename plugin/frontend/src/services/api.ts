@@ -168,6 +168,7 @@ function mapConfigItem(i: any): ConfigItem {
     prixUnitaire: Number(i.prix_unitaire ?? i.prixUnitaire ?? 0),
     unite:        i.unite,
     actif:        Boolean(i.actif),
+    obligatoire:  Boolean(i.obligatoire ?? false),
   }
 }
 

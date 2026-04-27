@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import styles from './Gardien.module.css'
 import { ErrorBanner } from '../common/ErrorBanner'
 import { LoadingSpinner } from '../common/LoadingSpinner'
@@ -12,7 +12,6 @@ interface SaisieSupplementsProps {
   onNavigate: (step: GardienStep) => void
 }
 
-
 interface LigneLibre {
   description: string
   montant: string
@@ -25,6 +24,7 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [quantites, setQuantites] = useState<Record<string, number>>({})
+  const [dejaMembreIds, setDejaMembreIds] = useState<Set<string>>(new Set())
   const [lignesLibres, setLignesLibres] = useState<LigneLibre[]>([
     { description: '', montant: '' },
   ])
@@ -32,27 +32,45 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
   const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
-    adminApi
-      .getItems()
-      .then((data) => {
-        setItems(data.filter((i) => i.actif))
+    if (!sejour) return
+    Promise.all([
+      adminApi.getItems(),
+      sejourApi.getLignes(sejour.id),
+    ])
+      .then(([data, existingLignes]) => {
+        const actifs = data.filter((i) => i.actif)
+        setItems(actifs)
+
         const initial: Record<string, number> = {}
-        data.filter((i) => i.actif).forEach((i) => { initial[i.id] = 0 })
+        actifs.filter((i) => !i.obligatoire).forEach((i) => { initial[i.id] = 0 })
         setQuantites(initial)
+
+        // Détecter l'état "déjà membre" depuis les lignes existantes
+        const dejaM = new Set<string>()
+        actifs.filter((i) => i.obligatoire).forEach((item) => {
+          const ligne = existingLignes.find((l) => l.configItemId === item.id)
+          if (ligne && ligne.quantite === 0) dejaM.add(item.id)
+        })
+        setDejaMembreIds(dejaM)
       })
       .catch((err) => {
         console.error('Erreur chargement items:', err)
         setLoadError('Impossible de charger les suppléments')
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [sejour])
 
-  const groupedItems = items.reduce<Record<string, ConfigItem[]>>((acc, item) => {
-    const cat = item.categorie
-    if (!acc[cat]) acc[cat] = []
-    acc[cat].push(item)
-    return acc
-  }, {})
+  const adhesionItems = useMemo(() => items.filter((i) => i.obligatoire), [items])
+  const regularItems  = useMemo(() => items.filter((i) => !i.obligatoire), [items])
+
+  const groupedItems = useMemo(() =>
+    regularItems.reduce<Record<string, ConfigItem[]>>((acc, item) => {
+      const cat = item.categorie
+      if (!acc[cat]) acc[cat] = []
+      acc[cat].push(item)
+      return acc
+    }, {}),
+  [regularItems])
 
   const categoryLabels: Record<string, string> = {
     CASSE: 'Casse & dégradations',
@@ -66,6 +84,15 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
       ...prev,
       [itemId]: Math.max(0, (prev[itemId] ?? 0) + delta),
     }))
+  }
+
+  const toggleDejaM = (itemId: string) => {
+    setDejaMembreIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(itemId)) next.delete(itemId)
+      else next.add(itemId)
+      return next
+    })
   }
 
   const handleAddLigneLibre = () => {
@@ -83,31 +110,47 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
     setSaving(true)
     setSaveError(null)
     try {
-      // Suppléments catalogue
-      const promises = items
+      const promises: Promise<unknown>[] = []
+
+      // Suppléments catalogue (qty > 0 uniquement)
+      regularItems
         .filter((item) => (quantites[item.id] ?? 0) > 0)
-        .map((item) =>
+        .forEach((item) =>
+          promises.push(
+            sejourApi.addSupplement(sejour.id, {
+              configItemId: item.id,
+              designation: item.designation,
+              quantite: quantites[item.id],
+              prixUnitaire: item.prixUnitaire,
+            }),
+          ),
+        )
+
+      // Items obligatoires — toujours soumis (qty=0 si déjà membre)
+      adhesionItems.forEach((item) => {
+        const estDejaM = dejaMembreIds.has(item.id)
+        promises.push(
           sejourApi.addSupplement(sejour.id, {
             configItemId: item.id,
             designation: item.designation,
-            quantite: quantites[item.id],
+            quantite: estDejaM ? 0 : 1,
             prixUnitaire: item.prixUnitaire,
           }),
         )
+      })
 
       // Saisies libres
-      const libresValides = lignesLibres.filter(
-        (l) => l.description.trim() && l.montant.trim(),
-      )
-      libresValides.forEach((l) => {
-        promises.push(
-          sejourApi.addSupplement(sejour.id, {
-            designation: l.description.trim(),
-            quantite: 1,
-            prixUnitaire: parseFloat(l.montant.replace(',', '.')),
-          }),
+      lignesLibres
+        .filter((l) => l.description.trim() && l.montant.trim())
+        .forEach((l) =>
+          promises.push(
+            sejourApi.addSupplement(sejour.id, {
+              designation: l.description.trim(),
+              quantite: 1,
+              prixUnitaire: parseFloat(l.montant.replace(',', '.')),
+            }),
+          ),
         )
-      })
 
       await Promise.all(promises)
       onNavigate('recapitulatif')
@@ -127,6 +170,50 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
       <div className={styles.scrollArea}>
         {saveError && <ErrorBanner message={saveError} onDismiss={() => setSaveError(null)} />}
 
+        {/* Items obligatoires (adhésion) */}
+        {adhesionItems.length > 0 && (
+          <div className={styles.card}>
+            <div className={styles.cardTitle}>Adhésion obligatoire</div>
+            {adhesionItems.map((item) => {
+              const estDejaM = dejaMembreIds.has(item.id)
+              return (
+                <div key={item.id} className={styles.supplementItem}>
+                  <div style={{ flex: 1 }}>
+                    <div className={styles.supplName}>{item.designation}</div>
+                    <div className={styles.supplPrice}>
+                      {estDejaM ? (
+                        <span style={{ color: 'var(--forest)' }}>Déjà membre — 0,00 €</span>
+                      ) : (
+                        <span>{formatEuros(item.prixUnitaire)} / séjour</span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={`${styles.payChip} ${estDejaM ? styles.payChipSelected : ''}`}
+                    style={{ minWidth: 120, fontSize: 13 }}
+                    onClick={() => toggleDejaM(item.id)}
+                    aria-pressed={estDejaM}
+                  >
+                    {estDejaM ? '✓ Déjà membre' : 'Déjà membre ?'}
+                  </button>
+                </div>
+              )
+            })}
+            <div
+              className={styles.infoBox}
+              style={{ marginTop: 8 }}
+            >
+              <span>ℹ️</span>
+              <span>
+                La carte de membre est obligatoire. Cocher "Déjà membre" si le locataire
+                possède déjà une carte valide pour l'année civile en cours.
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Catalogue par catégorie */}
         {Object.entries(groupedItems).map(([cat, catItems]) => (
           <div key={cat} className={styles.card}>
             <div className={styles.cardTitle}>{categoryLabels[cat] ?? cat}</div>

@@ -129,6 +129,7 @@ export interface ConfigItem {
   prixUnitaire: number
   unite: 'UNITE' | 'SEJOUR' | 'INTERVENTION'
   actif: boolean
+  obligatoire?: boolean
 }
 
 export interface ConfigSiteEntry {
