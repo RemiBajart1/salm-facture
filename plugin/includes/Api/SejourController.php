@@ -216,23 +216,45 @@ class SejourController {
 
     public function upload_photo_cheque( \WP_REST_Request $request ): \WP_REST_Response {
         return ExceptionHandler::handle( function () use ( $request ) {
-            $pid   = (int) $request->get_param( 'pid' );
-            $files = $request->get_file_params();
-            $file  = $files['photo'] ?? null;
+            $pid        = (int) $request->get_param( 'pid' );
+            $raw        = $request->get_file_params()['photo'] ?? null;
+            $max_size   = 5 * 1024 * 1024;
+            $valid_mimes = [ 'image/jpeg', 'image/png', 'image/webp' ];
 
-            if ( ! $file || ( $file['error'] ?? UPLOAD_ERR_NO_FILE ) !== UPLOAD_ERR_OK ) {
-                throw new InvalidInputException( 'Aucun fichier reçu ou erreur d\'upload.' );
+            if ( ! $raw ) {
+                throw new InvalidInputException( 'Aucun fichier reçu.' );
             }
 
-            $mime = $file['type'] ?? '';
-            if ( ! in_array( $mime, [ 'image/jpeg', 'image/jpg', 'image/png', 'image/webp' ], true ) ) {
-                throw new InvalidInputException( 'Type de fichier invalide. JPG, PNG ou WebP uniquement.' );
+            // PHP normalise différemment un seul fichier vs plusieurs (photo[])
+            $list = isset( $raw['name'] ) && is_array( $raw['name'] )
+                ? array_map( fn( $i ) => [
+                    'tmp_name' => $raw['tmp_name'][ $i ],
+                    'error'    => $raw['error'][ $i ],
+                    'size'     => $raw['size'][ $i ],
+                  ], array_keys( $raw['name'] ) )
+                : [ $raw ];
+
+            $finfo      = new \finfo( FILEINFO_MIME_TYPE );
+            $files_data = [];
+            foreach ( $list as $file ) {
+                if ( ( $file['error'] ?? UPLOAD_ERR_NO_FILE ) !== UPLOAD_ERR_OK ) {
+                    throw new InvalidInputException( "Erreur lors de l'envoi d'un fichier." );
+                }
+                if ( ( $file['size'] ?? 0 ) > $max_size ) {
+                    throw new InvalidInputException( 'Fichier trop volumineux (5 Mo maximum).' );
+                }
+                $mime = $finfo->file( $file['tmp_name'] );
+                if ( ! in_array( $mime, $valid_mimes, true ) ) {
+                    throw new InvalidInputException( 'Type de fichier invalide. JPG, PNG ou WebP uniquement.' );
+                }
+                $files_data[] = [
+                    'content' => file_get_contents( $file['tmp_name'] ),
+                    'mime'    => $mime,
+                ];
             }
 
-            $content = file_get_contents( $file['tmp_name'] );
-            $this->paiement_service->attacher_photo( $pid, $content, $mime );
-
-            return new \WP_REST_Response( [ 'message' => 'Photo enregistrée.' ], 200 );
+            $this->paiement_service->attacher_photos( $pid, $files_data );
+            return new \WP_REST_Response( [ 'message' => 'Photos enregistrées.' ], 200 );
         } );
     }
 }

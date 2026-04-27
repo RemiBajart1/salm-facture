@@ -332,9 +332,9 @@ export const sejourApi = {
     return data.map(mapPaiement)
   },
 
-  uploadPhotoCheque: async (sejourId: string, paiementId: string, file: File): Promise<void> => {
+  uploadPhotoCheque: async (sejourId: string, paiementId: string, files: File[]): Promise<void> => {
     const form = new FormData()
-    form.append('photo', file)
+    files.forEach((file) => form.append('photo[]', file))
     const headers: Record<string, string> = {}
     const token = authToken()
     if (token) headers['Authorization'] = `Bearer ${token}`

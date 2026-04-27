@@ -163,4 +163,38 @@ class PaiementServiceTest extends LocagestUnitTestCase {
         $result = $this->service->list_by_sejour( 5 );
         $this->assertCount( 2, $result );
     }
+
+    // ── attacher_photos ──────────────────────────────────────────────────────────
+
+    /** Une seule photo → JSON array d'un chemin en base */
+    public function test_attacher_photos_une_photo_sauvegarde_json(): void {
+        $this->file_service->shouldReceive( 'save_cheque' )
+            ->with( 10, 'data', 'image/jpeg', 0 )
+            ->andReturn( 'locagest/cheques/cheque-10.jpg' );
+        $this->paiement_repo->shouldReceive( 'update' )
+            ->withArgs( fn( $id, $d ) =>
+                $id === 10 &&
+                json_decode( $d['photo_cheque_path'], true ) === [ 'locagest/cheques/cheque-10.jpg' ]
+            )->once();
+
+        $this->service->attacher_photos( 10, [ [ 'content' => 'data', 'mime' => 'image/jpeg' ] ] );
+    }
+
+    /** Deux photos → JSON array de deux chemins, index croissants */
+    public function test_attacher_photos_deux_photos_index_croissants(): void {
+        $this->file_service->shouldReceive( 'save_cheque' )
+            ->with( 10, 'data1', 'image/jpeg', 0 )
+            ->andReturn( 'locagest/cheques/cheque-10.jpg' );
+        $this->file_service->shouldReceive( 'save_cheque' )
+            ->with( 10, 'data2', 'image/png', 1 )
+            ->andReturn( 'locagest/cheques/cheque-10-1.png' );
+        $this->paiement_repo->shouldReceive( 'update' )
+            ->withArgs( fn( $id, $d ) => count( json_decode( $d['photo_cheque_path'], true ) ) === 2 )
+            ->once();
+
+        $this->service->attacher_photos( 10, [
+            [ 'content' => 'data1', 'mime' => 'image/jpeg' ],
+            [ 'content' => 'data2', 'mime' => 'image/png' ],
+        ] );
+    }
 }
