@@ -11,6 +11,7 @@ use Locagest\Service\SupplementService;
 use Locagest\Repository\LigneSejourRepository;
 use Locagest\Repository\SejourRepository;
 use Locagest\Utils\ExceptionHandler;
+use Locagest\Utils\Exceptions\InvalidInputException;
 
 class SejourController {
 
@@ -110,6 +111,12 @@ class SejourController {
                 'permission_callback' => $any,
             ],
         ] );
+
+        register_rest_route( self::NS, '/sejours/(?P<id>\d+)/paiements/(?P<pid>\d+)/photo', [
+            'methods'             => 'POST',
+            'callback'            => [ $this, 'upload_photo_cheque' ],
+            'permission_callback' => $gardien_resp,
+        ] );
     }
 
     public function get_current(): \WP_REST_Response {
@@ -205,5 +212,27 @@ class SejourController {
         return ExceptionHandler::handle( fn() =>
             $this->paiement_service->list_by_sejour( (int) $request->get_param( 'id' ) )
         );
+    }
+
+    public function upload_photo_cheque( \WP_REST_Request $request ): \WP_REST_Response {
+        return ExceptionHandler::handle( function () use ( $request ) {
+            $pid   = (int) $request->get_param( 'pid' );
+            $files = $request->get_file_params();
+            $file  = $files['photo'] ?? null;
+
+            if ( ! $file || ( $file['error'] ?? UPLOAD_ERR_NO_FILE ) !== UPLOAD_ERR_OK ) {
+                throw new InvalidInputException( 'Aucun fichier reçu ou erreur d\'upload.' );
+            }
+
+            $mime = $file['type'] ?? '';
+            if ( ! in_array( $mime, [ 'image/jpeg', 'image/jpg', 'image/png', 'image/webp' ], true ) ) {
+                throw new InvalidInputException( 'Type de fichier invalide. JPG, PNG ou WebP uniquement.' );
+            }
+
+            $content = file_get_contents( $file['tmp_name'] );
+            $this->paiement_service->attacher_photo( $pid, $content, $mime );
+
+            return new \WP_REST_Response( [ 'message' => 'Photo enregistrée.' ], 200 );
+        } );
     }
 }
