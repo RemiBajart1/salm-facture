@@ -22,7 +22,8 @@ L'application doit être simple, rapide et intuitive pour les gardiens, qui ne s
 Avant tout travail sur ce projet, lire :
 
 - **Règles métier** : [`instructions/specs-fonctionnelles.md`](instructions/specs-fonctionnelles.md)
-- **Architecture** : [`instructions/specs-techniques.md`](instructions/specs-techniques.md)
+- **Architecture** : [`instructions/specs-techniques-wordpress.md`](instructions/specs-techniques-wordpress.md)
+- **Architecture (ancienne version Java)** : [`instructions/specs-techniques-java-OLD.md`](instructions/specs-techniques-java-OLD.md)
 - **API** : [`instructions/api.md`](instructions/api.md)
 - **TODO** : [`instructions/todo.md`](instructions/todo.md)
 
