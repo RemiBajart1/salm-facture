@@ -15,32 +15,14 @@ Cela installe Playwright et ses dépendances.
 
 ### Prérequis
 
-1. **Backend lancé** (port 8080) :
-   ```bash
-   cd backend
-   ./gradlew runLocal
-   ```
+1. **Backend lancé** (WordPress + plugin) :
+   Le plugin LocaGest doit être activé dans WordPress et accessible sur le port configuré.
 
 2. **Frontend lancé** (port 5173) :
    ```bash
-   cd frontend
+   cd plugin/frontend
    npm run dev
    ```
-
-3. **Base de données** (PostgreSQL sur Docker) :
-   ```bash
-   docker run -d --name locagest-postgres \
-     -e POSTGRES_USER=locagest_app \
-     -e POSTGRES_PASSWORD=password \
-     -e POSTGRES_DB=locagest \
-     -p 5432:5432 \
-     postgres:16
-   ```
-
-OU utiliser le script tout-en-un :
-```bash
-./dev-full.sh
-```
 
 ### Exécuter les tests
 
@@ -58,15 +40,32 @@ npm run test
 npm run test:debug
 ```
 
+## Authentification
+
+L'application tourne dans WordPress : l'authentification est assurée par WordPress lui-même via `window.locagestConfig` (injection de token JWT au chargement de la page WP admin).
+
+En mode dev standalone (Vite seul), `main.tsx` injecte un mock de `locagestConfig` avec le rôle `locagest_gardien` par défaut. Pour tester un autre rôle, modifier la variable `roles` dans `main.tsx`.
+
+Il n'y a **pas** de formulaire de login dans l'application : les tests E2E ne doivent pas chercher à se connecter via un formulaire.
+
+## Comptes de test
+
+| Rôle | Email | Mot de passe |
+|------|-------|--------------|
+| Resp Location | `resp@test.fr` | `test` |
+| Gardien | `gardien@test.fr` | `test` |
+| Trésorier | `tresorier@test.fr` | `test` |
+
+*(Ces comptes sont disponibles dans les mocks MSW du frontend pour le dev en mode mocké)*
+
 ## Structure
 
 ### `specs/auth-and-navigation.spec.ts`
 
-Test de l'authentification et navigation basique :
-- Login Resp Location → dashboard responsable
-- Login Gardien → dashboard gardien
-- Validation de la navigation après authentification
-- **Status** : ✅ PASSANT (12s)
+Test de navigation basique (sans login — géré par WP) :
+- Resp Location arrive sur le dashboard responsable
+- Gardien arrive sur le dashboard gardien
+- **Status** : ✅ À adapter selon l'environnement de test
 
 ### `specs/sejour-creation-full-workflow.spec.ts`
 
@@ -79,26 +78,14 @@ Test complet : Resp Location crée séjours + Gardien remplit données et paieme
    - Week-end prochain
 2. Crée un 2e séjour avec valeurs par défaut (semaine suivante)
 3. Vérifie que les 2 séjours apparaissent dans la liste
-4. Se déconnecte
 
 **Scénario 2 : Gardien**
-1. Se connecte
-2. Saisit les personnes réelles du 1er séjour
-3. Ajoute des suppléments :
+1. Saisit les personnes réelles du 1er séjour
+2. Ajoute des suppléments :
    - Un élément du catalogue (existant)
-   - Une ligne libre personnalisée ("Frais exceptionnels")
-4. Enregistre un paiement par virement (500€)
-5. Vérifie que la facture est prête
-
-## Comptes de test
-
-| Rôle | Email | Mot de passe |
-|------|-------|--------------|
-| Resp Location | `resp@test.fr` | `test` |
-| Gardien | `gardien@test.fr` | `test` |
-| Trésorier | `tresorier@test.fr` | `test` |
-
-*(Ces comptes sont disponibles dans les mocks MSW du frontend pour le dev en mode mocké)*
+   - Une ligne libre personnalisée
+3. Enregistre un paiement par virement
+4. Vérifie que la facture est prête
 
 ## Rapports
 
@@ -130,9 +117,6 @@ npx playwright show-report
 
 Vérifier que les serveurs tournent :
 ```bash
-# Backend
-curl http://localhost:8080/api/v1/admin/tarifs
-
 # Frontend
 curl http://localhost:5173
 ```
@@ -148,12 +132,6 @@ Solution :
 1. Lancer le test en mode UI : `npm run test:ui`
 2. Déboguer visuellement avec Playwright Inspector
 3. Mettre à jour les sélecteurs CSS
-
-### ❌ "Login failed" (identifiants rejetés)
-
-- Vérifier que les comptes existent dans le backend
-- S'assurer que le JWT n'a pas expiré
-- Vérifier que `COGNITO_DISABLED=true` ou `JWT_DISABLED=true` en local
 
 ### ❌ Tests lents ou instables
 

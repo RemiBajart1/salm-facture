@@ -126,6 +126,17 @@ npm test -- --run     # run unique (CI)
 npm run coverage      # rapport de couverture
 ```
 
+---
+
+## Règles qualité — Tests (obligatoires à chaque PR)
+
+| Règle | Détail |
+|---|---|
+| **Happy path obligatoire** | Tout nouveau code (frontend, backend, intégration, unitaire) doit être couvert par au moins un test du cas nominal. C'est un critère de fusion — une PR sans test du happy path ne peut pas être mergée. |
+| **Couverture minimale : 80 %** | Valable pour toutes les couches : TU backend (PHPUnit), TI backend (WP_UnitTestCase), TU frontend (Vitest/RTL), E2E (Playwright). |
+
+> Ces règles sont détaillées dans [`instructions/specs-techniques-wordpress.md`](instructions/specs-techniques-wordpress.md) § Tests.
+
 **Build de production :**
 ```bash
 cd plugin/frontend

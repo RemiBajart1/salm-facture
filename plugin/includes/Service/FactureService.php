@@ -126,6 +126,7 @@ class FactureService {
             'montant_hebergement'          => $ligne_heberg['prix_total'],
             'montant_energie'              => $ligne_energie['prix_total'],
             'montant_taxe'                 => $ligne_taxe['prix_total'],
+            'montant_taxe_enfants'         => $ligne_taxe_enfants['prix_total'],
             'montant_supplements'          => $montant_suppl,
             'montant_total'                => $montant_total,
             'date_emission'                => $date_emission,
@@ -169,7 +170,7 @@ class FactureService {
 
         // Lire le PDF existant depuis le disque
         $uploads   = wp_upload_dir();
-        $pdf_path  = $uploads['basedir'] . '/' . $facture['pdf_path'];
+        $pdf_path  = trailingslashit( $uploads['basedir'] ) . $facture['pdf_path'];
         $pdf_content = file_exists( $pdf_path ) ? file_get_contents( $pdf_path ) : '';
 
         // Si le PDF a disparu, le regénérer

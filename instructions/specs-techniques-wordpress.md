@@ -207,19 +207,24 @@ Architecture en couches, séparation claire des responsabilités :
 
 ### Tests
 
+> **Règles obligatoires — s'appliquent à chaque PR :**
+> 1. **Happy path obligatoire** : tout nouveau code (front, back, intégration, unitaire) doit être couvert par au moins un test du cas nominal ("tout se passe bien").
+> 2. **Couverture minimale globale : 80 %** — valable pour toutes les couches (TU backend, TI backend, TU frontend, E2E).
+> Ces deux règles sont des critères de fusion : une PR qui les viole ne peut pas être mergée.
+
 #### Unitaires (PHPUnit 11)
 
 - `WP_Mock` pour mocker les fonctions WordPress sans charger le core complet
 - Tests ciblés sur la logique métier pure (ex: `FactureCalculServiceTest`)
-- Couverture minimale : **80% en TU**
-- Cas nominaux + cas d'erreur + règles d'immuabilité
+- **Couverture minimale : 80 % en TU**
+- Cas nominaux (happy path) + cas d'erreur + règles d'immuabilité
 
 #### Intégration (WP_UnitTestCase)
 
 - Tests avec une base WordPress de test (`WP_UnitTestCase` + fixtures SQL)
 - Tests des routes REST avec `WP_REST_Request` / `WP_REST_Server`
-- Couverture minimale : **70% en TI**
-  - Tous les cas d'usage "heureux" (création séjour → génération facture → encaissement)
+- **Couverture minimale : 80 % en TI**
+  - **Tous les cas d'usage "heureux" (happy path) sont obligatoires** : création séjour → génération facture → encaissement
   - Erreurs courantes (saisie incorrecte, rôle insuffisant)
 
 ---
@@ -241,8 +246,9 @@ Les règles suivantes s'appliquent :
 - Vérifier systématiquement la cohérence des noms et formats entre frontend et API REST
 
 #### Couverture des tests frontend
-- Au moins **90% en TU**
-- Les tests E2E couvrent au minimum les cas d'usage "heureux"
+- Au moins **80 % en TU** (seuil global du projet — voir règles obligatoires ci-dessus)
+- **Happy path obligatoire** : chaque composant ou service modifié doit avoir au moins un test E2E ou TU couvrant le cas nominal
+- Les tests E2E couvrent **obligatoirement** tous les cas d'usage "heureux"
 
 ---
 

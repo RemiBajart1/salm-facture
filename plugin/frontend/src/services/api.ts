@@ -21,7 +21,9 @@ function apiBase(): string {
 }
 
 function authToken(): string | null {
-  return localStorage.getItem('locagest_jwt')
+  // Préfère le token injecté par WordPress (wp_localize_script) sur le localStorage,
+  // pour éviter d'utiliser un token périmé stocké en local après re-connexion WP.
+  return window.locagestConfig?.token ?? localStorage.getItem('locagest_jwt')
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -330,6 +332,22 @@ export const sejourApi = {
   getPaiements: async (id: string) => {
     const data = await request<unknown[]>('GET', `/sejours/${id}/paiements`)
     return data.map(mapPaiement)
+  },
+
+  uploadPhotoCheque: async (sejourId: string, paiementId: string, files: File[]): Promise<void> => {
+    const form = new FormData()
+    files.forEach((file) => form.append('photo[]', file))
+    const headers: Record<string, string> = {}
+    const token = authToken()
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const response = await fetch(
+      `${apiBase()}/sejours/${sejourId}/paiements/${paiementId}/photo`,
+      { method: 'POST', headers, body: form },
+    )
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText)
+      throw new ApiError(response.status, errorText)
+    }
   },
 }
 

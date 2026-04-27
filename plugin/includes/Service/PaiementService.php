@@ -54,10 +54,16 @@ class PaiementService {
         return $this->paiement_repo->find_by_sejour( $sejour_id );
     }
 
-    /** Attache une photo de chèque à un paiement (base64 ou binaire). */
-    public function attacher_photo( int $paiement_id, string $content, string $mime_type ): void {
-        $path = $this->file_service->save_cheque( $paiement_id, $content, $mime_type );
-        $this->paiement_repo->update( $paiement_id, [ 'photo_cheque_path' => $path ] );
+    /**
+     * Attache une ou plusieurs photos à un paiement.
+     * @param array $files Tableau de ['content' => string, 'mime' => string]
+     */
+    public function attacher_photos( int $paiement_id, array $files ): void {
+        $paths = [];
+        foreach ( $files as $i => $file ) {
+            $paths[] = $this->file_service->save_cheque( $paiement_id, $file['content'], $file['mime'], $i );
+        }
+        $this->paiement_repo->update( $paiement_id, [ 'photo_cheque_path' => json_encode( $paths ) ] );
     }
 
     private function validate( array $data ): void {
