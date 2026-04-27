@@ -93,10 +93,19 @@ Par défaut : `min(nb_nuits, 2) × 80 €`. Les nuits suivantes sont incluses.
 
 ### 4.3 Taxe de séjour
 
+**Adultes :**
 ```
 nb_adultes × nb_nuits × taxe_adulte_nuit
 ```
 Par défaut : `nb_adultes × nb_nuits × 0,88 €`
+
+**Enfants :**
+```
+nb_enfants × nb_nuits × taxe_enfant_nuit
+```
+Par défaut : `taxe_enfant_nuit = 0,00 €` (les enfants sont exonérés de taxe de séjour en France).
+
+**Règle d'affichage :** une ligne `TAXE_ENFANTS` est **toujours générée** sur la facture dès que `nb_enfants > 0`, même si `taxe_enfant_nuit = 0,00 €`. Le montant affiché est alors explicitement 0 €. Cela permet au trésorier de constater que les enfants ont bien été pris en compte, et de distinguer "aucun enfant" de "enfants exonérés".
 
 ### 4.4 Suppléments
 
