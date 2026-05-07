@@ -26,6 +26,7 @@ class AdminController {
         $tresorier     = Auth::require_role( 'locagest_tresorier' );
         $resp_tresor   = Auth::require_role( 'locagest_resp_location', 'locagest_tresorier' );
         $any_admin     = Auth::require_role( 'locagest_resp_location', 'locagest_tresorier', 'locagest_administrateur' );
+        $items_read    = Auth::require_role( 'locagest_gardien', 'locagest_resp_location', 'locagest_tresorier', 'locagest_administrateur' );
 
         // Tarifs
         register_rest_route( self::NS, '/admin/tarifs', [
@@ -52,7 +53,7 @@ class AdminController {
             [
                 'methods'             => 'GET',
                 'callback'            => [ $this, 'list_items' ],
-                'permission_callback' => $any_admin,
+                'permission_callback' => $items_read,
             ],
             [
                 'methods'             => 'POST',
@@ -166,13 +167,21 @@ class AdminController {
     }
 
     public function get_config(): \WP_REST_Response {
-        return ExceptionHandler::handle( fn() => $this->config_repo->get_all() );
+        return ExceptionHandler::handle( fn() => $this->config_repo->list_all() );
     }
 
     public function patch_config( \WP_REST_Request $request ): \WP_REST_Response {
         return ExceptionHandler::handle( function () use ( $request ) {
-            $this->config_repo->patch( (array) $request->get_json_params() );
-            return new \WP_REST_Response( $this->config_repo->get_all(), 200 );
+            $body    = (array) $request->get_json_params();
+            $entries = $body['entries'] ?? [];
+            $map     = [];
+            foreach ( $entries as $entry ) {
+                if ( isset( $entry['cle'], $entry['valeur'] ) ) {
+                    $map[ $entry['cle'] ] = $entry['valeur'];
+                }
+            }
+            $this->config_repo->patch( $map );
+            return new \WP_REST_Response( $this->config_repo->list_all(), 200 );
         } );
     }
 }

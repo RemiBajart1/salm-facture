@@ -74,11 +74,10 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
   [regularItems])
 
   const categoryLabels: Record<string, string> = {
-    CASSE:     'Casse & dégradations',
-    LOCATION:  'Locations & options',
-    SERVICE:   'Services',
-    LINGE:     'Linge',
-    ADHESION:  'Adhésion',
+    CASSE:        'Casse & dégradations',
+    LOCATION:     'Locations & options',
+    INTERVENTION: 'Interventions',
+    ADHESION:     'Adhésion',
   }
 
   const handleQuantite = (itemId: string, delta: number) => {

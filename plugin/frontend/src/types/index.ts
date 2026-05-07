@@ -127,7 +127,7 @@ export interface ConfigItem {
   designation: string
   categorie: string
   prixUnitaire: number
-  unite: 'UNITE' | 'SEJOUR' | 'INTERVENTION'
+  unite: 'UNITE' | 'SEJOUR'
   actif: boolean
   obligatoire?: boolean
 }
@@ -186,7 +186,7 @@ export interface CreatePaiementRequest {
 
 export interface PromouvoirLigneRequest {
   categorieItem: string
-  unite: 'UNITE' | 'SEJOUR' | 'INTERVENTION'
+  unite: 'UNITE' | 'SEJOUR'
   nomCatalogue?: string
 }
 
