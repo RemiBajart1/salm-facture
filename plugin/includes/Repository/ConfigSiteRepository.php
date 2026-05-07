@@ -13,7 +13,7 @@ class ConfigSiteRepository {
         $this->table = $wpdb->prefix . 'locagest_config_site';
     }
 
-    /** @return array<string,string> */
+    /** @return array<string,string> Associative map cle → valeur (usage interne services) */
     public function get_all(): array {
         global $wpdb;
         $rows = $wpdb->get_results( "SELECT cle, valeur FROM {$this->table}", ARRAY_A );
@@ -22,6 +22,12 @@ class ConfigSiteRepository {
             $map[ $row['cle'] ] = $row['valeur'];
         }
         return $map;
+    }
+
+    /** @return list<array{cle:string,valeur:string,description:string}> Format liste pour l'API REST */
+    public function list_all(): array {
+        global $wpdb;
+        return $wpdb->get_results( "SELECT cle, valeur, description FROM {$this->table} ORDER BY cle", ARRAY_A ) ?: [];
     }
 
     public function get( string $cle ): ?string {

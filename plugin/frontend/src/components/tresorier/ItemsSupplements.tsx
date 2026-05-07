@@ -15,7 +15,7 @@ export function ItemsSupplements() {
 
   const [newNom, setNewNom] = useState('')
   const [newPrix, setNewPrix] = useState('')
-  const [newUnite, setNewUnite] = useState<'UNITE' | 'SEJOUR' | 'INTERVENTION'>('UNITE')
+  const [newUnite, setNewUnite] = useState<'UNITE' | 'SEJOUR'>('UNITE')
   const [newCategorie, setNewCategorie] = useState('CASSE')
   const [saving, setSaving] = useState(false)
 
@@ -67,8 +67,7 @@ export function ItemsSupplements() {
   const categoryLabels: Record<string, string> = {
     CASSE: 'Casse',
     LOCATION: 'Location',
-    SERVICE: 'Service',
-    LINGE: 'Linge',
+    INTERVENTION: 'Intervention',
   }
 
   if (loading) return <LoadingSpinner message="Chargement des items..." />
@@ -149,11 +148,10 @@ export function ItemsSupplements() {
           <select
             className={styles.tnfInput}
             value={newUnite}
-            onChange={(e) => setNewUnite(e.target.value as 'UNITE' | 'SEJOUR' | 'INTERVENTION')}
+            onChange={(e) => setNewUnite(e.target.value as 'UNITE' | 'SEJOUR')}
           >
             <option value="UNITE">Unité</option>
             <option value="SEJOUR">Séjour</option>
-            <option value="INTERVENTION">Intervention</option>
           </select>
         </div>
         <div>
@@ -165,8 +163,7 @@ export function ItemsSupplements() {
           >
             <option value="CASSE">Casse</option>
             <option value="LOCATION">Location</option>
-            <option value="SERVICE">Service</option>
-            <option value="LINGE">Linge</option>
+            <option value="INTERVENTION">Intervention</option>
           </select>
         </div>
         <button
