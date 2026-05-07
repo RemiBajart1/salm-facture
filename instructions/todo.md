@@ -1,15 +1,33 @@
 # TODO — LocaGest
 
-## Indispensable   
-- [ ] **Frontend React** : les maquettes HTML sont dans `maquettes/` — à porter en composants React + Amplify
+## Bugs à corriger
 
-## Important
-- [ ] **Taxe de séjour enfants** : étendre la taxe de séjour aux enfants (<18 ans) — 2 lignes sur la facture (adultes + enfants).
-  - DB : ajouter `sejour.nb_enfants` (int, défaut 0) + `config_site.taxe_enfant_nuit` (decimal, défaut 0,00)
-  - Backend PHP : `SejourService::update_personnes()` accepte `nb_enfants` ; `FactureService::generer()` crée les 2 lignes taxe avec snapshot des taux
-  - Config trésorier : UI d'édition de `taxe_enfant_nuit` (à côté de `taxe_adulte_nuit`)
-  - Gardien : champ `nb_enfants` dans la saisie des effectifs réels
-  - Voir specs : `facturation.md §4.3`, `configuration.md`, `sejours.md`
+## changements mineurs à apporter aux features existantes (chapitre à supprimer une fois implémenté, données à reporter dans les fichiers/sections concernées)
+- le tarif "Présence journée sans nuitée (par jour)" doit toujours être cochée, même si qté = 0, pour permettre au gardien de saisir les journées sans nuitée 
+  - Ce tarif n'apparait pas sur la facture si qté = 0, mais elle doit être présente dans le formulaire de saisie pour permettre au gardien de l'utiliser
+  - Cette présence journée ne compte pas pour la taxe de séjour, qui ne compte que les nuitées
+- Le resp location doit pouvoir modifier les séjours programmés (toutes informations). 
+- L'aperçu d'un séjour (resp. location) n'est pas assez détaillé et doit reprendre l'intégralité des données
+- le trésorier doit pouvoir supprimer un tarif /personne
+- Ajouter 2 champs à un séjour 
+  - objet du séjour (ex : "Anniversaire 40 ans", "WE révisions bac") (obligatoire)
+  - Nom du groupe (distinct du nom du locataire) (Facultatif)
+- permettre de regénérer la facture si le template a changé (les données ne changent pas) (Trésorier uniquement)
+- Supplément "Carte de membre" : le resp location doit pouvoir le décocher pour les groupes déjà membres
+  - Avec la feature "adhérent", auto-détection (cf adherents.md)
+- Supplément "carte de membre" : l'unité = unité (et pas séjour)
+- Suppléments : le trésorier doit pouvoir modifier ou supprimer les items existants du catalogue
+
+##  Charte graphique  
+  - Revoie les couleurs du frontend pour s'adapter à la charte graphique 
+  - La facture doit avoir même thème que le reste du site (logo, couleurs, typo... ) : 
+  - [logo salm.svg](maquettes/charte_graphique/logo_salm.svg) : utiliser ce logo vectoriel pour la facture et le site (en remplacement du logo actuel en PNG)
+  - [charte graphique YMCA.pdf](maquettes/charte_graphique/charte_graphique_YMCA.pdf) : se baser sur ce document pour les couleurs du thème du site et de la facture(bleu foncé, bleu clair, vert, orange)
+  - [papier entête YMCA.docx](maquettes/charte_graphique/papier_entete_YMCA.docx) : se baser sur ce document pour la mise en page de la facture (logo, couleurs, typographie, format A4 portrait, pied de page avec coordonnées et mentions légales)
+  - 
+
+## Recette à faire par un humain
+- [ ] **Taxe de séjour enfants** :  
   - Le total enfants + adultes doit être égal au total effectif saisi, sinon message d'erreur "Le nombre total de personnes (adultes + enfants) doit être égal au nombre total saisi."
 - [ ] **Carte de membre (supplément obligatoire)** : ligne toujours présente sur chaque séjour, non-supprimable par le gardien.
   - DB : ajouter flag `obligatoire` (bool) sur `config_item` + initialisation du `ConfigItem` "Carte de membre" (15 €, unité, obligatoire)
@@ -29,10 +47,14 @@
 
 ## Nice to have
 - [ ] **Template PDF** : améliorer la mise en page `PdfService` (logo SVG vectoriel, tableau aligné, numérotation de page)
-- [ ] **Dashboard trésorier** : `GET /admin/stats?annee=2025` → agrégats par catégorie de tarif
+- [ ] **Dashboard trésorier** : 
+  - agrégats par catégorie de tarif, 
+  - enfants/Adulte, stat par mois, 
+  - comparer avec années précédentes
 
 ## Grosses Features futures
-Cf détail par feature
+_Cf détail par feature_
+- [Adhésions](spec_fonctionnelles/adherents.md) *(TODO)* — gestion des adhérents, cotisations, suivi
 - [Checklist](spec_fonctionnelles/checklist.md) *(TODO)* — gestion des listes et saisie par le gardien
 - [Compte-rendu de séjour](spec_fonctionnelles/compte_rendu_sejour.md) *(TODO)* — saisie gardien, relevés, consultation
 - [Travaux](spec_fonctionnelles/travaux.md) *(TODO)* — signalement, suivi, résolution
