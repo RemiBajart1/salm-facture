@@ -166,7 +166,19 @@ export interface CreateSejourRequest {
   }[]
 }
 
-export interface UpdateSejourRequest extends Partial<CreateSejourRequest> {
+export interface UpdateSejourRequest {
+  nomLocataire?: string
+  emailLocataire?: string
+  telephoneLocataire?: string
+  adresseLocataire?: string
+  dateArrivee?: string
+  dateDepart?: string
+  heureArriveePrevue?: string
+  heureDepartPrevu?: string
+  minPersonnesTotal?: number
+  notesInternes?: string
+  objetSejour?: string
+  nomGroupe?: string
   categories?: {
     tarifPersonneId: string
     nbPrevisionnel: number

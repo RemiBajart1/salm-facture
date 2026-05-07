@@ -77,6 +77,7 @@ class Plugin {
         Migration201::run();
         Migration202::run();
         Migration203::run();
+        Migration204::run();
         Migration205::run();
         update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
     }

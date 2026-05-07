@@ -5,6 +5,8 @@ import { adminApi, locataireApi, sejourApi } from '../../services/api'
 import type { TarifPersonne, Locataire, ModePaiement, ConfigItem } from '../../types'
 import { formatEuros } from '../../utils/calcul'
 
+// Libellé exact du tarif de présence journée tel qu'inséré en base par Migration100.
+// Si ce libellé est modifié en base par le trésorier, ce mécanisme se désactivera silencieusement.
 const NOM_TARIF_PRESENCE = 'Présence journée sans nuitée (par jour)'
 
 interface CategorieSelectionnee {
