@@ -151,6 +151,7 @@ export function ItemsSupplements() {
                       <option value="CASSE">Casse</option>
                       <option value="LOCATION">Location</option>
                       <option value="INTERVENTION">Intervention</option>
+                      <option value="ADHESION">Adhésion</option>
                     </select>
                   ) : (
                     categoryLabels[item.categorie] ?? item.categorie

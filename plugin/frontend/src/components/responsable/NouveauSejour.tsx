@@ -560,6 +560,7 @@ export function NouveauSejour() {
               setDateDepart('')
               setObjetSejour('')
               setNomGroupe('')
+              setDejaMembreIds(new Set())
             }}
           >
             Annuler
