@@ -160,7 +160,7 @@ function mapTarif(t: any): TarifPersonne {
     nom:         t.nom,
     prixNuit:    Number(t.prix_nuit ?? t.prixNuit ?? 0),
     description: t.description,
-    actif:       Boolean(t.actif),
+    actif:       Number(t.actif) === 1,
     ordre:       Number(t.ordre ?? 0),
   }
 }
@@ -173,8 +173,8 @@ function mapConfigItem(i: any): ConfigItem {
     categorie:    i.categorie ?? '',
     prixUnitaire: Number(i.prix_unitaire ?? i.prixUnitaire ?? 0),
     unite:        i.unite,
-    actif:        Boolean(i.actif),
-    obligatoire:  Boolean(i.obligatoire ?? false),
+    actif:        Number(i.actif) === 1,
+    obligatoire:  Number(i.obligatoire) === 1,
   }
 }
 
