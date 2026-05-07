@@ -15,6 +15,7 @@ use Locagest\Db\Migration201;
 use Locagest\Db\Migration202;
 use Locagest\Db\Migration203;
 use Locagest\Db\Migration204;
+use Locagest\Db\Migration205;
 use Locagest\Repository\ConfigItemRepository;
 use Locagest\Repository\ConfigSiteRepository;
 use Locagest\Repository\FactureRepository;
@@ -37,7 +38,7 @@ use Locagest\Service\SupplementService;
 class Plugin {
 
     private const DB_VERSION_OPTION = 'locagest_db_version';
-    private const DB_VERSION        = '1.3.0';
+    private const DB_VERSION        = '1.4.0';
 
     private SejourService    $sejour_svc;
     private FactureService   $facture_svc;
@@ -76,6 +77,8 @@ class Plugin {
         Migration201::run();
         Migration202::run();
         Migration203::run();
+        Migration204::run();
+        Migration205::run();
         update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
     }
 
@@ -92,6 +95,7 @@ class Plugin {
             Migration202::run();
             Migration203::run();
             Migration204::run();
+            Migration205::run();
             update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
         }
     }
@@ -118,7 +122,7 @@ class Plugin {
         $pdf_service          = new PdfService();
         $file_service         = new FileService();
         $email_service        = new EmailService( $config_repo );
-        $this->sejour_svc     = new SejourService( $sejour_repo, $categorie_repo, $tarif_repo, $locataire_repo, $config_repo );
+        $this->sejour_svc     = new SejourService( $sejour_repo, $categorie_repo, $tarif_repo, $locataire_repo, $config_repo, $item_repo, $ligne_repo );
         $this->facture_svc    = new FactureService( $facture_repo, $ligne_repo, $paiement_repo, $config_repo, $locataire_repo, $this->calcul_svc, $pdf_service, $file_service, $email_service, $this->sejour_svc );
         $this->paiement_svc   = new PaiementService( $paiement_repo, $facture_repo, $this->sejour_svc, $file_service );
         $this->supplement_svc = new SupplementService( $ligne_repo, $item_repo, $this->sejour_svc );

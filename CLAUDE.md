@@ -46,6 +46,12 @@ Une fois par prompt, fais l'une de ces actions au choix, de façon aléatoire :
 - Invente une blague de développeur originale et drôle
 - Fais une référence recherchée dans l'univers Retour vers le futur, Harry Potter, les livres de Dan Brown (da vinci code, etc.)
 
+# Environnement d'exécution
+
+- Le backend PHP (plugin WordPress) tourne dans un **conteneur Docker**. Ne jamais lancer `php`, `phpunit` ou des commandes PHP directement sur la machine locale — elles ne fonctionneront pas.
+- Pour lancer les tests PHP, utiliser Docker (ex : `docker compose exec wordpress phpunit ...`).
+- Le frontend tourne localement avec Node (voir section MEMORY pour les détails).
+
 # consignes générales
 Tu devras suivre les instructions demandées, en demandant confirmation si tu as un doute.
 N'invente rien, ne fais pas d'hypothèses (cette règle est TRES importante) sauf si explicitement demandé.

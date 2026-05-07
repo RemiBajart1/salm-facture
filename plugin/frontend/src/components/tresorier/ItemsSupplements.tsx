@@ -19,6 +19,13 @@ export function ItemsSupplements() {
   const [newCategorie, setNewCategorie] = useState('CASSE')
   const [saving, setSaving] = useState(false)
 
+  // Édition en ligne
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editNom, setEditNom] = useState('')
+  const [editPrix, setEditPrix] = useState('')
+  const [editUnite, setEditUnite] = useState<'UNITE' | 'SEJOUR'>('UNITE')
+  const [editCategorie, setEditCategorie] = useState('')
+
   useEffect(() => {
     adminApi
       .getItems()
@@ -53,6 +60,32 @@ export function ItemsSupplements() {
     }
   }
 
+  const handleStartEdit = (item: ConfigItem) => {
+    setEditingId(item.id)
+    setEditNom(item.designation)
+    setEditPrix(item.prixUnitaire.toFixed(2).replace('.', ','))
+    setEditUnite(item.unite)
+    setEditCategorie(item.categorie)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return
+    setActionError(null)
+    try {
+      const updated = await adminApi.updateItem(editingId, {
+        designation: editNom,
+        prixUnitaire: parseFloat(editPrix.replace(',', '.')),
+        unite: editUnite,
+        categorie: editCategorie,
+      })
+      setItems((prev) => prev.map((i) => (i.id === editingId ? updated : i)))
+      setEditingId(null)
+    } catch (err) {
+      console.error('Erreur mise à jour item:', err)
+      setActionError('Une erreur est survenue.')
+    }
+  }
+
   const handleDelete = async (id: string) => {
     setActionError(null)
     try {
@@ -68,6 +101,7 @@ export function ItemsSupplements() {
     CASSE: 'Casse',
     LOCATION: 'Location',
     INTERVENTION: 'Intervention',
+    ADHESION: 'Adhésion',
   }
 
   if (loading) return <LoadingSpinner message="Chargement des items..." />
@@ -88,32 +122,102 @@ export function ItemsSupplements() {
               <th>Prix unitaire</th>
               <th>Unité</th>
               <th>Statut</th>
-              <th style={{ width: 120 }}>Actions</th>
+              <th style={{ width: 160 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
               <tr key={item.id}>
-                <td><strong>{item.designation}</strong></td>
-                <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  {categoryLabels[item.categorie] ?? item.categorie}
+                <td>
+                  {editingId === item.id ? (
+                    <input
+                      className={styles.dformInput}
+                      value={editNom}
+                      onChange={(e) => setEditNom(e.target.value)}
+                      style={{ padding: '6px 10px' }}
+                    />
+                  ) : (
+                    <strong>{item.designation}</strong>
+                  )}
                 </td>
-                <td><span className={styles.priceCell}>{formatEuros(item.prixUnitaire)}</span></td>
-                <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{item.unite}</td>
+                <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  {editingId === item.id ? (
+                    <select
+                      className={styles.dformInput}
+                      value={editCategorie}
+                      onChange={(e) => setEditCategorie(e.target.value)}
+                      style={{ padding: '6px 10px' }}
+                    >
+                      <option value="CASSE">Casse</option>
+                      <option value="LOCATION">Location</option>
+                      <option value="INTERVENTION">Intervention</option>
+                      <option value="ADHESION">Adhésion</option>
+                    </select>
+                  ) : (
+                    categoryLabels[item.categorie] ?? item.categorie
+                  )}
+                </td>
+                <td>
+                  {editingId === item.id ? (
+                    <input
+                      className={styles.dformInput}
+                      value={editPrix}
+                      onChange={(e) => setEditPrix(e.target.value)}
+                      style={{ width: 80, padding: '6px 10px' }}
+                    />
+                  ) : (
+                    <span className={styles.priceCell}>{formatEuros(item.prixUnitaire)}</span>
+                  )}
+                </td>
+                <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  {editingId === item.id ? (
+                    <select
+                      className={styles.dformInput}
+                      value={editUnite}
+                      onChange={(e) => setEditUnite(e.target.value as 'UNITE' | 'SEJOUR')}
+                      style={{ padding: '6px 10px' }}
+                    >
+                      <option value="UNITE">Unité</option>
+                      <option value="SEJOUR">Séjour</option>
+                    </select>
+                  ) : (
+                    item.unite === 'UNITE' ? 'Unité' : 'Séjour'
+                  )}
+                </td>
                 <td>
                   <span className={`${styles.actifBadge} ${item.actif ? styles.actifBadgeOn : styles.actifBadgeOff}`}>
                     {item.actif ? 'Actif' : 'Inactif'}
                   </span>
                 </td>
                 <td>
-                  {item.actif && (
-                    <button
-                      type="button"
-                      className={styles.tblDel}
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      Désactiver
-                    </button>
+                  {editingId === item.id ? (
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button type="button" className={styles.btnValider} onClick={handleSaveEdit}>✓</button>
+                      <button type="button" className={styles.tblEdit} onClick={() => setEditingId(null)}>✕</button>
+                    </div>
+                  ) : (
+                    item.actif && (
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {!item.obligatoire && (
+                          <button
+                            type="button"
+                            className={styles.tblEdit}
+                            onClick={() => handleStartEdit(item)}
+                          >
+                            ✎ Modifier
+                          </button>
+                        )}
+                        {!item.obligatoire && (
+                          <button
+                            type="button"
+                            className={styles.tblDel}
+                            onClick={() => handleDelete(item.id)}
+                          >
+                            Désactiver
+                          </button>
+                        )}
+                      </div>
+                    )
                   )}
                 </td>
               </tr>

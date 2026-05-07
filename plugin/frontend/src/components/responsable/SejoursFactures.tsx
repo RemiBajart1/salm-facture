@@ -6,9 +6,13 @@ import { LoadingSpinner } from '../common/LoadingSpinner'
 import { sejourApi } from '../../services/api'
 import type { Sejour, Facture, Paiement } from '../../types'
 import { formatEuros } from '../../utils/calcul'
+import { useAuth } from '../../contexts/AuthContext'
 
 /** RL3 — Liste des séjours et factures */
 export function SejoursFactures() {
+  const { user } = useAuth()
+  const isTresorier = user?.role === 'tresorier'
+
   const [sejours, setSejours]           = useState<Sejour[]>([])
   const [loading, setLoading]           = useState(true)
   const [error, setError]               = useState<string | null>(null)
@@ -19,6 +23,15 @@ export function SejoursFactures() {
   const [detailFacture, setDetailFacture] = useState<Facture | null | 'none'>('none')
   const [detailPaiements, setDetailPaiements] = useState<Paiement[]>([])
   const [detailLoading, setDetailLoading] = useState(false)
+  const [actionMsg, setActionMsg]         = useState<string | null>(null)
+  const [actionError, setActionError]     = useState<string | null>(null)
+
+  // Mode édition séjour
+  const [editing, setEditing] = useState(false)
+  const [editObjet, setEditObjet] = useState('')
+  const [editNomGroupe, setEditNomGroupe] = useState('')
+  const [editNotes, setEditNotes] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -37,6 +50,9 @@ export function SejoursFactures() {
     setDetailFacture('none')
     setDetailPaiements([])
     setDetailLoading(true)
+    setActionMsg(null)
+    setActionError(null)
+    setEditing(false)
     try {
       const [fullSejour, paiements] = await Promise.all([
         sejourApi.getById(sejour.id),
@@ -51,6 +67,50 @@ export function SejoursFactures() {
       setDetailFacture(null)
     } finally {
       setDetailLoading(false)
+    }
+  }
+
+  const startEdit = () => {
+    if (!detail) return
+    setEditObjet(detail.objetSejour ?? '')
+    setEditNomGroupe(detail.nomGroupe ?? '')
+    setEditNotes(detail.notesInternes ?? '')
+    setEditing(true)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!detail) return
+    setEditSaving(true)
+    setActionError(null)
+    try {
+      const updated = await sejourApi.update(detail.id, {
+        objetSejour: editObjet,
+        nomGroupe: editNomGroupe,
+        notesInternes: editNotes,
+      })
+      setDetail(updated)
+      setSejours((prev) => prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s)))
+      setEditing(false)
+      setActionMsg('Séjour mis à jour.')
+    } catch (err) {
+      console.error('Erreur mise à jour séjour:', err)
+      setActionError('Une erreur est survenue.')
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
+  const handleRegenerePdf = async () => {
+    if (!detail) return
+    setActionError(null)
+    setActionMsg(null)
+    try {
+      const facture = await sejourApi.regenererFacture(detail.id)
+      setDetailFacture(facture)
+      setActionMsg('PDF régénéré avec succès.')
+    } catch (err) {
+      console.error('Erreur régénération PDF:', err)
+      setActionError('Impossible de régénérer le PDF.')
     }
   }
 
@@ -140,6 +200,7 @@ export function SejoursFactures() {
             <thead>
               <tr>
                 <th>Locataire</th>
+                <th>Objet / Groupe</th>
                 <th>Dates</th>
                 <th>Personnes</th>
                 <th>Statut</th>
@@ -154,6 +215,12 @@ export function SejoursFactures() {
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                       {sejour.emailLocataire}
                     </div>
+                  </td>
+                  <td>
+                    <div style={{ fontSize: 13 }}>{sejour.objetSejour || '—'}</div>
+                    {sejour.nomGroupe && (
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{sejour.nomGroupe}</div>
+                    )}
                   </td>
                   <td>
                     {formatDate(sejour.dateArrivee)} – {formatDate(sejour.dateDepart)}
@@ -209,13 +276,150 @@ export function SejoursFactures() {
                   {formatDate(detail.dateArrivee)} – {formatDate(detail.dateDepart)} · {detail.nbNuits} nuit{detail.nbNuits > 1 ? 's' : ''}
                 </div>
               </div>
-              <button type="button" className={modal.closeBtn} onClick={() => setDetail(null)}>✕</button>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                {detail.statut === 'PLANIFIE' && !editing && (
+                  <button type="button" className={styles.tblEdit} onClick={startEdit}>
+                    ✎ Modifier
+                  </button>
+                )}
+                <button type="button" className={modal.closeBtn} onClick={() => setDetail(null)}>✕</button>
+              </div>
             </div>
+
+            {actionMsg && (
+              <div style={{ padding: '8px 16px', background: 'var(--forest)', color: 'white', fontSize: 13 }}>
+                ✅ {actionMsg}
+              </div>
+            )}
+            {actionError && <ErrorBanner message={actionError} onDismiss={() => setActionError(null)} />}
 
             {detailLoading && <LoadingSpinner message="Chargement du détail..." />}
 
             {!detailLoading && (
               <>
+                {/* Infos générales */}
+                <div className={modal.section}>
+                  <div className={modal.sectionTitle}>Informations générales</div>
+                  {editing ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div className={styles.dformGroup}>
+                        <label className={styles.dformLabel}>Objet du séjour *</label>
+                        <input
+                          className={styles.dformInput}
+                          value={editObjet}
+                          onChange={(e) => setEditObjet(e.target.value)}
+                          placeholder="Ex: Anniversaire 40 ans"
+                        />
+                      </div>
+                      <div className={styles.dformGroup}>
+                        <label className={styles.dformLabel}>Nom du groupe</label>
+                        <input
+                          className={styles.dformInput}
+                          value={editNomGroupe}
+                          onChange={(e) => setEditNomGroupe(e.target.value)}
+                        />
+                      </div>
+                      <div className={styles.dformGroup}>
+                        <label className={styles.dformLabel}>Notes internes</label>
+                        <textarea
+                          className={styles.dformInput}
+                          rows={2}
+                          value={editNotes}
+                          onChange={(e) => setEditNotes(e.target.value)}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          style={{ padding: '8px 16px', fontSize: 13 }}
+                          onClick={handleSaveEdit}
+                          disabled={editSaving || !editObjet}
+                        >
+                          {editSaving ? 'Enregistrement...' : '✓ Enregistrer'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          style={{ padding: '8px 16px', fontSize: 13 }}
+                          onClick={() => setEditing(false)}
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px', fontSize: 13 }}>
+                      {detail.objetSejour && (
+                        <>
+                          <span style={{ color: 'var(--text-muted)' }}>Objet</span>
+                          <span>{detail.objetSejour}</span>
+                        </>
+                      )}
+                      {detail.nomGroupe && (
+                        <>
+                          <span style={{ color: 'var(--text-muted)' }}>Groupe</span>
+                          <span>{detail.nomGroupe}</span>
+                        </>
+                      )}
+                      {detail.telephoneLocataire && (
+                        <>
+                          <span style={{ color: 'var(--text-muted)' }}>Téléphone</span>
+                          <span>{detail.telephoneLocataire}</span>
+                        </>
+                      )}
+                      {detail.adresseLocataire && (
+                        <>
+                          <span style={{ color: 'var(--text-muted)' }}>Adresse</span>
+                          <span>{detail.adresseLocataire}</span>
+                        </>
+                      )}
+                      {detail.heureArriveePrevue && (
+                        <>
+                          <span style={{ color: 'var(--text-muted)' }}>Arrivée prévue</span>
+                          <span>{detail.heureArriveePrevue}</span>
+                        </>
+                      )}
+                      {detail.heureDepartPrevu && (
+                        <>
+                          <span style={{ color: 'var(--text-muted)' }}>Départ prévu</span>
+                          <span>{detail.heureDepartPrevu}</span>
+                        </>
+                      )}
+                      {detail.heureArriveeReelle && (
+                        <>
+                          <span style={{ color: 'var(--text-muted)' }}>Arrivée réelle</span>
+                          <span>{detail.heureArriveeReelle}</span>
+                        </>
+                      )}
+                      {detail.heureDepartReel && (
+                        <>
+                          <span style={{ color: 'var(--text-muted)' }}>Départ réel</span>
+                          <span>{detail.heureDepartReel}</span>
+                        </>
+                      )}
+                      {detail.minPersonnesTotal > 0 && (
+                        <>
+                          <span style={{ color: 'var(--text-muted)' }}>Forfait min.</span>
+                          <span>{detail.minPersonnesTotal} personnes</span>
+                        </>
+                      )}
+                      {detail.modePaiement && (
+                        <>
+                          <span style={{ color: 'var(--text-muted)' }}>Mode paiement</span>
+                          <span>{detail.modePaiement === 'CHEQUE' ? 'Chèque' : 'Virement'}</span>
+                        </>
+                      )}
+                      {detail.notesInternes && (
+                        <>
+                          <span style={{ color: 'var(--text-muted)' }}>Notes</span>
+                          <span style={{ whiteSpace: 'pre-wrap' }}>{detail.notesInternes}</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* Catégories */}
                 <div className={modal.section}>
                   <div className={modal.sectionTitle}>Personnes par catégorie</div>
@@ -273,6 +477,19 @@ export function SejoursFactures() {
                         <span>Email envoyé</span>
                         <span>{detailFacture.emailEnvoye ? '✅ Oui' : '❌ Non'}</span>
                       </div>
+                      {isTresorier && (
+                        <div className={modal.factureRow}>
+                          <span>Template</span>
+                          <button
+                            type="button"
+                            className={styles.tblEdit}
+                            onClick={handleRegenerePdf}
+                            style={{ fontSize: 12 }}
+                          >
+                            🔄 Régénérer le PDF
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

@@ -67,6 +67,17 @@ export function TarifsPersonne() {
     setEditDesc(t.description ?? '')
   }
 
+  const handleDeactivate = async (id: string) => {
+    setActionError(null)
+    try {
+      await adminApi.deleteTarif(id)
+      setTarifs((prev) => prev.map((t) => (t.id === id ? { ...t, actif: false } : t)))
+    } catch (err) {
+      console.error('Erreur désactivation tarif:', err)
+      setActionError('Une erreur est survenue.')
+    }
+  }
+
   const handleSaveEdit = async () => {
     if (!editingId) return
     setActionError(null)
@@ -166,13 +177,24 @@ export function TarifsPersonne() {
                       <button type="button" className={styles.tblEdit} onClick={() => setEditingId(null)}>✕</button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      className={styles.tblEdit}
-                      onClick={() => handleStartEdit(tarif)}
-                    >
-                      ✎ Modifier
-                    </button>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        type="button"
+                        className={styles.tblEdit}
+                        onClick={() => handleStartEdit(tarif)}
+                      >
+                        ✎ Modifier
+                      </button>
+                      {tarif.actif && (
+                        <button
+                          type="button"
+                          className={styles.tblDel}
+                          onClick={() => handleDeactivate(tarif.id)}
+                        >
+                          Désactiver
+                        </button>
+                      )}
+                    </div>
                   )}
                 </td>
               </tr>
