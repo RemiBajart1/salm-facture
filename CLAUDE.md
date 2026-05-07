@@ -55,7 +55,9 @@ Idem si tu n'es pas d'accord avec les instructions, demande des précisions.
 # Gestion du repository git
 
 Je valide moi meme chaque MR.
-Fais régulièrement des git fetch pour rester à jour avec les changements sur le repository distant. Rebase la branche en cours sur main avant de faire une MR, et résous les conflits s'il y en a.
+fais toujours une branche depuis main pour chaque feature.
+Fais régulièrement des git fetch pour rester à jour avec les changements sur le repository distant. 
+Rebase la branche en cours sur main avant de faire une MR, et résous les conflits s'il y en a.
 ## Commit et branches
 Ne commit JAMAIS sur les branches suivantes :  main, master, prod, staging, preprod, etc.
 - si explicitement, demande confirmation en précisant que c'est interdit de base et ce que tu recommandes (propose les options)
