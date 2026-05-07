@@ -185,6 +185,30 @@ class FactureService {
         $this->email_service->envoyer_facture( $facture, $pdf_content, $facture['numero'] );
     }
 
+    /**
+     * Regénère uniquement le PDF d'une facture EMISE ou PAYEE sans recalculer les données.
+     * Réservé au trésorier (ex: mise à jour du template).
+     */
+    public function regenerer( int $sejour_id ): array {
+        $facture = $this->facture_repo->find_by_sejour( $sejour_id );
+        if ( ! $facture ) throw new NotFoundException( "Aucune facture pour le séjour #$sejour_id." );
+
+        $sejour    = $this->sejour_service->get_detail( $sejour_id );
+        $locataire = $sejour['locataire_id'] ? $this->locataire_repo->find_by_id( (int) $sejour['locataire_id'] ) : [];
+        $lignes    = $this->ligne_repo->find_by_sejour( $sejour_id );
+        $paiements = $this->paiement_repo->find_by_sejour( $sejour_id );
+
+        $pdf_content = $this->pdf_service->generer( $facture, $sejour, $locataire ?? [], $lignes, $paiements );
+        $pdf_path    = $this->file_service->save_pdf( $pdf_content, $facture['numero'] );
+        $this->facture_repo->update( (int) $facture['id'], [ 'pdf_path' => $pdf_path ] );
+        $facture['pdf_path'] = $pdf_path;
+
+        if ( $facture['pdf_path'] ) {
+            $facture['pdf_url'] = $this->file_service->url_temporaire( $facture['pdf_path'] );
+        }
+        return $facture;
+    }
+
     public function get_by_sejour( int $sejour_id ): array {
         $facture = $this->facture_repo->find_by_sejour( $sejour_id );
         if ( ! $facture ) throw new NotFoundException( "Aucune facture pour le séjour #$sejour_id." );

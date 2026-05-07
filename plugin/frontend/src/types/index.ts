@@ -53,6 +53,7 @@ export interface Sejour {
   nomLocataire: string
   emailLocataire: string
   telephoneLocataire?: string
+  adresseLocataire?: string
   dateArrivee: string
   dateDepart: string
   nbNuits: number
@@ -67,6 +68,8 @@ export interface Sejour {
   dateLimitePaiement?: string | null
   optionsPresaisies?: string | null
   notesInternes?: string | null
+  objetSejour?: string | null
+  nomGroupe?: string | null
   categories: SejourCategorie[]
 }
 
@@ -154,9 +157,19 @@ export interface CreateSejourRequest {
   dateLimitePaiement?: string
   optionsPresaisies?: string
   notesInternes?: string
+  objetSejour: string
+  nomGroupe?: string
+  dejaMembreItemIds?: string[]
   categories: {
     tarifId: string  // UUID
     nbPrevues: number
+  }[]
+}
+
+export interface UpdateSejourRequest extends Partial<CreateSejourRequest> {
+  categories?: {
+    tarifPersonneId: string
+    nbPrevisionnel: number
   }[]
 }
 

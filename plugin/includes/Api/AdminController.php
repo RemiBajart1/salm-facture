@@ -43,9 +43,16 @@ class AdminController {
         ] );
 
         register_rest_route( self::NS, '/admin/tarifs/(?P<id>\d+)', [
-            'methods'             => 'PUT',
-            'callback'            => [ $this, 'update_tarif' ],
-            'permission_callback' => $tresorier,
+            [
+                'methods'             => 'PUT',
+                'callback'            => [ $this, 'update_tarif' ],
+                'permission_callback' => $tresorier,
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [ $this, 'delete_tarif' ],
+                'permission_callback' => $tresorier,
+            ],
         ] );
 
         // Items catalogue
@@ -113,6 +120,15 @@ class AdminController {
             $max_o = max( array_column( $this->tarif_repo->find_all_actifs(), 'ordre' ) ?: [0] );
             $id    = $this->tarif_repo->create( $data['nom'], (float) $data['prix_nuit'], $max_o + 1 );
             return new \WP_REST_Response( $this->tarif_repo->find_by_id( $id ), 201 );
+        } );
+    }
+
+    public function delete_tarif( \WP_REST_Request $request ): \WP_REST_Response {
+        return ExceptionHandler::handle( function () use ( $request ) {
+            $id = (int) $request->get_param( 'id' );
+            if ( ! $this->tarif_repo->find_by_id( $id ) ) throw new NotFoundException( "Tarif #$id introuvable." );
+            $this->tarif_repo->deactivate( $id );
+            return new \WP_REST_Response( null, 204 );
         } );
     }
 

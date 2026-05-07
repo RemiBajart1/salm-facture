@@ -2,21 +2,6 @@
 
 ## Bugs à corriger
 
-## changements mineurs à apporter aux features existantes (chapitre à supprimer une fois implémenté, données à reporter dans les fichiers/sections concernées)
-- le tarif "Présence journée sans nuitée (par jour)" doit toujours être cochée, même si qté = 0, pour permettre au gardien de saisir les journées sans nuitée 
-  - Ce tarif n'apparait pas sur la facture si qté = 0, mais elle doit être présente dans le formulaire de saisie pour permettre au gardien de l'utiliser
-  - Cette présence journée ne compte pas pour la taxe de séjour, qui ne compte que les nuitées
-- Le resp location doit pouvoir modifier les séjours programmés (toutes informations). 
-- L'aperçu d'un séjour (resp. location) n'est pas assez détaillé et doit reprendre l'intégralité des données
-- le trésorier doit pouvoir supprimer un tarif /personne
-- Ajouter 2 champs à un séjour 
-  - objet du séjour (ex : "Anniversaire 40 ans", "WE révisions bac") (obligatoire)
-  - Nom du groupe (distinct du nom du locataire) (Facultatif)
-- permettre de regénérer la facture si le template a changé (les données ne changent pas) (Trésorier uniquement)
-- Supplément "Carte de membre" : le resp location doit pouvoir le décocher pour les groupes déjà membres
-  - Avec la feature "adhérent", auto-détection (cf adherents.md)
-- Supplément "carte de membre" : l'unité = unité (et pas séjour)
-- Suppléments : le trésorier doit pouvoir modifier ou supprimer les items existants du catalogue
 
 ##  Charte graphique  
   - Revoie les couleurs du frontend pour s'adapter à la charte graphique 

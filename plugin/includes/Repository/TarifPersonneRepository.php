@@ -39,4 +39,9 @@ class TarifPersonneRepository {
         global $wpdb;
         $wpdb->update( $this->table, $data, [ 'id' => $id ] );
     }
+
+    public function deactivate( int $id ): void {
+        global $wpdb;
+        $wpdb->update( $this->table, [ 'actif' => 0 ], [ 'id' => $id ] );
+    }
 }

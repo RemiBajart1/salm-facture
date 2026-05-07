@@ -27,8 +27,9 @@ class SejourController {
     ) {}
 
     public function register_routes(): void {
-        $any   = Auth::require_role( 'locagest_gardien', 'locagest_resp_location', 'locagest_tresorier', 'locagest_administrateur' );
-        $resp  = Auth::require_role( 'locagest_resp_location', 'locagest_tresorier' );
+        $any       = Auth::require_role( 'locagest_gardien', 'locagest_resp_location', 'locagest_tresorier', 'locagest_administrateur' );
+        $resp      = Auth::require_role( 'locagest_resp_location', 'locagest_tresorier' );
+        $tresorier = Auth::require_role( 'locagest_tresorier' );
         $gardien_resp = Auth::require_role( 'locagest_gardien', 'locagest_resp_location', 'locagest_tresorier' );
 
         register_rest_route( self::NS, '/sejours/current', [
@@ -51,9 +52,16 @@ class SejourController {
         ] );
 
         register_rest_route( self::NS, '/sejours/(?P<id>\d+)', [
-            'methods'             => 'GET',
-            'callback'            => [ $this, 'get' ],
-            'permission_callback' => $any,
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $this, 'get' ],
+                'permission_callback' => $any,
+            ],
+            [
+                'methods'             => 'PUT',
+                'callback'            => [ $this, 'update' ],
+                'permission_callback' => $resp,
+            ],
         ] );
 
         register_rest_route( self::NS, '/sejours/(?P<id>\d+)/horaires', [
@@ -84,6 +92,12 @@ class SejourController {
             'methods'             => 'POST',
             'callback'            => [ $this, 'renvoyer_facture' ],
             'permission_callback' => $resp,
+        ] );
+
+        register_rest_route( self::NS, '/sejours/(?P<id>\d+)/facture/regenerer', [
+            'methods'             => 'POST',
+            'callback'            => [ $this, 'regenerer_facture' ],
+            'permission_callback' => $tresorier,
         ] );
 
         register_rest_route( self::NS, '/sejours/(?P<id>\d+)/facture', [
@@ -154,6 +168,12 @@ class SejourController {
         );
     }
 
+    public function update( \WP_REST_Request $request ): \WP_REST_Response {
+        return ExceptionHandler::handle( fn() =>
+            $this->sejour_service->update_sejour( (int) $request->get_param( 'id' ), (array) $request->get_json_params() )
+        );
+    }
+
     public function patch_horaires( \WP_REST_Request $request ): \WP_REST_Response {
         return ExceptionHandler::handle( fn() =>
             $this->sejour_service->update_horaires( (int) $request->get_param( 'id' ), (array) $request->get_json_params() )
@@ -198,6 +218,13 @@ class SejourController {
         return ExceptionHandler::handle( function () use ( $request ) {
             $this->facture_service->renvoyer( (int) $request->get_param( 'id' ) );
             return new \WP_REST_Response( [ 'message' => 'Facture renvoyée.' ], 200 );
+        } );
+    }
+
+    public function regenerer_facture( \WP_REST_Request $request ): \WP_REST_Response {
+        return ExceptionHandler::handle( function () use ( $request ) {
+            $facture = $this->facture_service->regenerer( (int) $request->get_param( 'id' ) );
+            return new \WP_REST_Response( $facture, 200 );
         } );
     }
 

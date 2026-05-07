@@ -2,18 +2,22 @@ import { useState, useEffect, useMemo } from 'react'
 import styles from './Desktop.module.css'
 import { ErrorBanner } from '../common/ErrorBanner'
 import { adminApi, locataireApi, sejourApi } from '../../services/api'
-import type { TarifPersonne, Locataire, ModePaiement } from '../../types'
+import type { TarifPersonne, Locataire, ModePaiement, ConfigItem } from '../../types'
 import { formatEuros } from '../../utils/calcul'
+
+const NOM_TARIF_PRESENCE = 'Présence journée sans nuitée (par jour)'
 
 interface CategorieSelectionnee {
   tarifId: string
   active: boolean
   nbPrevues: number
+  isPresenceJournee: boolean
 }
 
 /** RL1 — Formulaire de création d'un nouveau séjour */
 export function NouveauSejour() {
   const [tarifs, setTarifs] = useState<TarifPersonne[]>([])
+  const [adhesionItems, setAdhesionItems] = useState<ConfigItem[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
 
   // Locataire
@@ -30,10 +34,17 @@ export function NouveauSejour() {
   const [heureArrivee, setHeureArrivee] = useState('15:00')
   const [heureDepart, setHeureDepart] = useState('10:00')
 
+  // Infos séjour
+  const [objetSejour, setObjetSejour] = useState('')
+  const [nomGroupe, setNomGroupe] = useState('')
+
   // Catégories
   const [categories, setCategories] = useState<CategorieSelectionnee[]>([])
   const [minPersonnes, setMinPersonnes] = useState(40)
   const [tarifForfaitCategorieId, setTarifForfaitCategorieId] = useState<string | null>(null)
+
+  // Items adhésion déjà membres
+  const [dejaMembreIds, setDejaMembreIds] = useState<Set<string>>(new Set())
 
   // Paiement
   const [modePaiement, setModePaiement] = useState<ModePaiement>('CHEQUE')
@@ -46,17 +57,22 @@ export function NouveauSejour() {
   const [saveSuccess, setSaveSuccess] = useState(false)
 
   useEffect(() => {
-    adminApi
-      .getTarifs()
-      .then((data) => {
-        const actifs = data.filter((t) => t.actif)
+    Promise.all([adminApi.getTarifs(), adminApi.getItems()])
+      .then(([tarifsData, itemsData]) => {
+        const actifs = tarifsData.filter((t) => t.actif)
         setTarifs(actifs)
         setCategories(
-          actifs.map((t) => ({ tarifId: t.id, active: false, nbPrevues: 0 })),
+          actifs.map((t) => ({
+            tarifId: t.id,
+            active: t.nom === NOM_TARIF_PRESENCE ? true : false,
+            nbPrevues: 0,
+            isPresenceJournee: t.nom === NOM_TARIF_PRESENCE,
+          })),
         )
+        setAdhesionItems(itemsData.filter((i) => i.actif && i.obligatoire))
       })
       .catch((err) => {
-        console.error('Erreur chargement tarifs:', err)
+        console.error('Erreur chargement tarifs/items:', err)
         setLoadError('Impossible de charger les tarifs')
       })
   }, [])
@@ -82,8 +98,9 @@ export function NouveauSejour() {
     return Math.max(0, Math.round(diff / (1000 * 60 * 60 * 24)))
   }, [dateArrivee, dateDepart])
 
+  // Exclure "Présence journée" du total effectif (ne compte pas pour le forfait)
   const totalEffectif = categories
-    .filter((c) => c.active)
+    .filter((c) => c.active && !c.isPresenceJournee)
     .reduce((s, c) => s + c.nbPrevues, 0)
 
   const estimHeberg = useMemo(() => {
@@ -95,7 +112,6 @@ export function NouveauSejour() {
         if (!tarif) return s
         return s + c.nbPrevues * tarif.prixNuit * nbNuits
       }, 0)
-    // Application du forfait minimum
     if (totalEffectif < minPersonnes && tarifForfaitCategorieId) {
       const tarifRef = tarifs.find((t) => t.id === tarifForfaitCategorieId)
       if (tarifRef) return minPersonnes * tarifRef.prixNuit * nbNuits
@@ -114,14 +130,14 @@ export function NouveauSejour() {
 
   const handleCategorieToggle = (idx: number) => {
     setCategories((prev) => {
+      if (prev[idx]?.isPresenceJournee) return prev  // non-toggleable
       const next = prev.map((c, i) =>
         i === idx
           ? { ...c, active: !c.active, nbPrevues: !c.active ? c.nbPrevues : 0 }
           : c,
       )
-      // Si la catégorie de référence est désactivée, on la réinitialise
       const activeTarifIds = next
-        .filter((c) => c.active)
+        .filter((c) => c.active && !c.isPresenceJournee)
         .map((c) => c.tarifId)
       setTarifForfaitCategorieId((prev) =>
         prev && activeTarifIds.includes(prev) ? prev : activeTarifIds[0] ?? null,
@@ -137,12 +153,22 @@ export function NouveauSejour() {
     )
   }
 
+  const toggleDejaM = (itemId: string) => {
+    setDejaMembreIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(itemId)) next.delete(itemId)
+      else next.add(itemId)
+      return next
+    })
+  }
+
   const handleSubmit = async () => {
     setSaving(true)
     setSaveError(null)
     try {
+      // Inclure toutes les catégories actives — "Présence journée" incluse même si nbPrevues=0
       const catsActives = categories
-        .filter((c) => c.active && c.nbPrevues > 0)
+        .filter((c) => c.active && (c.isPresenceJournee || c.nbPrevues > 0))
         .map((c) => ({ tarifId: c.tarifId, nbPrevues: c.nbPrevues }))
 
       await sejourApi.create({
@@ -158,6 +184,9 @@ export function NouveauSejour() {
         modePaiement,
         dateLimitePaiement: dateLimitePaiement || undefined,
         optionsPresaisies: options || undefined,
+        objetSejour,
+        nomGroupe: nomGroupe || undefined,
+        dejaMembreItemIds: dejaMembreIds.size > 0 ? Array.from(dejaMembreIds) : undefined,
         categories: catsActives,
       })
       setSaveSuccess(true)
@@ -290,6 +319,35 @@ export function NouveauSejour() {
             <input id="heure-depart" className={styles.dformInput} type="time" value={heureDepart} onChange={(e) => setHeureDepart(e.target.value)} />
           </div>
         </div>
+
+        {/* Objet et nom de groupe */}
+        <div className={styles.formGrid}>
+          <div className={styles.dformGroup}>
+            <label className={styles.dformLabel} htmlFor="objet-sejour">
+              Objet du séjour <span style={{ color: 'var(--red)' }}>*</span>
+            </label>
+            <input
+              id="objet-sejour"
+              className={styles.dformInput}
+              type="text"
+              value={objetSejour}
+              onChange={(e) => setObjetSejour(e.target.value)}
+              placeholder="Ex : Anniversaire 40 ans, WE révisions bac..."
+              required
+            />
+          </div>
+          <div className={styles.dformGroup}>
+            <label className={styles.dformLabel} htmlFor="nom-groupe">Nom du groupe (facultatif)</label>
+            <input
+              id="nom-groupe"
+              className={styles.dformInput}
+              type="text"
+              value={nomGroupe}
+              onChange={(e) => setNomGroupe(e.target.value)}
+              placeholder="Ex : Les Ramblers, Club Montagne Alsace..."
+            />
+          </div>
+        </div>
       </div>
 
       {/* Catégories */}
@@ -303,6 +361,7 @@ export function NouveauSejour() {
 
         <div className={styles.tealBox}>
           ℹ️ Cochez les catégories qui s'appliquent à ce séjour et indiquez les effectifs prévus.
+          Le tarif « {NOM_TARIF_PRESENCE} » est toujours présent pour permettre au gardien de saisir des journées sans nuitée.
         </div>
 
         <div className={styles.tableWrap}>
@@ -321,6 +380,7 @@ export function NouveauSejour() {
               {tarifs.map((tarif, idx) => {
                 const cat = categories[idx]
                 if (!cat) return null
+                const isPresence = cat.isPresenceJournee
                 const sousTot = cat.active && nbNuits > 0
                   ? cat.nbPrevues * tarif.prixNuit * nbNuits
                   : null
@@ -331,11 +391,20 @@ export function NouveauSejour() {
                         type="checkbox"
                         checked={cat.active}
                         onChange={() => handleCategorieToggle(idx)}
+                        disabled={isPresence}
                         style={{ width: 16, height: 16, accentColor: 'var(--forest)' }}
                         aria-label={`Activer ${tarif.nom}`}
+                        title={isPresence ? 'Ce tarif est toujours actif' : undefined}
                       />
                     </td>
-                    <td><strong>{tarif.nom}</strong></td>
+                    <td>
+                      <strong>{tarif.nom}</strong>
+                      {isPresence && (
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 6 }}>
+                          (présences uniquement, hors taxe de séjour)
+                        </span>
+                      )}
+                    </td>
                     <td><span className={styles.priceCell}>{formatEuros(tarif.prixNuit)}</span></td>
                     <td>
                       <input
@@ -355,15 +424,17 @@ export function NouveauSejour() {
                         : '—'}
                     </td>
                     <td style={{ textAlign: 'center' }}>
-                      <input
-                        type="radio"
-                        name="tarifForfaitRef"
-                        checked={tarifForfaitCategorieId === tarif.id}
-                        onChange={() => setTarifForfaitCategorieId(tarif.id)}
-                        disabled={!cat.active}
-                        style={{ accentColor: 'var(--teal)', width: 16, height: 16 }}
-                        aria-label={`Référence forfait ${tarif.nom}`}
-                      />
+                      {!isPresence && (
+                        <input
+                          type="radio"
+                          name="tarifForfaitRef"
+                          checked={tarifForfaitCategorieId === tarif.id}
+                          onChange={() => setTarifForfaitCategorieId(tarif.id)}
+                          disabled={!cat.active}
+                          style={{ accentColor: 'var(--teal)', width: 16, height: 16 }}
+                          aria-label={`Référence forfait ${tarif.nom}`}
+                        />
+                      )}
                     </td>
                   </tr>
                 )
@@ -398,6 +469,36 @@ export function NouveauSejour() {
           </div>
         </div>
       </div>
+
+      {/* Adhésion */}
+      {adhesionItems.length > 0 && (
+        <div className={styles.dcard}>
+          <div className={styles.dcardTitle}>Carte de membre</div>
+          <div className={styles.tealBox}>
+            ℹ️ Si le groupe est déjà adhérent pour l'année civile, cochez cette case. La carte ne sera pas facturée.
+          </div>
+          {adhesionItems.map((item) => {
+            const estDejaM = dejaMembreIds.has(item.id)
+            return (
+              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
+                <input
+                  id={`deja-membre-${item.id}`}
+                  type="checkbox"
+                  checked={estDejaM}
+                  onChange={() => toggleDejaM(item.id)}
+                  style={{ width: 16, height: 16, accentColor: 'var(--forest)' }}
+                />
+                <label htmlFor={`deja-membre-${item.id}`} style={{ cursor: 'pointer', fontSize: 14 }}>
+                  Groupe déjà membre pour l'année civile
+                  <span style={{ color: 'var(--text-muted)', fontSize: 12, marginLeft: 8 }}>
+                    ({item.designation} — {formatEuros(item.prixUnitaire)} / pers.)
+                  </span>
+                </label>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Paiement */}
       <div className={styles.dcard}>
@@ -455,6 +556,8 @@ export function NouveauSejour() {
               setLocataireEmail('')
               setDateArrivee('')
               setDateDepart('')
+              setObjetSejour('')
+              setNomGroupe('')
             }}
           >
             Annuler
@@ -464,7 +567,7 @@ export function NouveauSejour() {
             className="btn-primary"
             style={{ width: 'auto', padding: '10px 24px' }}
             onClick={handleSubmit}
-            disabled={saving || !locataireNom || !locataireEmail || !dateArrivee || !dateDepart}
+            disabled={saving || !locataireNom || !locataireEmail || !dateArrivee || !dateDepart || !objetSejour}
           >
             {saving ? 'Enregistrement...' : 'Enregistrer le séjour'}
           </button>

@@ -10,6 +10,7 @@ import type {
   Locataire,
   PagedResponse,
   CreateSejourRequest,
+  UpdateSejourRequest,
   PatchPersonnesRequest,
   AddSupplementRequest,
   CreatePaiementRequest,
@@ -89,6 +90,9 @@ function mapSejour(s: any): Sejour {
     dateLimitePaiement:    s.date_limite_paiement ?? null,
     optionsPresaisies:     s.options_presaisies ?? null,
     notesInternes:         s.notes ?? null,
+    objetSejour:           s.objet_sejour ?? null,
+    nomGroupe:             s.nom_groupe ?? null,
+    adresseLocataire:      s.locataire_adresse_snapshot ?? null,
     categories:            (s.categories ?? []).map(mapSejourCategorie),
   }
 }
@@ -205,20 +209,50 @@ function toWPCreateSejour(data: CreateSejourRequest): Record<string, unknown> {
       telephone: data.telephoneLocataire,
       adresse:   data.adresseLocataire,
     },
-    date_debut:           data.dateArrivee,
-    date_fin:             data.dateDepart,
-    heure_arrivee_prevue: data.heureArriveePrevue,
-    heure_depart_prevu:   data.heureDepartPrevu,
-    min_personnes_total:  data.minPersonnesTotal,
-    mode_paiement:          data.modePaiement,
-    date_limite_paiement:   data.dateLimitePaiement,
-    options_presaisies:     data.optionsPresaisies,
-    notes:                  data.notesInternes,
-    categories:           data.categories.map((c) => ({
+    date_debut:              data.dateArrivee,
+    date_fin:                data.dateDepart,
+    heure_arrivee_prevue:    data.heureArriveePrevue,
+    heure_depart_prevu:      data.heureDepartPrevu,
+    min_personnes_total:     data.minPersonnesTotal,
+    mode_paiement:           data.modePaiement,
+    date_limite_paiement:    data.dateLimitePaiement,
+    options_presaisies:      data.optionsPresaisies,
+    notes:                   data.notesInternes,
+    objet_sejour:            data.objetSejour,
+    nom_groupe:              data.nomGroupe ?? '',
+    deja_membre_item_ids:    data.dejaMembreItemIds?.map(Number) ?? [],
+    categories:              data.categories.map((c) => ({
       tarif_personne_id: Number(c.tarifId),
       nb_previsionnel:   c.nbPrevues,
     })),
   }
+}
+
+function toWPUpdateSejour(data: UpdateSejourRequest): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  if (data.nomLocataire !== undefined || data.emailLocataire !== undefined) {
+    out.locataire = {
+      nom:       data.nomLocataire,
+      email:     data.emailLocataire,
+      telephone: data.telephoneLocataire,
+      adresse:   data.adresseLocataire,
+    }
+  }
+  if (data.dateArrivee)    out.date_debut            = data.dateArrivee
+  if (data.dateDepart)     out.date_fin              = data.dateDepart
+  if (data.heureArriveePrevue !== undefined) out.heure_arrivee_prevue = data.heureArriveePrevue
+  if (data.heureDepartPrevu !== undefined)   out.heure_depart_prevu   = data.heureDepartPrevu
+  if (data.minPersonnesTotal !== undefined)  out.min_personnes_total  = data.minPersonnesTotal
+  if (data.notesInternes !== undefined)      out.notes                = data.notesInternes
+  if (data.objetSejour !== undefined)        out.objet_sejour         = data.objetSejour
+  if (data.nomGroupe !== undefined)          out.nom_groupe           = data.nomGroupe
+  if (data.categories) {
+    out.categories = data.categories.map((c) => ({
+      tarif_personne_id: Number(c.tarifPersonneId),
+      nb_previsionnel:   c.nbPrevisionnel,
+    }))
+  }
+  return out
 }
 
 function toWPPatchPersonnes(data: PatchPersonnesRequest): Record<string, unknown> {
@@ -300,6 +334,9 @@ export const sejourApi = {
   create: async (data: CreateSejourRequest) =>
     mapSejour(await request<unknown>('POST', '/sejours', toWPCreateSejour(data))),
 
+  update: async (id: string, data: UpdateSejourRequest) =>
+    mapSejour(await request<unknown>('PUT', `/sejours/${id}`, toWPUpdateSejour(data))),
+
   patchPersonnes: (id: string, data: PatchPersonnesRequest) =>
     request<void>('PATCH', `/sejours/${id}/personnes`, toWPPatchPersonnes(data)),
 
@@ -325,6 +362,9 @@ export const sejourApi = {
 
   renvoyerFacture: (id: string) =>
     request<void>('POST', `/sejours/${id}/facture/renvoyer`),
+
+  regenererFacture: async (id: string) =>
+    mapFacture(await request<unknown>('POST', `/sejours/${id}/facture/regenerer`)),
 
   addPaiement: async (id: string, data: CreatePaiementRequest) =>
     mapPaiement(await request<unknown>('POST', `/sejours/${id}/paiements`, toWPCreatePaiement(data))),
@@ -385,6 +425,9 @@ export const adminApi = {
 
   updateTarif: async (id: string, data: Partial<TarifPersonne>) =>
     mapTarif(await request<unknown>('PUT', `/admin/tarifs/${id}`, toWPTarif(data))),
+
+  deleteTarif: (id: string) =>
+    request<void>('DELETE', `/admin/tarifs/${id}`),
 
   getItems: async () => {
     const data = await request<unknown[]>('GET', '/admin/items')
