@@ -52,28 +52,46 @@ class SejourRepository {
 
     /**
      * Liste paginée avec filtre optionnel sur le statut.
+     * @param bool $actifs_only Si true, exclut les séjours dont date_fin < aujourd'hui
+     * @param string $order 'ASC' ou 'DESC' pour le tri par date_debut
      * @return array{items: array, total: int, page: int, size: int}
      */
-    public function find_paginated( ?string $statut, int $page, int $size ): array {
+    public function find_paginated( ?string $statut, int $page, int $size, bool $actifs_only = false, string $order = 'DESC' ): array {
         global $wpdb;
         $offset = $page * $size;
+        $order  = $order === 'ASC' ? 'ASC' : 'DESC';
+
+        $where_parts = [];
+        $params      = [];
 
         if ( $statut ) {
-            $total = (int) $wpdb->get_var( $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$this->table} WHERE statut = %s", $statut
-            ) );
-            $items = $wpdb->get_results( $wpdb->prepare(
-                "{$this->select_with_locataire()} WHERE s.statut = %s ORDER BY s.date_debut DESC LIMIT %d OFFSET %d",
-                $statut, $size, $offset
-            ), ARRAY_A ) ?: [];
-        } else {
-            $total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$this->table}" );
-            $items = $wpdb->get_results( $wpdb->prepare(
-                "{$this->select_with_locataire()} ORDER BY s.date_debut DESC LIMIT %d OFFSET %d",
-                $size, $offset
-            ), ARRAY_A ) ?: [];
+            $where_parts[] = 's.statut = %s';
+            $params[]      = $statut;
+        }
+        if ( $actifs_only ) {
+            $where_parts[] = 's.date_fin >= %s';
+            $params[]      = current_time( 'Y-m-d' );
         }
 
+        $where_clause = $where_parts ? 'WHERE ' . implode( ' AND ', $where_parts ) : '';
+        $where_clause_count = $where_parts ? 'WHERE ' . implode( ' AND ', $where_parts ) : '';
+
+        if ( $params ) {
+            $count_sql = $wpdb->prepare( "SELECT COUNT(*) FROM {$this->table} s $where_clause_count", ...$params );
+            $total     = (int) $wpdb->get_var( $count_sql );
+            $items_sql = $wpdb->prepare(
+                "{$this->select_with_locataire()} $where_clause ORDER BY s.date_debut $order LIMIT %d OFFSET %d",
+                ...array_merge( $params, [ $size, $offset ] )
+            );
+        } else {
+            $total     = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$this->table}" );
+            $items_sql = $wpdb->prepare(
+                "{$this->select_with_locataire()} ORDER BY s.date_debut $order LIMIT %d OFFSET %d",
+                $size, $offset
+            );
+        }
+
+        $items = $wpdb->get_results( $items_sql, ARRAY_A ) ?: [];
         return [ 'items' => $items, 'total' => $total, 'page' => $page, 'size' => $size ];
     }
 

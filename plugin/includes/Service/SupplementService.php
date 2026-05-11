@@ -6,6 +6,8 @@ namespace Locagest\Service;
 
 use Locagest\Repository\LigneSejourRepository;
 use Locagest\Repository\ConfigItemRepository;
+use Locagest\Repository\FactureRepository;
+use Locagest\Utils\Exceptions\ImmuabiliteFactureException;
 use Locagest\Utils\Exceptions\InvalidInputException;
 use Locagest\Utils\Exceptions\NotFoundException;
 
@@ -15,6 +17,7 @@ class SupplementService {
         private readonly LigneSejourRepository $ligne_repo,
         private readonly ConfigItemRepository  $item_repo,
         private readonly SejourService         $sejour_service,
+        private readonly ?FactureRepository    $facture_repo = null,
     ) {}
 
     /**
@@ -29,6 +32,7 @@ class SupplementService {
      */
     public function ajouter( int $sejour_id, array $data ): array {
         $this->sejour_service->find_or_fail( $sejour_id );
+        $this->check_facture_not_locked( $sejour_id );
         $type = $data['type'] ?? 'SUPPLEMENT';
 
         if ( $type === 'SUPPLEMENT' ) {
@@ -106,6 +110,14 @@ class SupplementService {
         ] );
 
         return $this->ligne_repo->find_by_id( $id );
+    }
+
+    private function check_facture_not_locked( int $sejour_id ): void {
+        if ( ! $this->facture_repo ) return;
+        $facture = $this->facture_repo->find_active_by_sejour( $sejour_id );
+        if ( $facture && in_array( $facture['statut'], [ 'EMISE', 'PAYEE' ], true ) ) {
+            throw new ImmuabiliteFactureException( $facture['numero'] );
+        }
     }
 
     private function ajouter_libre( int $sejour_id, array $data ): array {

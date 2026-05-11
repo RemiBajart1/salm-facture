@@ -48,6 +48,10 @@ export function NouveauSejour() {
   // Items adhésion déjà membres
   const [dejaMembreIds, setDejaMembreIds] = useState<Set<string>>(new Set())
 
+  // Suppléments présélectionnés
+  const [preselectedIds, setPreselectedIds] = useState<Set<string>>(new Set())
+  const [catalogueItems, setCatalogueItems] = useState<ConfigItem[]>([])
+
   // Paiement
   const [modePaiement, setModePaiement] = useState<ModePaiement>('CHEQUE')
   const [dateLimitePaiement, setDateLimitePaiement] = useState('')
@@ -72,6 +76,7 @@ export function NouveauSejour() {
           })),
         )
         setAdhesionItems(itemsData.filter((i) => i.actif && i.obligatoire))
+        setCatalogueItems(itemsData.filter((i) => i.actif && !i.obligatoire))
       })
       .catch((err) => {
         console.error('Erreur chargement tarifs/items:', err)
@@ -164,6 +169,15 @@ export function NouveauSejour() {
     })
   }
 
+  const togglePreselected = (itemId: string) => {
+    setPreselectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(itemId)) next.delete(itemId)
+      else next.add(itemId)
+      return next
+    })
+  }
+
   const handleSubmit = async () => {
     setSaving(true)
     setSaveError(null)
@@ -189,6 +203,7 @@ export function NouveauSejour() {
         objetSejour,
         nomGroupe: nomGroupe || undefined,
         dejaMembreItemIds: dejaMembreIds.size > 0 ? Array.from(dejaMembreIds) : undefined,
+        preselectedItemIds: preselectedIds.size > 0 ? Array.from(preselectedIds) : undefined,
         categories: catsActives,
       })
       setSaveSuccess(true)
@@ -499,6 +514,50 @@ export function NouveauSejour() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Suppléments présélectionnés */}
+      {catalogueItems.length > 0 && (
+        <div className={styles.dcard}>
+          <div className={styles.dcardTitle}>Suppléments présélectionnés</div>
+          <div className={styles.tealBox}>
+            ℹ️ Cochez les suppléments que le gardien retrouvera déjà ajoutés (quantité 1). Il pourra les modifier ou en ajouter d'autres.
+          </div>
+          {Object.entries(
+            catalogueItems.reduce<Record<string, ConfigItem[]>>((acc, item) => {
+              const cat = item.categorie
+              if (!acc[cat]) acc[cat] = []
+              acc[cat].push(item)
+              return acc
+            }, {}),
+          ).map(([cat, items]) => (
+            <div key={cat} style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6 }}>
+                {cat}
+              </div>
+              {items.map((item) => {
+                const checked = preselectedIds.has(item.id)
+                return (
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0' }}>
+                    <input
+                      id={`presel-${item.id}`}
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => togglePreselected(item.id)}
+                      style={{ width: 16, height: 16, accentColor: 'var(--teal)' }}
+                    />
+                    <label htmlFor={`presel-${item.id}`} style={{ cursor: 'pointer', fontSize: 13 }}>
+                      {item.designation}
+                      <span style={{ color: 'var(--text-muted)', fontSize: 12, marginLeft: 8 }}>
+                        {formatEuros(item.prixUnitaire)} / {item.unite === 'SEJOUR' ? 'séjour' : 'unité'}
+                      </span>
+                    </label>
+                  </div>
+                )
+              })}
+            </div>
+          ))}
         </div>
       )}
 

@@ -31,7 +31,9 @@ Le resp. location crée le séjour avec :
 - Le forfait minimum de personnes (`minPersonnesTotal`, défaut = valeur de `config_site.min_personnes_defaut`)
 - La catégorie de référence pour le forfait (`tarifForfaitCategorieId`)
 - **Case "Groupe déjà membre pour l'année civile"** : si cochée, la quantité de la carte de membre (item obligatoire) est pré-initialisée à 0 pour ce séjour. Voir [Suppléments obligatoires](supplements_catalogue.md#suppléments-obligatoires).
+- Peut préselectionner les suppléments
 
+Le resp. location a également possibilité de modifier toutes ces données via l'édition d'un séjour
 ---
 
 ## Facturation — séjour en cours
@@ -50,3 +52,9 @@ Le gardien saisit, pendant ou à la fin du séjour :
 
 Pour les règles de calcul de la facture, voir [Facturation](facturation.md).
 
+Règle Importante : une fois la facture éditée, le gardien ne peut plus saisir le nombre de personnes, les options, etc.
+Ces données doivent être verrouillées visuellement et techniquement
+
+En cas d'erreur, le gardien peut déclarer la facture invalide (séjour en cours uniquement) ce qui permet de débloquer la saisie pour corriger les données.
+Le trésorier peut aussi forcer une facture à l'état "invalide" pour permettre une correction en cas d'erreur détectée a posteriori.
+Une nouvelle facture (nouveau numéro) sera éditée dans ce cas.

@@ -663,6 +663,120 @@
   line-height: 1.7;
 }
 
+/* ── Filtre toggle ── */
+.filterRow {
+  display: flex;
+  gap: 6px;
+}
+
+.filterChip {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filterChipActive {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: white;
+}
+
+/* ── Liste des séjours ── */
+.sejourList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sejourListCard {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: all 0.15s;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sejourListCard:active {
+  transform: scale(0.98);
+  border-color: var(--forest);
+}
+
+.sejourCardDimmed {
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+.sejourCardHighlighted {
+  border-color: var(--forest);
+  border-width: 2px;
+  background: var(--green-dim);
+}
+
+.sejourListHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.sejourListDates {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sejourListNuits {
+  background: var(--cream-dk);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.sejourListBadge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+  background: var(--teal-dim);
+  color: var(--teal);
+}
+
+.sejourListBadge[data-statut="EN_COURS"] {
+  background: var(--warm-dim);
+  color: var(--warm);
+}
+
+.sejourListBadge[data-statut="TERMINE"] {
+  background: var(--green-dim);
+  color: var(--forest);
+}
+
+.sejourListSecondary {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 /* ── Empty state ── */
 .emptyState {
   display: flex;

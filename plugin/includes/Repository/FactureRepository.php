@@ -15,12 +15,25 @@ class FactureRepository {
         $this->seq_table = $wpdb->prefix . 'locagest_facture_sequence';
     }
 
-    public function find_by_sejour( int $sejour_id ): ?array {
+    /**
+     * Retourne la facture active (non invalidée) d'un séjour, ou null.
+     */
+    public function find_active_by_sejour( int $sejour_id ): ?array {
         global $wpdb;
         return $wpdb->get_row(
-            $wpdb->prepare( "SELECT * FROM {$this->table} WHERE sejour_id = %d", $sejour_id ),
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table} WHERE sejour_id = %d AND statut != 'INVALIDE' ORDER BY id DESC LIMIT 1",
+                $sejour_id
+            ),
             ARRAY_A
         ) ?: null;
+    }
+
+    /**
+     * Alias de compatibilité — retourne la facture active.
+     */
+    public function find_by_sejour( int $sejour_id ): ?array {
+        return $this->find_active_by_sejour( $sejour_id );
     }
 
     public function find_by_id( int $id ): ?array {
