@@ -197,6 +197,7 @@ export function NouveauSejour() {
         heureArriveePrevue: heureArrivee || undefined,
         heureDepartPrevu: heureDepart || undefined,
         minPersonnesTotal: minPersonnes,
+        tarifForfaitCategorieId: tarifForfaitCategorieId ?? undefined,
         modePaiement,
         dateLimitePaiement: dateLimitePaiement || undefined,
         optionsPresaisies: options || undefined,

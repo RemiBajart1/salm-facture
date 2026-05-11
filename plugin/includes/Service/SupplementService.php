@@ -58,6 +58,18 @@ class SupplementService {
         $quantite = $item['unite'] === 'SEJOUR' ? 1.0 : max( 1.0, (float) ( $data['quantite'] ?? 1 ) );
         $total    = round( $quantite * (float) $item['prix_unitaire'], 2 );
 
+        $existing = $this->ligne_repo->find_by_sejour_and_config_item( $sejour_id, (int) $item['id'] );
+        if ( $existing ) {
+            $this->ligne_repo->update( (int) $existing['id'], [
+                'libelle'       => $item['libelle'],
+                'quantite'      => $quantite,
+                'prix_unitaire' => $item['prix_unitaire'],
+                'prix_total'    => $total,
+                'statut'        => 'CONFIRME',
+            ] );
+            return $this->ligne_repo->find_by_id( (int) $existing['id'] );
+        }
+
         $id = $this->ligne_repo->create( [
             'sejour_id'      => $sejour_id,
             'type_ligne'     => 'SUPPLEMENT',

@@ -75,7 +75,7 @@ class SejourService {
             'heure_depart_prevu'        => $data['heure_depart_prevu'] ?? null,
             'statut'                    => 'PLANIFIE',
             'min_personnes_total'       => $data['min_personnes_total'] ?? $min_def,
-            'tarif_forfait_categorie_id'=> $data['tarif_forfait_categorie_id'],
+            'tarif_forfait_categorie_id'=> $data['tarif_forfait_categorie_id'] ?? null,
             'notes'                     => $data['notes'] ?? '',
             'objet_sejour'              => $data['objet_sejour'] ?? '',
             'nom_groupe'                => $data['nom_groupe'] ?? '',
