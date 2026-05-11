@@ -23,6 +23,7 @@ export type StatutFacture =
   | 'BROUILLON'
   | 'EMISE'
   | 'PAYEE'
+  | 'INVALIDE'
 
 export type ModePaiement =
   | 'CHEQUE'
@@ -160,6 +161,7 @@ export interface CreateSejourRequest {
   objetSejour: string
   nomGroupe?: string
   dejaMembreItemIds?: string[]
+  preselectedItemIds?: string[]
   categories: {
     tarifId: string  // UUID
     nbPrevues: number
@@ -179,6 +181,9 @@ export interface UpdateSejourRequest {
   notesInternes?: string
   objetSejour?: string
   nomGroupe?: string
+  modePaiement?: ModePaiement
+  dateLimitePaiement?: string
+  optionsPresaisies?: string
   categories?: {
     tarifPersonneId: string
     nbPrevisionnel: number

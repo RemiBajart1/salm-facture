@@ -6,15 +6,16 @@ import { sejourApi } from '../../services/api'
 import { formatEuros } from '../../utils/calcul'
 import type { ModePaiement } from '../../types'
 import type { GardienStep } from '../../pages/GardienPage'
-import { useCurrentSejour } from '../../hooks/useSejour'
+import { useSejourByIdOrCurrent } from '../../hooks/useSejour'
 
 interface EncaissementProps {
   onNavigate: (step: GardienStep) => void
+  sejourId?: string
 }
 
 /** G5 — Encaissement du paiement */
-export function Encaissement({ onNavigate }: EncaissementProps) {
-  const { sejour } = useCurrentSejour()
+export function Encaissement({ onNavigate, sejourId }: EncaissementProps) {
+  const { sejour } = useSejourByIdOrCurrent(sejourId)
   const [montantTotal, setMontantTotal] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [mode, setMode] = useState<ModePaiement>('CHEQUE')

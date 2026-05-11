@@ -8,4 +8,5 @@ enum StatutFacture: string {
     case BROUILLON = 'BROUILLON';
     case EMISE     = 'EMISE';
     case PAYEE     = 'PAYEE';
+    case INVALIDE  = 'INVALIDE';
 }

@@ -221,6 +221,7 @@ function toWPCreateSejour(data: CreateSejourRequest): Record<string, unknown> {
     objet_sejour:            data.objetSejour,
     nom_groupe:              data.nomGroupe ?? '',
     deja_membre_item_ids:    data.dejaMembreItemIds?.map(Number) ?? [],
+    preselected_item_ids:    data.preselectedItemIds?.map(Number) ?? [],
     categories:              data.categories.map((c) => ({
       tarif_personne_id: Number(c.tarifId),
       nb_previsionnel:   c.nbPrevues,
@@ -246,6 +247,9 @@ function toWPUpdateSejour(data: UpdateSejourRequest): Record<string, unknown> {
   if (data.notesInternes !== undefined)      out.notes                = data.notesInternes
   if (data.objetSejour !== undefined)        out.objet_sejour         = data.objetSejour
   if (data.nomGroupe !== undefined)          out.nom_groupe           = data.nomGroupe
+  if (data.modePaiement !== undefined)       out.mode_paiement        = data.modePaiement
+  if (data.dateLimitePaiement !== undefined) out.date_limite_paiement = data.dateLimitePaiement
+  if (data.optionsPresaisies !== undefined)  out.options_presaisies   = data.optionsPresaisies
   if (data.categories) {
     out.categories = data.categories.map((c) => ({
       tarif_personne_id: Number(c.tarifPersonneId),
@@ -321,11 +325,13 @@ export const sejourApi = {
   getById: async (id: string) =>
     mapSejour(await request<unknown>('GET', `/sejours/${id}`)),
 
-  list: async (statut?: string, page = 0, size = 20) => {
+  list: async (statut?: string, page = 0, size = 20, options?: { actif?: boolean; sort?: 'asc' | 'desc' }) => {
     const params = new URLSearchParams()
     if (statut) params.set('statut', statut)
     params.set('page', String(page))
     params.set('size', String(size))
+    if (options?.actif) params.set('actif', '1')
+    if (options?.sort) params.set('sort', options.sort)
     const data = await request<unknown>('GET', `/sejours?${params}`)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return mapPagedResponse<any, Sejour>(data, mapSejour)
@@ -365,6 +371,9 @@ export const sejourApi = {
 
   regenererFacture: async (id: string) =>
     mapFacture(await request<unknown>('POST', `/sejours/${id}/facture/regenerer`)),
+
+  invaliderFacture: (id: string) =>
+    request<{ message: string; ancien_numero: string }>('POST', `/sejours/${id}/facture/invalider`),
 
   addPaiement: async (id: string, data: CreatePaiementRequest) =>
     mapPaiement(await request<unknown>('POST', `/sejours/${id}/paiements`, toWPCreatePaiement(data))),

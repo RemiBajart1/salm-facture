@@ -18,14 +18,20 @@ const mockLocataires = [
   { id: 3, nom: 'Famille Martin',              email: 'c.martin@gmail.com',          telephone: '06 98 76 54 32' },
 ]
 
+const today = new Date()
+const todayStr = today.toISOString().slice(0, 10)
+const nextWeekStr = new Date(today.getTime() + 7 * 86400000).toISOString().slice(0, 10)
+const nextMonthStr = new Date(today.getTime() + 30 * 86400000).toISOString().slice(0, 10)
+const nextMonthEndStr = new Date(today.getTime() + 32 * 86400000).toISOString().slice(0, 10)
+
 const mockSejourCurrent = {
   id: 1,
   statut: 'EN_COURS',
   locataire_nom_snapshot:       'Famille Dupont',
   locataire_email_snapshot:     'jp.dupont@email.fr',
   locataire_telephone_snapshot: '06 12 34 56 78',
-  date_debut:           '2025-03-22',
-  date_fin:             '2025-03-29',
+  date_debut:           todayStr,
+  date_fin:             nextWeekStr,
   nb_nuits:             7,
   heure_arrivee_prevue: '15:00',
   heure_depart_prevu:   '10:00',
@@ -36,6 +42,8 @@ const mockSejourCurrent = {
   options_presaisies:   'Linge de maison inclus, animaux autorisés',
   mode_paiement:        'CHEQUE',
   notes:                null,
+  objet_sejour:         'Week-end anniversaire 40 ans',
+  nom_groupe:           'Les Amis de Pierre',
   categories: [
     { id: 1, nom_snapshot: "Membre de l'union", prix_nuit_snapshot: 14.0, nb_previsionnel: 25, nb_reelles: null },
     { id: 2, nom_snapshot: 'Groupe de jeunes',  prix_nuit_snapshot: 12.0, nb_previsionnel: 15, nb_reelles: null },
@@ -51,8 +59,8 @@ const mockSejours: any[] = [
     locataire_nom_snapshot:       'Association Les Randonneurs',
     locataire_email_snapshot:     'contact@randonneurs67.fr',
     locataire_telephone_snapshot: '03 88 45 67 89',
-    date_debut:           '2025-04-05',
-    date_fin:             '2025-04-07',
+    date_debut:           nextMonthStr,
+    date_fin:             nextMonthEndStr,
     nb_nuits:             2,
     heure_arrivee_prevue: '16:00',
     heure_depart_prevu:   '10:00',
@@ -63,6 +71,8 @@ const mockSejours: any[] = [
     options_presaisies:   null,
     mode_paiement:        'VIREMENT',
     notes:                null,
+    objet_sejour:         'Randonnée club vosges',
+    nom_groupe:           'Les Randonneurs 67',
     categories: [
       { id: 3, nom_snapshot: 'Extérieur', prix_nuit_snapshot: 18.0, nb_previsionnel: 42, nb_reelles: null },
     ],
@@ -85,6 +95,8 @@ const mockSejours: any[] = [
     options_presaisies:   null,
     mode_paiement:        'CHEQUE',
     notes:                null,
+    objet_sejour:         'Saint-Valentin en famille',
+    nom_groupe:           '',
     categories: [
       { id: 4, nom_snapshot: "Membre de l'union", prix_nuit_snapshot: 14.0, nb_previsionnel: 30, nb_reelles: 28 },
     ],
@@ -180,7 +192,16 @@ export const handlers = [
     const statut = url.searchParams.get('statut')
     const page   = parseInt(url.searchParams.get('page') ?? '0')
     const size   = parseInt(url.searchParams.get('size') ?? '20')
-    const filtered = statut ? mockSejours.filter((s) => s.statut === statut) : mockSejours
+    const actif  = url.searchParams.get('actif') === '1'
+    const sort   = url.searchParams.get('sort') === 'asc' ? 'asc' : 'desc'
+    const today  = new Date().toISOString().slice(0, 10)
+
+    let filtered = statut ? mockSejours.filter((s) => s.statut === statut) : [...mockSejours]
+    if (actif) filtered = filtered.filter((s) => s.date_fin >= today)
+    filtered.sort((a, b) => sort === 'asc'
+      ? a.date_debut.localeCompare(b.date_debut)
+      : b.date_debut.localeCompare(a.date_debut))
+
     return HttpResponse.json({
       items: filtered.slice(page * size, (page + 1) * size),
       total: filtered.length,
@@ -278,6 +299,12 @@ export const handlers = [
 
   /* Renvoyer facture */
   http.post(`${BASE}/sejours/:id/facture/renvoyer`, () => new HttpResponse(null, { status: 204 })),
+
+  /* Invalider facture */
+  http.post(`${BASE}/sejours/:id/facture/invalider`, () => {
+    mockFacture.statut = 'INVALIDE'
+    return HttpResponse.json({ message: 'Facture invalidée.', ancien_numero: mockFacture.numero })
+  }),
 
   /* Ajouter paiement */
   http.post(`${BASE}/sejours/:id/paiements`, async ({ request }) => {

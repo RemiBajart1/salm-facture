@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Locagest\Service;
 
 use Locagest\Repository\ConfigItemRepository;
+use Locagest\Repository\FactureRepository;
 use Locagest\Repository\LocataireRepository;
 use Locagest\Repository\LigneSejourRepository;
 use Locagest\Repository\SejourRepository;
 use Locagest\Repository\SejourCategorieRepository;
 use Locagest\Repository\TarifPersonneRepository;
 use Locagest\Repository\ConfigSiteRepository;
+use Locagest\Utils\Exceptions\ImmuabiliteFactureException;
 use Locagest\Utils\Exceptions\InvalidInputException;
 use Locagest\Utils\Exceptions\NotFoundException;
 
@@ -24,6 +26,7 @@ class SejourService {
         private readonly ConfigSiteRepository      $config_repo,
         private readonly ?ConfigItemRepository     $item_repo = null,
         private readonly ?LigneSejourRepository    $ligne_repo = null,
+        private readonly ?FactureRepository        $facture_repo = null,
     ) {}
 
     /**
@@ -114,6 +117,26 @@ class SejourService {
             }
         }
 
+        // Pré-créer les lignes pour les suppléments présélectionnés (quantité=1)
+        if ( ! empty( $data['preselected_item_ids'] ) && $this->item_repo && $this->ligne_repo ) {
+            foreach ( (array) $data['preselected_item_ids'] as $item_id ) {
+                $item = $this->item_repo->find_by_id( (int) $item_id );
+                if ( $item && $item['actif'] && ! $item['obligatoire'] ) {
+                    $prix = (float) $item['prix_unitaire'];
+                    $this->ligne_repo->create( [
+                        'sejour_id'      => $sejour_id,
+                        'type_ligne'     => 'SUPPLEMENT',
+                        'libelle'        => $item['libelle'],
+                        'quantite'       => 1,
+                        'prix_unitaire'  => $prix,
+                        'prix_total'     => $prix,
+                        'config_item_id' => (int) $item_id,
+                        'statut'         => 'CONFIRME',
+                    ] );
+                }
+            }
+        }
+
         return $this->get_detail( $sejour_id );
     }
 
@@ -152,7 +175,7 @@ class SejourService {
         }
 
         // Champs simples
-        $simple = [ 'heure_arrivee_prevue', 'heure_depart_prevu', 'notes', 'objet_sejour', 'nom_groupe', 'min_personnes_total', 'tarif_forfait_categorie_id' ];
+        $simple = [ 'heure_arrivee_prevue', 'heure_depart_prevu', 'notes', 'objet_sejour', 'nom_groupe', 'min_personnes_total', 'tarif_forfait_categorie_id', 'mode_paiement', 'date_limite_paiement', 'options_presaisies' ];
         foreach ( $simple as $field ) {
             if ( array_key_exists( $field, $data ) ) {
                 $update[ $field ] = $data[ $field ];
@@ -203,6 +226,7 @@ class SejourService {
      */
     public function update_personnes( int $sejour_id, array $data ): array {
         $this->find_or_fail( $sejour_id );
+        $this->check_facture_not_locked( $sejour_id );
         $update = [];
         if ( isset( $data['nb_adultes'] ) ) $update['nb_adultes'] = (int) $data['nb_adultes'];
         if ( isset( $data['nb_enfants'] ) ) $update['nb_enfants'] = (int) $data['nb_enfants'];
@@ -240,6 +264,14 @@ class SejourService {
         $sejour = $this->sejour_repo->find_by_id( $id );
         if ( ! $sejour ) throw new NotFoundException( "Séjour #$id introuvable." );
         return $sejour;
+    }
+
+    private function check_facture_not_locked( int $sejour_id ): void {
+        if ( ! $this->facture_repo ) return;
+        $facture = $this->facture_repo->find_active_by_sejour( $sejour_id );
+        if ( $facture && in_array( $facture['statut'], [ 'EMISE', 'PAYEE' ], true ) ) {
+            throw new ImmuabiliteFactureException( $facture['numero'] );
+        }
     }
 
     private function validate_dates( string $debut, string $fin ): void {

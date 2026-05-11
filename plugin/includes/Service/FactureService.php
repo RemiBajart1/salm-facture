@@ -209,6 +209,22 @@ class FactureService {
         return $facture;
     }
 
+    /**
+     * Invalide la facture active d'un séjour (EMISE ou PAYEE → INVALIDE).
+     * Une nouvelle facture pourra être générée ensuite avec un nouveau numéro.
+     */
+    public function invalider( int $sejour_id ): array {
+        $facture = $this->facture_repo->find_active_by_sejour( $sejour_id );
+        if ( ! $facture ) {
+            throw new NotFoundException( "Aucune facture active pour le séjour #$sejour_id." );
+        }
+        if ( $facture['statut'] === 'BROUILLON' ) {
+            throw new InvalidInputException( "Impossible d'invalider un brouillon — supprimez-le ou regénérez la facture." );
+        }
+        $this->facture_repo->update( (int) $facture['id'], [ 'statut' => 'INVALIDE' ] );
+        return [ 'message' => 'Facture invalidée.', 'ancien_numero' => $facture['numero'] ];
+    }
+
     public function get_by_sejour( int $sejour_id ): array {
         $facture = $this->facture_repo->find_by_sejour( $sejour_id );
         if ( ! $facture ) throw new NotFoundException( "Aucune facture pour le séjour #$sejour_id." );

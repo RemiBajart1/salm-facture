@@ -37,6 +37,7 @@ const STEP_BACK: Partial<Record<GardienStep, GardienStep>> = {
 /** Layout mobile-first du gardien avec navigation par étapes */
 export function GardienPage() {
   const [step, setStep] = useState<GardienStep>('accueil')
+  const [selectedSejourId, setSelectedSejourId] = useState<string | null>(null)
 
   const showSubHeader = step !== 'accueil' && step !== 'succes'
   const showStepper   = STEPS_WITH_STEPPER.includes(step)
@@ -44,16 +45,25 @@ export function GardienPage() {
   const backStep      = STEP_BACK[step]
   const stepLabel     = STEPS_WITH_STEPPER.includes(step) ? `${stepIdx + 1}/${STEP_ORDER.length}` : undefined
 
+  const handleNavigate = (newStep: GardienStep) => {
+    if (newStep === 'accueil') setSelectedSejourId(null)
+    setStep(newStep)
+  }
+
+  const handleSelectSejour = (sejourId: string) => {
+    setSelectedSejourId(sejourId)
+    setStep('personnes')
+  }
+
   return (
     <div className={styles.phone}>
-      {/* Navigation entre étapes */}
       {showSubHeader && (
         <div className={styles.subHeader}>
           {backStep && (
             <button
               type="button"
               className={styles.backBtn}
-              onClick={() => setStep(backStep)}
+              onClick={() => handleNavigate(backStep)}
             >
               ← {STEP_TITLES[backStep]}
             </button>
@@ -63,7 +73,6 @@ export function GardienPage() {
         </div>
       )}
 
-      {/* Barre de progression */}
       {showStepper && (
         <div className={styles.stepper}>
           {STEP_ORDER.map((s, idx) => (
@@ -75,14 +84,13 @@ export function GardienPage() {
         </div>
       )}
 
-      {/* Contenu */}
       <div className={styles.screenContent}>
-        {step === 'accueil'       && <AccueilGardien     onNavigate={setStep} />}
-        {step === 'personnes'     && <SaisiePersonnes    onNavigate={setStep} />}
-        {step === 'supplements'   && <SaisieSupplements  onNavigate={setStep} />}
-        {step === 'recapitulatif' && <Recapitulatif      onNavigate={setStep} />}
-        {step === 'encaissement'  && <Encaissement       onNavigate={setStep} />}
-        {step === 'succes'        && <SuccesPage         onNavigate={setStep} />}
+        {step === 'accueil'       && <AccueilGardien onNavigate={handleNavigate} onSelectSejour={handleSelectSejour} />}
+        {step === 'personnes'     && <SaisiePersonnes onNavigate={handleNavigate} sejourId={selectedSejourId ?? undefined} />}
+        {step === 'supplements'   && <SaisieSupplements onNavigate={handleNavigate} sejourId={selectedSejourId ?? undefined} />}
+        {step === 'recapitulatif' && <Recapitulatif onNavigate={handleNavigate} sejourId={selectedSejourId ?? undefined} />}
+        {step === 'encaissement'  && <Encaissement onNavigate={handleNavigate} sejourId={selectedSejourId ?? undefined} />}
+        {step === 'succes'        && <SuccesPage onNavigate={handleNavigate} />}
       </div>
     </div>
   )

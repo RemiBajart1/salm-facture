@@ -6,16 +6,17 @@ import { sejourApi } from '../../services/api'
 import { formatEuros } from '../../utils/calcul'
 import type { LigneSejour, Facture } from '../../types'
 import type { GardienStep } from '../../pages/GardienPage'
-import { useCurrentSejour } from '../../hooks/useSejour'
+import { useSejourByIdOrCurrent } from '../../hooks/useSejour'
 
 interface RecapitulatifProps {
   onNavigate: (step: GardienStep) => void
   onFactureGenerated?: (facture: Facture) => void
+  sejourId?: string
 }
 
 /** G4 — Récapitulatif de la facture avant envoi */
-export function Recapitulatif({ onNavigate, onFactureGenerated }: RecapitulatifProps) {
-  const { sejour } = useCurrentSejour()
+export function Recapitulatif({ onNavigate, onFactureGenerated, sejourId }: RecapitulatifProps) {
+  const { sejour } = useSejourByIdOrCurrent(sejourId)
   const [lignes, setLignes] = useState<LigneSejour[]>([])
   const [factureStatut, setFactureStatut] = useState<Facture['statut'] | null>(null)
   const [loading, setLoading] = useState(true)
@@ -83,6 +84,25 @@ export function Recapitulatif({ onNavigate, onFactureGenerated }: RecapitulatifP
     }
   }
 
+  const handleInvalider = async () => {
+    if (!sejour) return
+    const confirmed = window.confirm(
+      'Êtes-vous sûr de vouloir invalider cette facture ?\n\nLa saisie sera débloquée et une nouvelle facture (nouveau numéro) devra être générée.',
+    )
+    if (!confirmed) return
+    setSending(true)
+    setSendError(null)
+    try {
+      await sejourApi.invaliderFacture(sejour.id)
+      onNavigate('personnes')
+    } catch (err) {
+      console.error('Erreur invalidation facture:', err)
+      setSendError("Une erreur est survenue lors de l'invalidation.")
+    } finally {
+      setSending(false)
+    }
+  }
+
   return (
     <>
       <div className={styles.scrollArea}>
@@ -140,12 +160,24 @@ export function Recapitulatif({ onNavigate, onFactureGenerated }: RecapitulatifP
 
       <div className={styles.bottomBar}>
         {factureStatut === 'EMISE' || factureStatut === 'PAYEE' ? (
-          <div className={styles.infoBox} style={{ margin: 0 }}>
-            <span>🔒</span>
-            <span>
-              Facture <strong>{factureStatut === 'PAYEE' ? 'payée' : 'déjà envoyée'}</strong> — aucune modification possible.
-            </span>
-          </div>
+          <>
+            <div className={styles.infoBox} style={{ margin: 0 }}>
+              <span>🔒</span>
+              <span>
+                Facture <strong>{factureStatut === 'PAYEE' ? 'payée' : 'déjà envoyée'}</strong> — aucune modification possible.
+              </span>
+            </div>
+            {factureStatut === 'EMISE' && (
+              <button
+                className="btn-secondary"
+                style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
+                onClick={handleInvalider}
+                disabled={sending}
+              >
+                {sending ? 'Invalidation...' : 'Déclarer la facture invalide'}
+              </button>
+            )}
+          </>
         ) : (
           <>
             <button className="btn-primary" onClick={handleEnvoyer} disabled={sending}>

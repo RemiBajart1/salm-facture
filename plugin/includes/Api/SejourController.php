@@ -42,7 +42,7 @@ class SejourController {
             [
                 'methods'             => 'GET',
                 'callback'            => [ $this, 'list' ],
-                'permission_callback' => $resp,
+                'permission_callback' => $any,
             ],
             [
                 'methods'             => 'POST',
@@ -86,6 +86,12 @@ class SejourController {
             'methods'             => 'GET',
             'callback'            => [ $this, 'get_lignes' ],
             'permission_callback' => $any,
+        ] );
+
+        register_rest_route( self::NS, '/sejours/(?P<id>\d+)/facture/invalider', [
+            'methods'             => 'POST',
+            'callback'            => [ $this, 'invalider_facture' ],
+            'permission_callback' => $gardien_resp,
         ] );
 
         register_rest_route( self::NS, '/sejours/(?P<id>\d+)/facture/renvoyer', [
@@ -147,10 +153,12 @@ class SejourController {
 
     public function list( \WP_REST_Request $request ): \WP_REST_Response {
         return ExceptionHandler::handle( function () use ( $request ) {
-            $statut = $request->get_param( 'statut' ) ?: null;
-            $page   = max( 0, (int) ( $request->get_param( 'page' ) ?? 0 ) );
-            $size   = min( 100, max( 1, (int) ( $request->get_param( 'size' ) ?? 20 ) ) );
-            $result = $this->sejour_repo->find_paginated( $statut, $page, $size );
+            $statut      = $request->get_param( 'statut' ) ?: null;
+            $page        = max( 0, (int) ( $request->get_param( 'page' ) ?? 0 ) );
+            $size        = min( 100, max( 1, (int) ( $request->get_param( 'size' ) ?? 20 ) ) );
+            $actif_only  = filter_var( $request->get_param( 'actif' ), FILTER_VALIDATE_BOOLEAN );
+            $order       = strtoupper( $request->get_param( 'sort' ) ?? 'DESC' ) === 'ASC' ? 'ASC' : 'DESC';
+            $result = $this->sejour_repo->find_paginated( $statut, $page, $size, $actif_only, $order );
             return $this->sejour_service->enrich_list_with_categories( $result );
         } );
     }
@@ -211,6 +219,12 @@ class SejourController {
     public function get_facture( \WP_REST_Request $request ): \WP_REST_Response {
         return ExceptionHandler::handle( fn() =>
             $this->facture_service->get_by_sejour( (int) $request->get_param( 'id' ) )
+        );
+    }
+
+    public function invalider_facture( \WP_REST_Request $request ): \WP_REST_Response {
+        return ExceptionHandler::handle( fn() =>
+            $this->facture_service->invalider( (int) $request->get_param( 'id' ) )
         );
     }
 

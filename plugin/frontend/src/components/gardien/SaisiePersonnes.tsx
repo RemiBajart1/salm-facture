@@ -1,25 +1,34 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import styles from './Gardien.module.css'
 import { NumberInput } from '../common/NumberInput'
 import { ErrorBanner } from '../common/ErrorBanner'
 import { LoadingSpinner } from '../common/LoadingSpinner'
-import { useCurrentSejour } from '../../hooks/useSejour'
+import { useSejourByIdOrCurrent } from '../../hooks/useSejour'
 import { sejourApi } from '../../services/api'
 import { calculerHebergement, calculerTaxeSejour, calculerTaxeSejourEnfants, calculerEnergie, formatEuros } from '../../utils/calcul'
 import type { GardienStep } from '../../pages/GardienPage'
 
 interface SaisiePersonnesProps {
   onNavigate: (step: GardienStep) => void
+  sejourId?: string
 }
 
 /** G2 — Saisie des effectifs réels par catégorie + calcul temps réel */
-export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
-  const { sejour, loading, error, refresh } = useCurrentSejour()
+export function SaisiePersonnes({ onNavigate, sejourId }: SaisiePersonnesProps) {
+  const { sejour, loading, error, refresh } = useSejourByIdOrCurrent(sejourId)
   const [effectifs, setEffectifs] = useState<Record<string, number>>({})
   const [nbAdultes, setNbAdultes] = useState(0)
   const [nbEnfants, setNbEnfants] = useState(0)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [locked, setLocked] = useState(false)
+
+  useEffect(() => {
+    if (!sejour) return
+    sejourApi.getFacture(sejour.id)
+      .then((f) => setLocked(f.statut === 'EMISE' || f.statut === 'PAYEE'))
+      .catch(() => setLocked(false))
+  }, [sejour])
 
   // Initialise les effectifs avec les valeurs prévues (si pas encore saisis)
   const getEffectif = useCallback(
@@ -62,6 +71,23 @@ export function SaisiePersonnes({ onNavigate }: SaisiePersonnesProps) {
   if (loading) return <LoadingSpinner message="Chargement du séjour..." />
   if (error) return <ErrorBanner message={error} />
   if (!sejour) return null
+
+  if (locked) {
+    return (
+      <div className={styles.scrollArea}>
+        <div className={styles.warnBox}>
+          <span>🔒</span>
+          <span>
+            La facture a été émise — la saisie des personnes est verrouillée.
+            Pour modifier, invalidez la facture depuis le récapitulatif.
+          </span>
+        </div>
+        <button className="btn-secondary" onClick={() => onNavigate('recapitulatif')}>
+          Voir le récapitulatif
+        </button>
+      </div>
+    )
+  }
 
   const handleSubmit = async () => {
     setSaving(true)

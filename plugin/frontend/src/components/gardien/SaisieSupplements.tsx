@@ -5,12 +5,13 @@ import { LoadingSpinner } from '../common/LoadingSpinner'
 import { adminApi, sejourApi } from '../../services/api'
 import type { ConfigItem } from '../../types'
 import type { GardienStep } from '../../pages/GardienPage'
-import { useCurrentSejour } from '../../hooks/useSejour'
+import { useSejourByIdOrCurrent } from '../../hooks/useSejour'
 import { formatEuros } from '../../utils/calcul'
 import { buildAdhesionPayloads } from '../../utils/supplements'
 
 interface SaisieSupplementsProps {
   onNavigate: (step: GardienStep) => void
+  sejourId?: string
 }
 
 interface LigneLibre {
@@ -19,8 +20,8 @@ interface LigneLibre {
 }
 
 /** G3 — Saisie des suppléments (catalogue + saisie libre) */
-export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
-  const { sejour } = useCurrentSejour()
+export function SaisieSupplements({ onNavigate, sejourId }: SaisieSupplementsProps) {
+  const { sejour } = useSejourByIdOrCurrent(sejourId)
   const [items, setItems] = useState<ConfigItem[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -31,6 +32,14 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
   ])
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [locked, setLocked] = useState(false)
+
+  useEffect(() => {
+    if (!sejour) return
+    sejourApi.getFacture(sejour.id)
+      .then((f) => setLocked(f.statut === 'EMISE' || f.statut === 'PAYEE'))
+      .catch(() => setLocked(false))
+  }, [sejour])
 
   useEffect(() => {
     if (!sejour) return
@@ -157,6 +166,23 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
 
   if (loading) return <LoadingSpinner message="Chargement des suppléments..." />
   if (loadError) return <ErrorBanner message={loadError} />
+
+  if (locked) {
+    return (
+      <div className={styles.scrollArea}>
+        <div className={styles.warnBox}>
+          <span>🔒</span>
+          <span>
+            La facture a été émise — les suppléments sont verrouillés.
+            Pour modifier, invalidez la facture depuis le récapitulatif.
+          </span>
+        </div>
+        <button className="btn-secondary" onClick={() => onNavigate('recapitulatif')}>
+          Voir le récapitulatif
+        </button>
+      </div>
+    )
+  }
 
   return (
     <>

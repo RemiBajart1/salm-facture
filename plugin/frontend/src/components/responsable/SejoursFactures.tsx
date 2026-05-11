@@ -31,6 +31,13 @@ export function SejoursFactures() {
   const [editObjet, setEditObjet] = useState('')
   const [editNomGroupe, setEditNomGroupe] = useState('')
   const [editNotes, setEditNotes] = useState('')
+  const [editDateArrivee, setEditDateArrivee] = useState('')
+  const [editDateDepart, setEditDateDepart] = useState('')
+  const [editHeureArrivee, setEditHeureArrivee] = useState('')
+  const [editHeureDepart, setEditHeureDepart] = useState('')
+  const [editMinPersonnes, setEditMinPersonnes] = useState(40)
+  const [editModePaiement, setEditModePaiement] = useState('')
+  const [editOptions, setEditOptions] = useState('')
   const [editSaving, setEditSaving] = useState(false)
 
   useEffect(() => {
@@ -75,6 +82,13 @@ export function SejoursFactures() {
     setEditObjet(detail.objetSejour ?? '')
     setEditNomGroupe(detail.nomGroupe ?? '')
     setEditNotes(detail.notesInternes ?? '')
+    setEditDateArrivee(detail.dateArrivee ?? '')
+    setEditDateDepart(detail.dateDepart ?? '')
+    setEditHeureArrivee(detail.heureArriveePrevue ?? '')
+    setEditHeureDepart(detail.heureDepartPrevu ?? '')
+    setEditMinPersonnes(detail.minPersonnesTotal ?? 40)
+    setEditModePaiement(detail.modePaiement ?? 'CHEQUE')
+    setEditOptions(detail.optionsPresaisies ?? '')
     setEditing(true)
   }
 
@@ -87,6 +101,13 @@ export function SejoursFactures() {
         objetSejour: editObjet,
         nomGroupe: editNomGroupe,
         notesInternes: editNotes,
+        dateArrivee: editDateArrivee || undefined,
+        dateDepart: editDateDepart || undefined,
+        heureArriveePrevue: editHeureArrivee,
+        heureDepartPrevu: editHeureDepart,
+        minPersonnesTotal: editMinPersonnes,
+        modePaiement: editModePaiement as 'CHEQUE' | 'VIREMENT' || undefined,
+        optionsPresaisies: editOptions,
       })
       setDetail(updated)
       setSejours((prev) => prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s)))
@@ -302,31 +323,54 @@ export function SejoursFactures() {
                   <div className={modal.sectionTitle}>Informations générales</div>
                   {editing ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      <div className={styles.dformGroup}>
-                        <label className={styles.dformLabel}>Objet du séjour *</label>
-                        <input
-                          className={styles.dformInput}
-                          value={editObjet}
-                          onChange={(e) => setEditObjet(e.target.value)}
-                          placeholder="Ex: Anniversaire 40 ans"
-                        />
+                      <div className={styles.formGrid}>
+                        <div className={styles.dformGroup}>
+                          <label className={styles.dformLabel}>Objet du séjour *</label>
+                          <input className={styles.dformInput} value={editObjet} onChange={(e) => setEditObjet(e.target.value)} placeholder="Ex: Anniversaire 40 ans" />
+                        </div>
+                        <div className={styles.dformGroup}>
+                          <label className={styles.dformLabel}>Nom du groupe</label>
+                          <input className={styles.dformInput} value={editNomGroupe} onChange={(e) => setEditNomGroupe(e.target.value)} />
+                        </div>
+                      </div>
+                      <div className={styles.formGrid}>
+                        <div className={styles.dformGroup}>
+                          <label className={styles.dformLabel}>Date arrivée</label>
+                          <input className={styles.dformInput} type="date" value={editDateArrivee} onChange={(e) => setEditDateArrivee(e.target.value)} />
+                        </div>
+                        <div className={styles.dformGroup}>
+                          <label className={styles.dformLabel}>Date départ</label>
+                          <input className={styles.dformInput} type="date" value={editDateDepart} onChange={(e) => setEditDateDepart(e.target.value)} />
+                        </div>
+                        <div className={styles.dformGroup}>
+                          <label className={styles.dformLabel}>Heure arrivée</label>
+                          <input className={styles.dformInput} type="time" value={editHeureArrivee} onChange={(e) => setEditHeureArrivee(e.target.value)} />
+                        </div>
+                        <div className={styles.dformGroup}>
+                          <label className={styles.dformLabel}>Heure départ</label>
+                          <input className={styles.dformInput} type="time" value={editHeureDepart} onChange={(e) => setEditHeureDepart(e.target.value)} />
+                        </div>
+                      </div>
+                      <div className={styles.formGrid}>
+                        <div className={styles.dformGroup}>
+                          <label className={styles.dformLabel}>Min. personnes</label>
+                          <input className={styles.dformInput} type="number" min={1} value={editMinPersonnes} onChange={(e) => setEditMinPersonnes(parseInt(e.target.value, 10) || 40)} />
+                        </div>
+                        <div className={styles.dformGroup}>
+                          <label className={styles.dformLabel}>Mode paiement</label>
+                          <select className={styles.dformInput} value={editModePaiement} onChange={(e) => setEditModePaiement(e.target.value)}>
+                            <option value="CHEQUE">Chèque</option>
+                            <option value="VIREMENT">Virement</option>
+                          </select>
+                        </div>
                       </div>
                       <div className={styles.dformGroup}>
-                        <label className={styles.dformLabel}>Nom du groupe</label>
-                        <input
-                          className={styles.dformInput}
-                          value={editNomGroupe}
-                          onChange={(e) => setEditNomGroupe(e.target.value)}
-                        />
+                        <label className={styles.dformLabel}>Options présaisies</label>
+                        <textarea className={styles.dformInput} rows={2} value={editOptions} onChange={(e) => setEditOptions(e.target.value)} placeholder="Ex: Linge de maison inclus" />
                       </div>
                       <div className={styles.dformGroup}>
                         <label className={styles.dformLabel}>Notes internes</label>
-                        <textarea
-                          className={styles.dformInput}
-                          rows={2}
-                          value={editNotes}
-                          onChange={(e) => setEditNotes(e.target.value)}
-                        />
+                        <textarea className={styles.dformInput} rows={2} value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
                       </div>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button
