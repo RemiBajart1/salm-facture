@@ -223,9 +223,20 @@ class SejourController {
     }
 
     public function invalider_facture( \WP_REST_Request $request ): \WP_REST_Response {
-        return ExceptionHandler::handle( fn() =>
-            $this->facture_service->invalider( (int) $request->get_param( 'id' ) )
-        );
+        return ExceptionHandler::handle( function () use ( $request ) {
+            $sejour_id  = (int) $request->get_param( 'id' );
+            $user_roles = (array) $request->get_param( '_jwt_user_roles' );
+            $is_tresorier = in_array( 'locagest_tresorier', $user_roles, true );
+
+            if ( ! $is_tresorier ) {
+                $sejour = $this->sejour_service->find_or_fail( $sejour_id );
+                if ( $sejour['statut'] !== 'EN_COURS' ) {
+                    throw new InvalidInputException( "Le gardien ne peut invalider une facture que sur un séjour en cours." );
+                }
+            }
+
+            return $this->facture_service->invalider( $sejour_id );
+        } );
     }
 
     public function renvoyer_facture( \WP_REST_Request $request ): \WP_REST_Response {

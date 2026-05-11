@@ -106,7 +106,7 @@ export function SejoursFactures() {
         heureArriveePrevue: editHeureArrivee,
         heureDepartPrevu: editHeureDepart,
         minPersonnesTotal: editMinPersonnes,
-        modePaiement: editModePaiement as 'CHEQUE' | 'VIREMENT' || undefined,
+        modePaiement: (editModePaiement || undefined) as 'CHEQUE' | 'VIREMENT' | undefined,
         optionsPresaisies: editOptions,
       })
       setDetail(updated)
