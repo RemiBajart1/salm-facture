@@ -33,10 +33,11 @@
 | `GET` | `/api/v1/admin/tarifs` | resp, trésorier | Lister les tarifs/personne |
 | `POST` | `/api/v1/admin/tarifs` | trésorier | Créer un tarif |
 | `PUT` | `/api/v1/admin/tarifs/{id}` | trésorier | Modifier un tarif |
+| `DELETE` | `/api/v1/admin/tarifs/{id}` | trésorier | Supprimer un tarif (409 si utilisé par un séjour) |
 | `GET` | `/api/v1/admin/items` | resp, trésorier | Lister les items catalogue |
 | `POST` | `/api/v1/admin/items` | resp, trésorier | Créer un item |
 | `PUT` | `/api/v1/admin/items/{id}` | resp, trésorier | Modifier un item |
-| `DELETE` | `/api/v1/admin/items/{id}` | resp, trésorier | Désactiver un item |
+| `DELETE` | `/api/v1/admin/items/{id}` | resp, trésorier | Supprimer un item (409 si utilisé par un séjour) |
 | `GET` | `/api/v1/admin/lignes-libres` | resp, trésorier | Saisies libres en attente |
 | `POST` | `/api/v1/admin/lignes-libres/{id}/promouvoir` | resp, trésorier | Promouvoir → catalogue |
 | `GET` | `/api/v1/admin/config` | trésorier | Lire la config site |

@@ -349,6 +349,22 @@ export const handlers = [
     return HttpResponse.json(mockTarifs[idx])
   }),
 
+  http.delete(`${BASE}/admin/tarifs/:id`, ({ params }) => {
+    const idx = mockTarifs.findIndex((t) => String(t.id) === String(params.id))
+    if (idx === -1) return HttpResponse.json({ message: 'Tarif introuvable' }, { status: 404 })
+    const isUsed = mockSejours.some((s) =>
+      s.categories?.some((c: any) => c.nom_snapshot === mockTarifs[idx].nom)
+    )
+    if (isUsed) {
+      return HttpResponse.json(
+        { code: 'locagest_error', message: 'Ce tarif est utilisé par des séjours existants. Vous pouvez uniquement le désactiver.' },
+        { status: 409 },
+      )
+    }
+    mockTarifs.splice(idx, 1)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
   /* Items */
   http.get(`${BASE}/admin/items`, () => HttpResponse.json(mockItems)),
 
@@ -369,7 +385,15 @@ export const handlers = [
 
   http.delete(`${BASE}/admin/items/:id`, ({ params }) => {
     const idx = mockItems.findIndex((i) => String(i.id) === String(params.id))
-    if (idx !== -1) mockItems[idx].actif = false
+    if (idx === -1) return HttpResponse.json({ message: 'Item introuvable' }, { status: 404 })
+    const isUsed = mockLignes.some((l) => l.config_item_id === mockItems[idx].id)
+    if (isUsed) {
+      return HttpResponse.json(
+        { code: 'locagest_error', message: 'Cet item est utilisé par des séjours existants. Vous pouvez uniquement le désactiver.' },
+        { status: 409 },
+      )
+    }
+    mockItems.splice(idx, 1)
     return new HttpResponse(null, { status: 204 })
   }),
 

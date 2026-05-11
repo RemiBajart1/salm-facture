@@ -9,6 +9,7 @@ use Locagest\Repository\ConfigSiteRepository;
 use Locagest\Repository\LigneSejourRepository;
 use Locagest\Service\ConfigItemService;
 use Locagest\Utils\ExceptionHandler;
+use Locagest\Utils\Exceptions\ConflictException;
 use Locagest\Utils\Exceptions\NotFoundException;
 
 class AdminController {
@@ -127,7 +128,10 @@ class AdminController {
         return ExceptionHandler::handle( function () use ( $request ) {
             $id = (int) $request->get_param( 'id' );
             if ( ! $this->tarif_repo->find_by_id( $id ) ) throw new NotFoundException( "Tarif #$id introuvable." );
-            $this->tarif_repo->deactivate( $id );
+            if ( $this->tarif_repo->is_used( $id ) ) {
+                throw new ConflictException( "Ce tarif est utilisé par des séjours existants. Vous pouvez uniquement le désactiver." );
+            }
+            $this->tarif_repo->hard_delete( $id );
             return new \WP_REST_Response( null, 204 );
         } );
     }
@@ -166,7 +170,7 @@ class AdminController {
 
     public function delete_item( \WP_REST_Request $request ): \WP_REST_Response {
         return ExceptionHandler::handle( function () use ( $request ) {
-            $this->item_service->deactivate( (int) $request->get_param( 'id' ) );
+            $this->item_service->delete( (int) $request->get_param( 'id' ) );
             return new \WP_REST_Response( null, 204 );
         } );
     }

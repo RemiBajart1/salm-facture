@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import styles from '../responsable/Desktop.module.css'
 import { ErrorBanner } from '../common/ErrorBanner'
 import { LoadingSpinner } from '../common/LoadingSpinner'
-import { adminApi } from '../../services/api'
+import { adminApi, ApiError } from '../../services/api'
 import type { ConfigItem } from '../../types'
 import { formatEuros } from '../../utils/calcul'
 
@@ -86,10 +86,29 @@ export function ItemsSupplements() {
     }
   }
 
+  const [confirmDeactivateId, setConfirmDeactivateId] = useState<string | null>(null)
+
   const handleDelete = async (id: string) => {
     setActionError(null)
+    setConfirmDeactivateId(null)
     try {
       await adminApi.deleteItem(id)
+      setItems((prev) => prev.filter((i) => i.id !== id))
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setConfirmDeactivateId(id)
+      } else {
+        console.error('Erreur suppression item:', err)
+        setActionError('Une erreur est survenue.')
+      }
+    }
+  }
+
+  const handleDeactivate = async (id: string) => {
+    setConfirmDeactivateId(null)
+    setActionError(null)
+    try {
+      await adminApi.updateItem(id, { actif: false })
       setItems((prev) => prev.map((i) => (i.id === id ? { ...i, actif: false } : i)))
     } catch (err) {
       console.error('Erreur désactivation item:', err)
@@ -110,6 +129,28 @@ export function ItemsSupplements() {
   return (
     <div className={styles.dcard}>
       <div className={styles.dcardTitle}>Catalogue d'items facturables</div>
+
+      {confirmDeactivateId && (
+        <div className={styles.tealBox}>
+          Cet item est utilisé par des séjours existants et ne peut pas être supprimé.{' '}
+          <button
+            type="button"
+            className={styles.tblEdit}
+            onClick={() => handleDeactivate(confirmDeactivateId)}
+            style={{ marginLeft: 8 }}
+          >
+            Désactiver à la place
+          </button>
+          <button
+            type="button"
+            className={styles.tblEdit}
+            onClick={() => setConfirmDeactivateId(null)}
+            style={{ marginLeft: 4 }}
+          >
+            Annuler
+          </button>
+        </div>
+      )}
 
       {actionError && <ErrorBanner message={actionError} onDismiss={() => setActionError(null)} />}
 
@@ -213,7 +254,7 @@ export function ItemsSupplements() {
                             className={styles.tblDel}
                             onClick={() => handleDelete(item.id)}
                           >
-                            Désactiver
+                            Supprimer
                           </button>
                         )}
                       </div>

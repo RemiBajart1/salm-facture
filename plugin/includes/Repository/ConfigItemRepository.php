@@ -44,4 +44,18 @@ class ConfigItemRepository {
         global $wpdb;
         $wpdb->update( $this->table, [ 'actif' => 0 ], [ 'id' => $id ] );
     }
+
+    public function is_used( int $id ): bool {
+        global $wpdb;
+        $table = $wpdb->prefix . 'locagest_ligne_sejour';
+        $count = (int) $wpdb->get_var(
+            $wpdb->prepare( "SELECT COUNT(*) FROM $table WHERE config_item_id = %d", $id )
+        );
+        return $count > 0;
+    }
+
+    public function hard_delete( int $id ): void {
+        global $wpdb;
+        $wpdb->delete( $this->table, [ 'id' => $id ] );
+    }
 }

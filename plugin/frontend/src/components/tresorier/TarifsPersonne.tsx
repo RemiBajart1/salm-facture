@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import styles from '../responsable/Desktop.module.css'
 import { ErrorBanner } from '../common/ErrorBanner'
 import { LoadingSpinner } from '../common/LoadingSpinner'
-import { adminApi } from '../../services/api'
+import { adminApi, ApiError } from '../../services/api'
 import type { TarifPersonne } from '../../types'
 import { formatEuros } from '../../utils/calcul'
 
@@ -67,10 +67,29 @@ export function TarifsPersonne() {
     setEditDesc(t.description ?? '')
   }
 
-  const handleDeactivate = async (id: string) => {
+  const [confirmDeactivateId, setConfirmDeactivateId] = useState<string | null>(null)
+
+  const handleDelete = async (id: string) => {
     setActionError(null)
+    setConfirmDeactivateId(null)
     try {
       await adminApi.deleteTarif(id)
+      setTarifs((prev) => prev.filter((t) => t.id !== id))
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setConfirmDeactivateId(id)
+      } else {
+        console.error('Erreur suppression tarif:', err)
+        setActionError('Une erreur est survenue.')
+      }
+    }
+  }
+
+  const handleDeactivate = async (id: string) => {
+    setConfirmDeactivateId(null)
+    setActionError(null)
+    try {
+      await adminApi.updateTarif(id, { actif: false })
       setTarifs((prev) => prev.map((t) => (t.id === id ? { ...t, actif: false } : t)))
     } catch (err) {
       console.error('Erreur désactivation tarif:', err)
@@ -110,6 +129,28 @@ export function TarifsPersonne() {
       <div className={styles.tealBox}>
         ⚠️ La modification d'un tarif n'affecte <strong>pas les séjours existants</strong> (les prix sont copiés au moment de la création du séjour).
       </div>
+
+      {confirmDeactivateId && (
+        <div className={styles.tealBox}>
+          Ce tarif est utilisé par des séjours existants et ne peut pas être supprimé.{' '}
+          <button
+            type="button"
+            className={styles.tblEdit}
+            onClick={() => handleDeactivate(confirmDeactivateId)}
+            style={{ marginLeft: 8 }}
+          >
+            Désactiver à la place
+          </button>
+          <button
+            type="button"
+            className={styles.tblEdit}
+            onClick={() => setConfirmDeactivateId(null)}
+            style={{ marginLeft: 4 }}
+          >
+            Annuler
+          </button>
+        </div>
+      )}
 
       {actionError && <ErrorBanner message={actionError} onDismiss={() => setActionError(null)} />}
 
@@ -189,9 +230,9 @@ export function TarifsPersonne() {
                         <button
                           type="button"
                           className={styles.tblDel}
-                          onClick={() => handleDeactivate(tarif.id)}
+                          onClick={() => handleDelete(tarif.id)}
                         >
-                          Désactiver
+                          Supprimer
                         </button>
                       )}
                     </div>

@@ -6,6 +6,7 @@ namespace Locagest\Service;
 
 use Locagest\Repository\ConfigItemRepository;
 use Locagest\Repository\LigneSejourRepository;
+use Locagest\Utils\Exceptions\ConflictException;
 use Locagest\Utils\Exceptions\InvalidInputException;
 use Locagest\Utils\Exceptions\NotFoundException;
 
@@ -51,6 +52,14 @@ class ConfigItemService {
     public function deactivate( int $id ): void {
         $this->find_or_fail( $id );
         $this->item_repo->deactivate( $id );
+    }
+
+    public function delete( int $id ): void {
+        $this->find_or_fail( $id );
+        if ( $this->item_repo->is_used( $id ) ) {
+            throw new ConflictException( "Cet item est utilisé par des séjours existants. Vous pouvez uniquement le désactiver." );
+        }
+        $this->item_repo->hard_delete( $id );
     }
 
     /**
