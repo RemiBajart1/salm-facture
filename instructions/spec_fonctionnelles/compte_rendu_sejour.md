@@ -20,6 +20,7 @@ Les compte-rendus sont visibles (lecture seule) par les autres gardiens pour les
 - Commentaire libre sur le séjour
 - Photos éventuelles
 - Statut des items des checklists associées
+- Nombre total de personnes
 
 ## Lien avec les checklist (TODO)
 Une checklist est associée à chaque séjour, avec des items à cocher par le gardien pendant ou à la fin du séjour (ex : "Vérifier l'état de la vaisselle", "Vérifier les matelas", "Vérifier les équipements de sécurité", etc.). Voir [Checklist](checklist.md).

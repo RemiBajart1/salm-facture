@@ -35,8 +35,7 @@ Un gardien peut demander à assurer la garde d'un séjour donné.
 - Valider ou refuser les demandes de garde des gardiens
 - Modifier les affectations (réaffecter un séjour à un autre gardien)
 - Saisir directement une affectation sans passer par une demande
-- **Vue calendrier** indispensable : visualisation de tous les séjours avec leur gardien affecté
-- Mise en avant des séjours **sans gardien affecté** pour faciliter la gestion
+- **Vue liste des séjours** indispensable : visualisation de tous les séjours avec leur gardien affecté  
 
 ---
 
