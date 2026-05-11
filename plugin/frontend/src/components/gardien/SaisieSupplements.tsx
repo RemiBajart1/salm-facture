@@ -210,40 +210,55 @@ export function SaisieSupplements({ onNavigate }: SaisieSupplementsProps) {
         {Object.entries(groupedItems).map(([cat, catItems]) => (
           <div key={cat} className={styles.card}>
             <div className={styles.cardTitle}>{categoryLabels[cat] ?? cat}</div>
-            {catItems.map((item) => (
-              <div key={item.id} className={styles.supplementItem}>
-                <div>
-                  <div className={styles.supplName}>{item.designation}</div>
-                  <div className={styles.supplPrice}>
-                    {formatEuros(item.prixUnitaire)} / {item.unite}
+            {catItems.map((item) => {
+              const qty = quantites[item.id] ?? 0
+              const checked = qty > 0
+              return (
+                <div key={item.id} className={styles.supplementItem}>
+                  <div>
+                    <div className={styles.supplName}>{item.designation}</div>
+                    <div className={styles.supplPrice}>
+                      {formatEuros(item.prixUnitaire)} / {item.unite === 'SEJOUR' ? 'séjour' : 'unité'}
+                    </div>
                   </div>
+                  {item.unite === 'SEJOUR' ? (
+                    <button
+                      type="button"
+                      className={`${styles.payChip} ${checked ? styles.payChipSelected : ''}`}
+                      style={{ minWidth: 80, fontSize: 13 }}
+                      onClick={() => setQuantites((prev) => ({ ...prev, [item.id]: checked ? 0 : 1 }))}
+                      aria-pressed={checked}
+                      aria-label={item.designation}
+                    >
+                      {checked ? '✓ Inclus' : 'Ajouter'}
+                    </button>
+                  ) : (
+                    <div className={styles.supplControls}>
+                      <button
+                        type="button"
+                        className={styles.supplBtn}
+                        onClick={() => handleQuantite(item.id, -1)}
+                        disabled={qty === 0}
+                        aria-label={`Diminuer ${item.designation}`}
+                      >
+                        −
+                      </button>
+                      <div className={`${styles.supplCount} ${qty === 0 ? styles.supplCountZero : ''}`}>
+                        {qty}
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.supplBtn}
+                        onClick={() => handleQuantite(item.id, 1)}
+                        aria-label={`Augmenter ${item.designation}`}
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div className={styles.supplControls}>
-                  <button
-                    type="button"
-                    className={styles.supplBtn}
-                    onClick={() => handleQuantite(item.id, -1)}
-                    disabled={(quantites[item.id] ?? 0) === 0}
-                    aria-label={`Diminuer ${item.designation}`}
-                  >
-                    −
-                  </button>
-                  <div
-                    className={`${styles.supplCount} ${(quantites[item.id] ?? 0) === 0 ? styles.supplCountZero : ''}`}
-                  >
-                    {quantites[item.id] ?? 0}
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.supplBtn}
-                    onClick={() => handleQuantite(item.id, 1)}
-                    aria-label={`Augmenter ${item.designation}`}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         ))}
 
