@@ -6,7 +6,16 @@ import { NumberInput } from '../NumberInput'
 describe('NumberInput', () => {
   it('affiche la valeur initiale', () => {
     render(<NumberInput value={5} onChange={() => {}} />)
-    expect(screen.getByText('5')).toBeInTheDocument()
+    expect(screen.getByRole('spinbutton')).toHaveValue(5)
+  })
+
+  it('accepte la saisie clavier', async () => {
+    const onChange = vi.fn()
+    render(<NumberInput value={3} onChange={onChange} />)
+    const input = screen.getByRole('spinbutton')
+    await userEvent.clear(input)
+    await userEvent.type(input, '8')
+    expect(onChange).toHaveBeenLastCalledWith(8)
   })
 
   it('appelle onChange avec valeur - 1 au clic sur −', async () => {

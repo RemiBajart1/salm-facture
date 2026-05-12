@@ -49,3 +49,4 @@ plugin/frontend/node_modules/
 /backend/build/
 /backend/.gradle/
 /.mcp.json
+/.playwright-mcp/
