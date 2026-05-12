@@ -59,24 +59,107 @@ salm-facture/
 
 ---
 
-## Installation
+## Environnement local (Docker)
+
+### Prérequis
+- [Docker Desktop](https://docs.docker.com/get-docker/) (inclut Docker Compose v2)
+- Node 20+ via [fnm](https://github.com/Schniz/fnm) — pour le build et les tests frontend uniquement
+
+### Démarrer la stack
+
+```bash
+# Cloner le dépôt puis :
+docker compose up -d
+```
+
+Cela lance deux conteneurs :
+
+| Conteneur | Image | Accès |
+|---|---|---|
+| `locagest-wp` | WordPress 6.7 + PHP 8.2 + Apache | [http://localhost:8080](http://localhost:8080) |
+| `locagest-db` | MariaDB 10.11 | `localhost:3306` |
+
+Au premier démarrage, WordPress s'installe automatiquement. Le plugin LocaGest est monté en direct depuis `./plugin/` — toute modification PHP est visible immédiatement sans redémarrage.
+
+### Variables d'environnement
+
+Copier `.env.example` en `.env` à la racine du projet et ajuster si besoin :
+
+```bash
+cp .env.example .env          # les valeurs par défaut conviennent pour le dev
+```
+
+Les variables disponibles :
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `MYSQL_ROOT_PASSWORD` | `root` | Mot de passe root MariaDB |
+| `MYSQL_DATABASE` | `locagest_wp` | Nom de la base |
+| `MYSQL_USER` | `locagest` | Utilisateur applicatif |
+| `MYSQL_PASSWORD` | `locagest` | Mot de passe applicatif |
+| `LOCAGEST_JWT_SECRET` | `dev-secret-key-changeme` | **Changer en production** |
+
+### Build du frontend
+
+Le frontend React est servi par WordPress via les artefacts compilés dans `plugin/frontend/build/`. Après chaque modification des sources :
+
+```bash
+cd plugin/frontend
+fnm use 20
+npm install          # première fois uniquement
+npm run build        # → plugin/frontend/build/ (lu immédiatement par le conteneur)
+```
+
+Pas de redémarrage Docker nécessaire — le volume monte `./plugin/` en direct.
+
+### Tests backend (PHP)
+
+Les tests PHPUnit s'exécutent dans le conteneur WordPress :
+
+```bash
+# Tests unitaires
+docker compose exec wordpress phpunit --testdox --testsuite=Unit
+
+# Tests d'intégration
+docker compose exec wordpress phpunit --testdox --testsuite=Integration
+```
+
+### Commandes Docker utiles
+
+```bash
+docker compose up -d          # démarrer la stack
+docker compose down           # arrêter (données conservées dans les volumes)
+docker compose down -v        # arrêter + supprimer les volumes (reset complet)
+docker compose logs -f        # suivre les logs de tous les conteneurs
+docker compose logs -f wordpress   # logs WordPress/Apache uniquement
+docker compose exec wordpress bash # shell dans le conteneur WordPress
+docker compose exec db mariadb -u locagest -plocagest locagest_wp  # console SQL
+```
+
+---
+
+## Installation en production
 
 ### Prérequis
 - WordPress 6.x avec PHP 8.2+
 - MySQL 8 ou MariaDB 10.6+
 - Composer (pour les dépendances PHP)
-- Node 20+ (pour le développement frontend uniquement)
+- Node 20+ (pour le build frontend — à faire en amont, pas sur le serveur)
 
-### Déploiement du plugin
+### Déployer le plugin
+
 ```bash
-# 1. Copier le répertoire plugin/ dans wp-content/plugins/locagest/
+# 1. Construire le frontend en local
+cd plugin/frontend && npm run build
+
+# 2. Copier le répertoire plugin/ dans wp-content/plugins/locagest/
 cp -r plugin/ /path/to/wordpress/wp-content/plugins/locagest/
 
-# 2. Installer les dépendances PHP
+# 3. Installer les dépendances PHP (sans les dépendances de dev)
 cd /path/to/wordpress/wp-content/plugins/locagest/
-composer install --no-dev
+composer install --no-dev --optimize-autoloader
 
-# 3. Activer le plugin dans WordPress Admin → Extensions
+# 4. Activer le plugin dans WordPress Admin → Extensions
 ```
 
 L'activation crée automatiquement :

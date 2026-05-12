@@ -222,6 +222,7 @@ function toWPCreateSejour(data: CreateSejourRequest): Record<string, unknown> {
     nom_groupe:              data.nomGroupe ?? '',
     deja_membre_item_ids:    data.dejaMembreItemIds?.map(Number) ?? [],
     preselected_item_ids:    data.preselectedItemIds?.map(Number) ?? [],
+    tarif_forfait_categorie_id: data.tarifForfaitCategorieId ? Number(data.tarifForfaitCategorieId) : null,
     categories:              data.categories.map((c) => ({
       tarif_personne_id: Number(c.tarifId),
       nb_previsionnel:   c.nbPrevues,

@@ -63,6 +63,7 @@ class SupplementServiceTest extends LocagestUnitTestCase {
         $this->sejour_exist();
         $item = [ 'id' => 1, 'libelle' => 'Casse assiette', 'prix_unitaire' => 5.0, 'unite' => 'UNITE', 'actif' => true ];
         $this->item_repo->shouldReceive( 'find_by_id' )->andReturn( $item );
+        $this->ligne_repo->shouldReceive( 'find_by_sejour_and_config_item' )->with( 1, 1 )->andReturn( null );
         $this->ligne_repo->shouldReceive( 'create' )
             ->withArgs( fn( $d ) => $d['prix_total'] === 15.0 && $d['quantite'] === 3.0 )
             ->andReturn( 10 );
@@ -79,6 +80,7 @@ class SupplementServiceTest extends LocagestUnitTestCase {
         $this->sejour_exist();
         $item = [ 'id' => 2, 'libelle' => 'Ménage', 'prix_unitaire' => 80.0, 'unite' => 'SEJOUR', 'actif' => true ];
         $this->item_repo->shouldReceive( 'find_by_id' )->andReturn( $item );
+        $this->ligne_repo->shouldReceive( 'find_by_sejour_and_config_item' )->with( 1, 2 )->andReturn( null );
         $this->ligne_repo->shouldReceive( 'create' )
             ->withArgs( fn( $d ) => $d['quantite'] === 1.0 && $d['prix_total'] === 80.0 )
             ->andReturn( 11 );
@@ -88,6 +90,26 @@ class SupplementServiceTest extends LocagestUnitTestCase {
         // Même si quantite=5 est fournie, elle doit être ignorée
         $result = $this->service->ajouter( 1, [ 'type' => 'SUPPLEMENT', 'config_item_id' => 2, 'quantite' => 5 ] );
         $this->assertSame( 80.0, $result['prix_total'] );
+    }
+
+    /** Item non-obligatoire, ligne existante → update appelé, create non appelé */
+    public function test_catalogue_upsert_met_a_jour_ligne_existante(): void {
+        $this->sejour_exist();
+        $item     = [ 'id' => 1, 'libelle' => 'Casse assiette', 'prix_unitaire' => 5.0, 'unite' => 'UNITE', 'actif' => true ];
+        $existing = [ 'id' => 50, 'libelle' => 'Casse assiette', 'quantite' => 2.0, 'prix_total' => 10.0 ];
+        $this->item_repo->shouldReceive( 'find_by_id' )->with( 1 )->andReturn( $item );
+        $this->ligne_repo->shouldReceive( 'find_by_sejour_and_config_item' )->with( 1, 1 )->andReturn( $existing );
+        $this->ligne_repo->shouldReceive( 'update' )
+            ->withArgs( fn( $id, $d ) => $id === 50 && $d['quantite'] === 3.0 && $d['prix_total'] === 15.0 )
+            ->once();
+        $this->ligne_repo->shouldNotReceive( 'create' );
+        $updated = [ 'id' => 50, 'quantite' => 3.0, 'prix_total' => 15.0 ];
+        $this->ligne_repo->shouldReceive( 'find_by_id' )->with( 50 )->andReturn( $updated );
+
+        $result = $this->service->ajouter( 1, [ 'type' => 'SUPPLEMENT', 'config_item_id' => 1, 'quantite' => 3 ] );
+
+        $this->assertSame( 15.0, $result['prix_total'] );
+        $this->assertSame( 50, $result['id'] );
     }
 
     // ── Saisie libre ──────────────────────────────────────────────────────────────

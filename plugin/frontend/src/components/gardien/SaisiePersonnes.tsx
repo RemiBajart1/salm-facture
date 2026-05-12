@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import styles from './Gardien.module.css'
 import { NumberInput } from '../common/NumberInput'
 import { ErrorBanner } from '../common/ErrorBanner'
@@ -22,6 +22,14 @@ export function SaisiePersonnes({ onNavigate, sejourId }: SaisiePersonnesProps) 
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [locked, setLocked] = useState(false)
+  const initializedForSejourRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!sejour || initializedForSejourRef.current === sejour.id) return
+    initializedForSejourRef.current = sejour.id
+    const total = sejour.categories.reduce((sum, c) => sum + c.nbPrevues, 0)
+    setNbAdultes(total)
+  }, [sejour])
 
   useEffect(() => {
     if (!sejour) return

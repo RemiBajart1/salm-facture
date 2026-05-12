@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import styles from './NumberInput.module.css'
 
 interface NumberInputProps {
@@ -9,10 +10,6 @@ interface NumberInputProps {
   'aria-label'?: string
 }
 
-/**
- * Input numérique avec boutons − et +.
- * Utilisé pour la saisie des effectifs et quantités de suppléments.
- */
 export function NumberInput({
   value,
   onChange,
@@ -21,12 +18,38 @@ export function NumberInput({
   disabled = false,
   'aria-label': ariaLabel,
 }: NumberInputProps) {
+  const [inputValue, setInputValue] = useState(String(value))
+
+  useEffect(() => {
+    setInputValue(String(value))
+  }, [value])
+
   const handleDecrement = () => {
     if (value > min) onChange(value - 1)
   }
 
   const handleIncrement = () => {
     if (value < max) onChange(value + 1)
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value
+    setInputValue(raw)
+    const parsed = parseInt(raw, 10)
+    if (!isNaN(parsed) && parsed >= min && parsed <= max) {
+      onChange(parsed)
+    }
+  }
+
+  const handleBlur = () => {
+    const parsed = parseInt(inputValue, 10)
+    if (isNaN(parsed) || parsed < min) {
+      setInputValue(String(min))
+      onChange(min)
+    } else if (parsed > max) {
+      setInputValue(String(max))
+      onChange(max)
+    }
   }
 
   return (
@@ -40,9 +63,16 @@ export function NumberInput({
       >
         −
       </button>
-      <div className={styles.value} aria-live="polite">
-        {value}
-      </div>
+      <input
+        type="number"
+        className={styles.input}
+        value={inputValue}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        min={min}
+        max={max}
+        disabled={disabled}
+      />
       <button
         type="button"
         className={styles.btn}

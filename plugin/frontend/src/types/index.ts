@@ -162,6 +162,7 @@ export interface CreateSejourRequest {
   nomGroupe?: string
   dejaMembreItemIds?: string[]
   preselectedItemIds?: string[]
+  tarifForfaitCategorieId?: string
   categories: {
     tarifId: string  // UUID
     nbPrevues: number

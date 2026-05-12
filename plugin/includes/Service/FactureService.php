@@ -46,6 +46,10 @@ class FactureService {
         // Calcul des lignes
         $min_personnes = (int) ( $sejour['min_personnes_total'] ?? $config['min_personnes_defaut'] ?? 40 );
         $forfait_id    = (int) ( $sejour['tarif_forfait_categorie_id'] ?? 0 );
+        // Fallback : si non défini, utiliser la première catégorie non-présence comme référence forfait
+        if ( $forfait_id === 0 && ! empty( $categories ) ) {
+            $forfait_id = (int) $categories[0]['tarif_personne_id'];
+        }
 
         $ligne_heberg = $this->calcul_service->calculer_hebergement(
             $categories,

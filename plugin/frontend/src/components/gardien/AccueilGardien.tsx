@@ -1,17 +1,15 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import styles from './Gardien.module.css'
 import { LoadingSpinner } from '../common/LoadingSpinner'
 import { ErrorBanner } from '../common/ErrorBanner'
 import { useSejourList } from '../../hooks/useSejour'
 import type { Sejour } from '../../types'
-import type { GardienStep } from '../../pages/GardienPage'
 
 interface AccueilGardienProps {
-  onNavigate: (step: GardienStep) => void
   onSelectSejour: (sejourId: string) => void
 }
 
-export function AccueilGardien({ onNavigate, onSelectSejour }: AccueilGardienProps) {
+export function AccueilGardien({ onSelectSejour }: AccueilGardienProps) {
   const [showAll, setShowAll] = useState(false)
 
   const { sejours, loading, error } = useSejourList({

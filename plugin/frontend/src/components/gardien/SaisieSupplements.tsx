@@ -51,8 +51,16 @@ export function SaisieSupplements({ onNavigate, sejourId }: SaisieSupplementsPro
         const actifs = data.filter((i) => i.actif)
         setItems(actifs)
 
+        // Initialiser les quantités : 0 par défaut, puis restaurer depuis les lignes existantes
         const initial: Record<string, number> = {}
         actifs.filter((i) => !i.obligatoire).forEach((i) => { initial[i.id] = 0 })
+        existingLignes
+          .filter((l) => l.configItemId && l.statut === 'CONFIRME')
+          .forEach((l) => {
+            if (l.configItemId && l.configItemId in initial) {
+              initial[l.configItemId] = l.quantite
+            }
+          })
         setQuantites(initial)
 
         // Détecter l'état "déjà membre" depuis les lignes existantes

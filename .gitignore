@@ -48,3 +48,5 @@ plugin/frontend/node_modules/
 *.iml
 /backend/build/
 /backend/.gradle/
+/.mcp.json
+/.playwright-mcp/

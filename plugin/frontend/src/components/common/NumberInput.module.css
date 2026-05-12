@@ -33,11 +33,26 @@
   opacity: 0.5;
 }
 
-.value {
+.input {
   flex: 1;
+  min-width: 0;
   text-align: center;
   font-family: 'Playfair Display', serif;
   font-size: 26px;
   font-weight: 700;
   color: var(--text);
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+}
+
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input[type=number] {
+  -moz-appearance: textfield;
 }

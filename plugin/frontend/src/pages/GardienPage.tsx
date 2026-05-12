@@ -85,7 +85,7 @@ export function GardienPage() {
       )}
 
       <div className={styles.screenContent}>
-        {step === 'accueil'       && <AccueilGardien onNavigate={handleNavigate} onSelectSejour={handleSelectSejour} />}
+        {step === 'accueil'       && <AccueilGardien onSelectSejour={handleSelectSejour} />}
         {step === 'personnes'     && <SaisiePersonnes onNavigate={handleNavigate} sejourId={selectedSejourId ?? undefined} />}
         {step === 'supplements'   && <SaisieSupplements onNavigate={handleNavigate} sejourId={selectedSejourId ?? undefined} />}
         {step === 'recapitulatif' && <Recapitulatif onNavigate={handleNavigate} sejourId={selectedSejourId ?? undefined} />}
